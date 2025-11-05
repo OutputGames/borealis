@@ -3,9 +3,9 @@ CC = gcc
 CXX = g++
 
 # Define compiler flags
-CFLAGS = -Wall  -std=c11 -Iext/glad/include -Iext/glfw/include/  # C specific flags
-CXXFLAGS = -Wall -std=c++17  -Iext/glad/include -Iext/glfw/include/ # C++ specific flags
-LDFLAGS = -Lext/glfw/lib-mingw-w64/ -lglfw3 -lopengl32 -lgdi32 # Linker flags, e.g., -lm for math library
+CFLAGS = -Wall  -std=c11 -Iext/glad/include -Iext/glfw/include/ -Iinclude/  # C specific flags
+CXXFLAGS = -Wall -std=c++17  -Iext/glad/include -Iext/glfw/include/ -Iinclude/ # C++ specific flags
+LDFLAGS = -Lext/glfw/lib-mingw-w64/ -Lext/glad/lib/ -lglad -lglfw3 -lopengl32 -lgdi32 # Linker flags, e.g., -lm for math library
 
 # Define source directories and build directory
 SRC_DIRS = src include # Add all your source subdirectories here
@@ -21,7 +21,7 @@ CPP_OBJS = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(CPP_SRCS))
 OBJS = $(C_OBJS) $(CPP_OBJS)
 
 # Define the executable name
-TARGET = myapp.exe
+TARGET = out/myapp.exe
 
 .PHONY: all clean
 
@@ -32,6 +32,7 @@ $(BUILD_DIR):
 
 # Rule to build the executable
 $(TARGET): $(OBJS)
+	mkdir -p $(dir $@)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 # Rule for compiling C files
