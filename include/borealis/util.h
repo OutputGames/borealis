@@ -6,5 +6,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 #endif // UTIL_H

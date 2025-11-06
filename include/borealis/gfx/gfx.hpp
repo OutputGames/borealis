@@ -8,6 +8,8 @@
 namespace brl
 {
 
+    struct GfxDrawCall;
+
     struct GfxWindow {
         bool isOpen() { return !glfwWindowShouldClose((GLFWwindow*)window); }
     private:
@@ -35,15 +37,97 @@ namespace brl
         void shutdown();
         void update();
         bool isRunning() {return mainWindow->isOpen();}
+        void insertCall(GfxDrawCall* call);
         
     private:
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;
+        std::vector<GfxDrawCall*> calls;
     };
     
     struct GfxShader {
-        GfxShader(GLenum format,const void* binary, size_t binarySize);
-    }
+        GfxShader(GLenum format,const void* binary, size_t binarySize) = delete;
+        GfxShader(GLenum type,std::string data);
+
+        void destroy();
+
+    private:
+        friend struct GfxShaderProgram;
+        unsigned int id;
+        GLenum type;
+    };
+
+    struct GfxShaderProgram 
+    {
+        GfxShaderProgram(GfxShader** shaders, int shaderCount, bool deleteOnLoad);
+
+        void use();
+
+    private:
+        unsigned int id;
+    };
+
+    struct IGfxBuffer 
+    {
+
+
+        virtual void use() {}
+        virtual void destroy() {};
+        
+
+    private:
+        friend struct GfxBuffer;
+        friend struct AttribGfxBuffer;
+
+        IGfxBuffer() {};
+        unsigned int id = -1;
+    };
+
+    struct GfxBuffer : public IGfxBuffer {
+        GfxBuffer(GLenum format);
+
+        void use();
+        void updateData(GLenum usage, const void* data, size_t size);
+        void destroy();
+
+    private:
+        friend struct AttribGfxBuffer;
+        GLenum format;
+        size_t size;
+    };
+
+    struct GfxAttribute {
+        int size;
+        int stride;
+        const void* pointer;
+
+        GLenum format = GL_FLOAT;
+        bool normalized = false;
+    };
+
+    struct AttribGfxBuffer : public IGfxBuffer {
+        AttribGfxBuffer();
+
+        void assignBuffer(GfxBuffer* buffer);
+        void assignElementBuffer(GfxBuffer* buffer, GLenum format);
+        void insertAttribute(GfxAttribute attribute);
+
+        void use();
+        void destroy();
+
+        void draw();
+
+    private:
+        GfxBuffer* vbo, *ebo;
+        GLenum eboFormat = GL_UNSIGNED_INT;
+        int attributeCount = 0;
+        size_t vertexSize;
+    };
+
+    struct GfxDrawCall {
+        GfxShaderProgram* program;
+        AttribGfxBuffer* gfxBuffer;
+    };
 
 } // namespace 
 
