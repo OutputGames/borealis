@@ -3,7 +3,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <borealis/util.h>
+#include <borealis/util/util.h>
 
 namespace brl
 {
@@ -57,6 +57,16 @@ namespace brl
         GLenum type;
     };
 
+    struct GfxShaderUniform {
+        std::string name;
+        GLenum type;
+    };
+
+    union GfxShaderValue {
+        int intValue;
+        float floatValue;
+    };
+
     struct GfxShaderProgram 
     {
         GfxShaderProgram(GfxShader** shaders, int shaderCount, bool deleteOnLoad);
@@ -65,6 +75,30 @@ namespace brl
 
     private:
         unsigned int id;
+        GfxShaderUniform* uniforms;
+    };
+
+    struct GfxMaterial {
+
+        GfxShaderProgram* getShader() {return shader;}
+        
+        void setInt(std::string name, int value) {
+            GfxShaderValue val;
+            val.intValue = value;
+            overrides.insert({name, val});
+        }
+
+        void setFloat(std::string name, float value) {
+            GfxShaderValue val;
+            val.floatValue = value;
+            overrides.insert({name, val});
+        }
+
+        void draw(AttribGfxBuffer* buffer);
+
+    private:
+        GfxShaderProgram* shader;
+        std::map<std::string, GfxShaderValue> overrides;
     };
 
     struct IGfxBuffer 
@@ -115,9 +149,10 @@ namespace brl
         void use();
         void destroy();
 
-        void draw();
+        int getSize();
 
     private:
+        friend GfxMaterial;
         GfxBuffer* vbo, *ebo;
         GLenum eboFormat = GL_UNSIGNED_INT;
         int attributeCount = 0;
@@ -125,7 +160,7 @@ namespace brl
     };
 
     struct GfxDrawCall {
-        GfxShaderProgram* program;
+        GfxMaterial* material;
         AttribGfxBuffer* gfxBuffer;
     };
 

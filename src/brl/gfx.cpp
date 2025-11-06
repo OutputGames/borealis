@@ -1,4 +1,6 @@
 #include "borealis/gfx/gfx.hpp"
+#include "gfx.hpp"
+#include "gfx.hpp"
 brl::GfxWindow::GfxWindow(int w, int h, const char* title)
 {
     window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
@@ -68,9 +70,7 @@ void brl::GfxEngine::update()
     mainWindow->clear();
 
     for (GfxDrawCall* call : calls) {
-        call->program->use();
-        call->gfxBuffer->use();
-        call->gfxBuffer->draw();
+        call->material->draw(call->gfxBuffer);
     }
     calls.clear();
 
@@ -136,32 +136,7 @@ void brl::AttribGfxBuffer::destroy() { glDeleteVertexArrays(1, &id); }
 
 void brl::AttribGfxBuffer::draw() {
 
-    if (ebo) {
-        int size = 0;
 
-        int elementSize = 0;
-
-        switch (eboFormat)
-        {
-        case GL_UNSIGNED_INT:
-            elementSize = sizeof(unsigned int);
-            break;
-        
-        default:
-            break;
-        }
-
-        size = ebo->size / elementSize;
-
-        ebo->use();
-
-        glDrawElements(GL_TRIANGLES, size, eboFormat, 0);
-    } else {
-
-
-
-        glDrawArrays(GL_TRIANGLES, vertexSize, vbo->size / vertexSize);
-    }
 }
 
 brl::GfxShader::GfxShader(GLenum type, std::string data) {
@@ -200,6 +175,7 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
     {
         glGetProgramInfoLog(id, 512, NULL, infoLog);
         std::cerr << "Shader linking failed.\n" << infoLog << std::endl;
+        return;
     }
 
     if (deleteOnLoad) {
@@ -210,8 +186,75 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
         }
     }
 
+    brl::print("Sucessfully linked shader.");
+
+    GLint totalUniforms = 0;
+    glGetProgramiv(id, GL_ACTIVE_UNIFORMS, &totalUniforms);
+    uniforms = new brl::GfxShaderUniform[totalUniforms];
+
+    brl::print("\tAmount of uniforms: "+std::to_string(totalUniforms));
+
+    for (int i = 0; i < totalUniforms; i++)
+    {
+        GLint nameLength = -1;
+        GLint num = -1;
+        GLenum type = GL_ZERO;
+        char name[256];
+
+        glGetActiveUniform(id, i, sizeof(name)-1, &nameLength, &num, &type, name);
+
+        uniforms[i] = GfxShaderUniform{name, type};
+
+        std::cout << "\t" << name << " - " << type << std::endl;
+    }
+
+
+    
+
 }
 
 void brl::GfxShaderProgram::use() {
     glUseProgram(id);
+}
+
+void brl::GfxMaterial::draw(AttribGfxBuffer * buffer)
+{
+    
+    shader->use();
+    for (const auto& _override : overrides) {
+        
+    }
+
+    if (buffer->ebo) {
+        buffer->ebo->use();
+        glDrawElements(GL_TRIANGLES, buffer->getSize(), buffer->eboFormat, 0);
+    } else {
+
+
+
+        glDrawArrays(GL_TRIANGLES, 0,  buffer->getSize());
+    }
+}
+int brl::AttribGfxBuffer::getSize()
+{
+    if (ebo) {
+        int size = 0;
+
+        int elementSize = 0;
+
+        switch (eboFormat)
+        {
+        case GL_UNSIGNED_INT:
+            elementSize = sizeof(unsigned int);
+            break;
+        
+        default:
+            break;
+        }
+
+        size = ebo->size / elementSize;
+        return size;
+    } else {
+        return vbo->size /  vertexSize;
+    }
 }
