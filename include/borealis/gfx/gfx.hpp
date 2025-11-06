@@ -60,11 +60,15 @@ namespace brl
     struct GfxShaderUniform {
         std::string name;
         GLenum type;
+        int location;
     };
 
     union GfxShaderValue {
         int intValue;
         float floatValue;
+        vector2 v2value;
+        vector3 v3value;
+        vector4 v4value;
     };
 
     struct GfxShaderProgram 
@@ -75,7 +79,17 @@ namespace brl
 
     private:
         unsigned int id;
+
         GfxShaderUniform* uniforms;
+        int uniformCount;
+
+        GfxShaderUniform* getUniform(std::string name) {
+            for(int i=0; i<uniformCount; i++){
+                if (uniforms[i].name == name)
+                    return &uniforms[i]; 
+            }
+            return nullptr;
+        }
     };
 
     struct GfxMaterial {
@@ -85,20 +99,39 @@ namespace brl
         void setInt(std::string name, int value) {
             GfxShaderValue val;
             val.intValue = value;
-            overrides.insert({name, val});
+            overrides.insert({shader.getUniform(name), val});
         }
 
         void setFloat(std::string name, float value) {
             GfxShaderValue val;
             val.floatValue = value;
-            overrides.insert({name, val});
+            overrides.insert({shader.getUniform(name), val});
         }
+
+        void setVec2(std::string name, vector2 value) {
+            GfxShaderValue val;
+            val.v2value = value;
+            overrides.insert({shader.getUniform(name), val});
+        }
+
+        void setVec3(std::string name, vector3 value) {
+            GfxShaderValue val;
+            val.v3value = value;
+            overrides.insert({shader.getUniform(name), val});
+        }
+
+        void setVec4(std::string name, vector4 value) {
+            GfxShaderValue val;
+            val.v4value = value;
+            overrides.insert({shader.getUniform(name), val});
+        }
+
 
         void draw(AttribGfxBuffer* buffer);
 
     private:
         GfxShaderProgram* shader;
-        std::map<std::string, GfxShaderValue> overrides;
+        std::map<GfxShaderUniform*, GfxShaderValue> overrides;
     };
 
     struct IGfxBuffer 

@@ -203,7 +203,7 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
 
         glGetActiveUniform(id, i, sizeof(name)-1, &nameLength, &num, &type, name);
 
-        uniforms[i] = GfxShaderUniform{name, type};
+        uniforms[i] = GfxShaderUniform{name, type, i};
 
         std::cout << "\t" << name << " - " << type << std::endl;
     }
@@ -222,7 +222,14 @@ void brl::GfxMaterial::draw(AttribGfxBuffer * buffer)
     
     shader->use();
     for (const auto& _override : overrides) {
-        
+        switch (_override.first->type) {
+            case GL_FLOAT:
+                glUniform1f(_override.first->location, _override.second.floatValue);
+            case GL_FLOAT_VEC2:
+                glUniform2fv(_override.first->location, 1, _override.second.v2value);
+            case GL_INT:
+                glUniform1i(_override.first->location, _override.second.intValue);
+        }
     }
 
     if (buffer->ebo) {
