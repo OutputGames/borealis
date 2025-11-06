@@ -1,6 +1,9 @@
 #include "borealis/gfx/gfx.hpp"
-#include "gfx.hpp"
-#include "gfx.hpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+
 brl::GfxWindow::GfxWindow(int w, int h, const char* title)
 {
     window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
@@ -134,10 +137,6 @@ void brl::AttribGfxBuffer::use() { glBindVertexArray(id); }
 
 void brl::AttribGfxBuffer::destroy() { glDeleteVertexArrays(1, &id); }
 
-void brl::AttribGfxBuffer::draw() {
-
-
-}
 
 brl::GfxShader::GfxShader(GLenum type, std::string data) {
     this->type = type;
@@ -222,22 +221,33 @@ void brl::GfxMaterial::draw(AttribGfxBuffer * buffer)
     
     shader->use();
     for (const auto& _override : overrides) {
+            
         switch (_override.first->type) {
             case GL_FLOAT:
                 glUniform1f(_override.first->location, _override.second.floatValue);
+                break;
             case GL_FLOAT_VEC2:
-                glUniform2fv(_override.first->location, 1, _override.second.v2value);
+                glUniform2f(_override.first->location, _override.second.v2value.x, _override.second.v2value.y);
+                break;
+            case GL_FLOAT_VEC3:
+                glUniform3f(_override.first->location, _override.second.v3value.x, _override.second.v3value.y, _override.second.v3value.z);
+                break;
+            case GL_FLOAT_VEC4:
+                glUniform4f(_override.first->location, _override.second.v4value.x, _override.second.v4value.y, _override.second.v4value.z, _override.second.v4value.w);
+                break;
             case GL_INT:
                 glUniform1i(_override.first->location, _override.second.intValue);
+                break;
         }
     }
 
     if (buffer->ebo) {
         buffer->ebo->use();
+
+       // std::cout << buffer->getSize() << std::endl;
+
         glDrawElements(GL_TRIANGLES, buffer->getSize(), buffer->eboFormat, 0);
     } else {
-
-
 
         glDrawArrays(GL_TRIANGLES, 0,  buffer->getSize());
     }
@@ -264,4 +274,32 @@ int brl::AttribGfxBuffer::getSize()
     } else {
         return vbo->size /  vertexSize;
     }
+}
+
+brl::GfxTexture2d::GfxTexture2d(std::string path)
+{
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int nrChannels;
+    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+    unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        GLenum format = GL_RGB;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
 }

@@ -4,11 +4,13 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <borealis/util/util.h>
+#include <borealis/math/vector.hpp>
 
 namespace brl
 {
 
     struct GfxDrawCall;
+    struct AttribGfxBuffer;
 
     struct GfxWindow {
         bool isOpen() { return !glfwWindowShouldClose((GLFWwindow*)window); }
@@ -63,7 +65,7 @@ namespace brl
         int location;
     };
 
-    union GfxShaderValue {
+    struct GfxShaderValue {
         int intValue;
         float floatValue;
         vector2 v2value;
@@ -78,6 +80,7 @@ namespace brl
         void use();
 
     private:
+        friend struct GfxMaterial;
         unsigned int id;
 
         GfxShaderUniform* uniforms;
@@ -92,38 +95,77 @@ namespace brl
         }
     };
 
+    struct GfxTexture2d {
+
+        GfxTexture2d(std::string path);
+
+        int getWidth() {return width;}
+        int getHeight() {return height;}
+
+    private:
+        unsigned id;
+        int width, height;
+    };
+
     struct GfxMaterial {
+
+        GfxMaterial(GfxShaderProgram* shader) {
+            this->shader = shader;
+        }
 
         GfxShaderProgram* getShader() {return shader;}
         
         void setInt(std::string name, int value) {
+
+            if (!shader->getUniform(name))
+                return;
+
             GfxShaderValue val;
             val.intValue = value;
-            overrides.insert({shader.getUniform(name), val});
+            overrides.insert({shader->getUniform(name), val});
         }
 
         void setFloat(std::string name, float value) {
+
+
+            if (!shader->getUniform(name))
+                return;
+
             GfxShaderValue val;
             val.floatValue = value;
-            overrides.insert({shader.getUniform(name), val});
+            overrides.insert({shader->getUniform(name), val});
         }
 
         void setVec2(std::string name, vector2 value) {
+
+
+            if (!shader->getUniform(name))
+                return;
+
             GfxShaderValue val;
             val.v2value = value;
-            overrides.insert({shader.getUniform(name), val});
+            overrides.insert({shader->getUniform(name), val});
         }
 
         void setVec3(std::string name, vector3 value) {
+
+            if (shader->getUniform(name) == nullptr)
+                return;
+
             GfxShaderValue val;
             val.v3value = value;
-            overrides.insert({shader.getUniform(name), val});
+            overrides.insert({shader->getUniform(name), val});
         }
 
         void setVec4(std::string name, vector4 value) {
+
+
+            if (!shader->getUniform(name))
+                return;
+
             GfxShaderValue val;
             val.v4value = value;
-            overrides.insert({shader.getUniform(name), val});
+            overrides.insert({shader->getUniform(name), val});
         }
 
 
