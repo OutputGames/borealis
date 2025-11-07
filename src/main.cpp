@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <iostream>
 #include <borealis/gfx/gfx.hpp>
+#include <borealis/math/matrix.hpp>
 
 
 const char *vertexShaderSource = "#version 330 core\n"
@@ -72,6 +73,18 @@ unsigned int indices[] = {  // note that we start from 0!
 
     brl::GfxMaterial* material = new brl::GfxMaterial(shader);
     //material->setVec3("color", brl::vector3{1,0,0});
+
+        
+    brl::matrix4x4 m1 = { {1,3,0,0}, {2,4,0,0}, {0,0,0,0}, {0,0,0,0} };
+
+    brl::matrix4x4 m2 = { {5,7,0,0}, {6,8,0,0}, {0,0,0,0}, {0,0,0,0} };
+
+    brl::matrix4x4 m3 = m1 * m2;
+
+    std::cout << m1.toString() << std::endl << std::endl;
+    std::cout << m2.toString() << std::endl << std::endl;
+    std::cout << m3.toString() << std::endl << std::endl;
+    
 
     while(engine.isRunning())
     {
