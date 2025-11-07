@@ -135,7 +135,20 @@ namespace brl
         static matrix4x4 identity() {
             return matrix4x4();
         }
+
+        static matrix4x4 scale(matrix4x4 m, vector3 s) {
+            m[0][0] = s.x;
+            m[1][1] = s.y;
+            m[2][2] = s.z;
+        }
         
+
+        static matrix4x4 translate(matrix4x4 m, vector3 s) {
+            m[3][0] = s.x;
+            m[3][1] = s.y;
+            m[3][2] = s.z;
+        }
+
         std::string toString() {
             std::string s = "";
 

@@ -59,6 +59,29 @@ namespace brl
         {
             return vector3{x / v, y / v, z / v};
         }
+
+        float length() {
+            return sqrt(pow(x, 2) + pow(y,2) + pow(z,2));
+        }
+
+        float dot(vector3 v) {
+            float sum = 0;
+
+            sum += x*v.x;
+            sum += y*v.y;
+            sum += z*v.z;
+            return sum;
+        }
+
+        vector3 dot(vector3 v) {
+            vector3 result = vector3{};
+
+            result.x = this->y * v.z - this->z * v.y;
+            result.y = this->z * v.x - this->x * v.z;
+            result.z = this->x * v.b - this->y * v.x;
+
+            return result;
+        }
     };
 
     struct vector4
