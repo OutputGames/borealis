@@ -4,7 +4,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <borealis/util/util.h>
-#include <borealis/math/vector.hpp>
 
 namespace brl
 {
@@ -40,11 +39,14 @@ namespace brl
         void update();
         bool isRunning() {return mainWindow->isOpen();}
         void insertCall(GfxDrawCall* call);
+        int getFrameCount();
         
     private:
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;
         std::vector<GfxDrawCall*> calls;
+
+        int frameCount = 0;
     };
     
     struct GfxShader {
@@ -68,9 +70,10 @@ namespace brl
     struct GfxShaderValue {
         int intValue;
         float floatValue;
-        vector2 v2value;
-        vector3 v3value;
-        vector4 v4value;
+        glm::vec2 v2value;
+        glm::vec3 v3value;
+        glm::vec4 v4value;
+        glm::mat4 m4value;
     };
 
     struct GfxShaderProgram 
@@ -122,7 +125,7 @@ namespace brl
 
             GfxShaderValue val;
             val.intValue = value;
-            overrides.insert({shader->getUniform(name), val});
+            setOverride({shader->getUniform(name), val});
         }
 
         void setFloat(std::string name, float value) {
@@ -133,10 +136,10 @@ namespace brl
 
             GfxShaderValue val;
             val.floatValue = value;
-            overrides.insert({shader->getUniform(name), val});
+            setOverride({shader->getUniform(name), val});
         }
 
-        void setVec2(std::string name, vector2 value) {
+        void setVec2(std::string name, glm::vec2 value) {
 
 
             if (!shader->getUniform(name))
@@ -144,20 +147,20 @@ namespace brl
 
             GfxShaderValue val;
             val.v2value = value;
-            overrides.insert({shader->getUniform(name), val});
+            setOverride({shader->getUniform(name), val});
         }
 
-        void setVec3(std::string name, vector3 value) {
+        void setVec3(std::string name, glm::vec3 value) {
 
             if (shader->getUniform(name) == nullptr)
                 return;
 
             GfxShaderValue val;
             val.v3value = value;
-            overrides.insert({shader->getUniform(name), val});
+            setOverride({shader->getUniform(name), val});
         }
 
-        void setVec4(std::string name, vector4 value) {
+        void setVec4(std::string name, glm::vec4 value) {
 
 
             if (!shader->getUniform(name))
@@ -165,15 +168,33 @@ namespace brl
 
             GfxShaderValue val;
             val.v4value = value;
-            overrides.insert({shader->getUniform(name), val});
+            setOverride({shader->getUniform(name), val});
         }
 
+        void setMat4(std::string name, glm::mat4 value) {
+
+
+            if (!shader->getUniform(name))
+                return;
+
+            GfxShaderValue val;
+            val.m4value = value;
+            setOverride({shader->getUniform(name), val});
+        }
 
         void draw(AttribGfxBuffer* buffer);
 
     private:
         GfxShaderProgram* shader;
         std::map<GfxShaderUniform*, GfxShaderValue> overrides;
+
+        void setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair) {
+            if (overrides.contains(pair.first)) {
+                overrides[pair.first] = pair.second;
+            } else {
+                overrides.insert(pair);
+            }
+        }
     };
 
     struct IGfxBuffer 

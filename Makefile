@@ -3,8 +3,8 @@ CC = gcc
 CXX = g++
 
 # Define compiler flags
-CFLAGS = -Wall  -std=c11 -fcompare-debug-second -Iext/glad/include -Iext/stb/include -Iext/glfw/include/ -Iinclude/  # C specific flags
-CXXFLAGS = -Wall -std=c++17 -fcompare-debug-second -Iext/glad/include -Iext/stb/include -Iext/glfw/include/ -Iinclude/ # C++ specific flags
+CFLAGS = -Wall  -std=c11 -fcompare-debug-second -Iext/glad/include -Iext/glm/ -Iext/stb/include -Iext/glfw/include/ -Iinclude/  # C specific flags
+CXXFLAGS = -Wall -std=c++20 -fcompare-debug-second -Iext/glad/include -Iext/glm/ -Iext/stb/include -Iext/glfw/include/ -Iinclude/ # C++ specific flags
 LDFLAGS = -Lext/glfw/lib-mingw-w64/ -Lext/glad/lib/ -lglad -lglfw3 -lopengl32 -lgdi32 # Linker flags, e.g., -lm for math library
 
 # Define source directories and build directory

@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/ext/glfw/include/",
                 "${workspaceFolder}/ext/glad/include",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/ext/glm/"
             ],
             "defines": [
                 "_DEBUG",
@@ -15,7 +16,7 @@
             ],
             "compilerPath": "C:\\MinGW\\bin\\gcc.exe",
             "cStandard": "c17",
-            "cppStandard": "gnu++14",
+            "cppStandard": "gnu++20",
             "intelliSenseMode": "windows-gcc-x86"
         }
     ],

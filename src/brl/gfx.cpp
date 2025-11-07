@@ -79,12 +79,18 @@ void brl::GfxEngine::update()
 
     mainWindow->pollEvents();
     mainWindow->swapBuffers();
+
+    frameCount++;
 }
 
 void brl::GfxEngine::insertCall(GfxDrawCall* call) {
     calls.push_back(call);
 }
 
+int brl::GfxEngine::getFrameCount()
+{
+    return frameCount;
+}
 void brl::GfxWindow::clear() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -233,7 +239,10 @@ void brl::GfxMaterial::draw(AttribGfxBuffer * buffer)
                 glUniform3f(_override.first->location, _override.second.v3value.x, _override.second.v3value.y, _override.second.v3value.z);
                 break;
             case GL_FLOAT_VEC4:
-                glUniform4f(_override.first->location, _override.second.v4value.x, _override.second.v4value.y, _override.second.v4value.z, _override.second.v4value.w);
+                glUniform4fv(_override.first->location,1,glm::value_ptr(_override.second.v4value));
+                break;
+            case GL_FLOAT_MAT4:
+                glUniformMatrix4fv(_override.first->location,1,GL_FALSE,glm::value_ptr(_override.second.m4value));
                 break;
             case GL_INT:
                 glUniform1i(_override.first->location, _override.second.intValue);

@@ -1,18 +1,18 @@
 #include <cstdio>
 #include <iostream>
 #include <borealis/gfx/gfx.hpp>
-#include <borealis/math/matrix.hpp>
 
 
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "layout (location = 1) in vec3 aColor;\n"
     "layout (location = 2) in vec2 aUV;\n"
+    "uniform mat4 model;"
     "out vec2 texCoords;"
     "void main()\n"
     "{\n"
     "   texCoords = aUV;"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "   gl_Position = model * vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
@@ -74,24 +74,18 @@ unsigned int indices[] = {  // note that we start from 0!
     brl::GfxMaterial* material = new brl::GfxMaterial(shader);
     //material->setVec3("color", brl::vector3{1,0,0});
 
-        
-    brl::matrix4x4 m1 = {};
 
-    std::cout << m1.toString() << std::endl;
-
-    brl::vector4 v1 = {1,2,3,4};
-    std::cout << v1.toString() << std::endl;
-
-
-    v1 *= m1;
-
-    std::cout << v1.toString() << std::endl;
     
 
     while(engine.isRunning())
     {
         brl::GfxDrawCall* call = new brl::GfxDrawCall{material, attribBuffer};
         engine.insertCall(call);
+
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::rotate(model, glm::radians((float)engine.getFrameCount()), glm::vec3(0.0f, 0.0001f, 0.0f)); 
+
+        material->setMat4("model", model);
 
         engine.update();
     }
