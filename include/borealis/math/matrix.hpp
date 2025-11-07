@@ -9,6 +9,13 @@ namespace brl
     struct matrix4x4 {
         vector4 v1, v2,v3,v4;
 
+        matrix4x4() {
+            v1 = {1,0,0,0};
+            v2 = {0,1,0,0};
+            v3 = {0,0,1,0};
+            v4 = {0,0,0,1};
+        }
+
         vector4& operator[](int idx) {
             idx = idx % 4;
             switch (idx) {
@@ -89,6 +96,23 @@ namespace brl
             return o;
         }
 
+        brl::vector4& operator*(const brl::vector4& v) const {
+            brl::vector4 temp = v;
+            for (int i = 0; i < 4; i++)
+            {
+                float sum = 0;
+                for (int j = 0; j < 4; j++)
+                {
+                    sum += (*this)[i][j] * v[j];
+                }
+                
+                temp[i] = sum;
+            }
+            
+            return temp;
+        }
+
+
         matrix4x4& operator*=(const matrix4x4& s) {
             // Store original values since we'll be modifying the matrix in-place
             matrix4x4 temp = *this;
@@ -108,17 +132,8 @@ namespace brl
             return *this;
         }
 
-        matrix4x4 operator*(const vector4& s) const {
-            matrix4x4 o = *this;
-            o *= s;
-            return o;
-        }
-
-        matrix4x4& operator*=(const vector4& s) {
-            // Store original values since we'll be modifying the matrix in-place
-            matrix4x4 temp = *this;
-
-            return *this;
+        static matrix4x4 identity() {
+            return matrix4x4();
         }
         
         std::string toString() {

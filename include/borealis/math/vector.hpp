@@ -1,8 +1,13 @@
-#ifndef MATH_HPP
-#define MATH_HPP
+#ifndef VECTOR_HPP
+#define VECTOR_HPP
+
+#include <string>
 
 namespace brl
 {
+
+    struct matrix4x4;
+
     struct vector2
     {
         float x = 0;
@@ -144,6 +149,33 @@ namespace brl
                     return w;
             }
         }
+
+        vector4& operator*(const matrix4x4& v) const
+        {
+            vector4 o = *this;
+
+            o *= v;
+            
+            return o;
+        }
+
+        vector4& operator*=(const matrix4x4& v);
+
+        std::string toString() {
+            std::string s = "";
+
+            s += "[";
+
+            for (int i = 0; i < 4; i++)
+            {
+                s += std::to_string((*this)[i]);
+            }
+
+            s += "]";
+
+            return s;
+        }
+
     };
 
     

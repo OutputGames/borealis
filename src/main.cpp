@@ -75,15 +75,17 @@ unsigned int indices[] = {  // note that we start from 0!
     //material->setVec3("color", brl::vector3{1,0,0});
 
         
-    brl::matrix4x4 m1 = { {1,3,0,0}, {2,4,0,0}, {0,0,0,0}, {0,0,0,0} };
+    brl::matrix4x4 m1 = {};
 
-    brl::matrix4x4 m2 = { {5,7,0,0}, {6,8,0,0}, {0,0,0,0}, {0,0,0,0} };
+    std::cout << m1.toString() << std::endl;
 
-    brl::matrix4x4 m3 = m1 * m2;
+    brl::vector4 v1 = {1,2,3,4};
+    std::cout << v1.toString() << std::endl;
 
-    std::cout << m1.toString() << std::endl << std::endl;
-    std::cout << m2.toString() << std::endl << std::endl;
-    std::cout << m3.toString() << std::endl << std::endl;
+
+    v1 *= m1;
+
+    std::cout << v1.toString() << std::endl;
     
 
     while(engine.isRunning())
