@@ -1,6 +1,6 @@
 #include "borealis/gfx/gfx.hpp"
 
-brl::AttribGfxBuffer* brl::GfxFramebufferAttachment::fullscreenQuadBuffer = nullptr;
+brl::GfxAttribBuffer* brl::GfxFramebufferAttachment::fullscreenQuadBuffer = nullptr;
 
 void brl::GfxFramebufferAttachment::draw(GfxMaterial* material)
 {
@@ -12,7 +12,7 @@ void brl::GfxFramebufferAttachment::draw(GfxMaterial* material)
             -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
             -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 
-        auto attribBuffer = new AttribGfxBuffer();
+        auto attribBuffer = new GfxAttribBuffer();
 
 
         attribBuffer->use();

@@ -16,8 +16,11 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     int nrChannels;
-    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+
+    IoBinaryData file = readFileBinary(path);
+
+
+    unsigned char* data = stbi_load_from_memory(file.mem, file.size, &width, &height, &nrChannels, 0);
     if (data)
     {
         GLenum format = GL_RGB;

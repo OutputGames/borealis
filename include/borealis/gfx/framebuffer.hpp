@@ -12,7 +12,7 @@ namespace brl
     struct GfxShaderUniform;
     struct GfxTexture;
     struct GfxDrawCall;
-    struct AttribGfxBuffer;
+    struct GfxAttribBuffer;
     struct GfxMaterial;
 
     struct GfxFramebufferAttachment : GfxTexture
@@ -24,7 +24,7 @@ namespace brl
 
     private:
 
-        static AttribGfxBuffer* fullscreenQuadBuffer;
+        static GfxAttribBuffer* fullscreenQuadBuffer;
 
     };
 

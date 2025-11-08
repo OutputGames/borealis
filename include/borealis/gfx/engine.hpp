@@ -8,7 +8,7 @@
 namespace brl
 {
     struct GfxDrawCall;
-    struct AttribGfxBuffer;
+    struct GfxAttribBuffer;
     struct GfxMaterial;
 
     struct GfxWindow {
@@ -60,7 +60,7 @@ namespace brl
 
     struct GfxDrawCall {
         GfxMaterial* material;
-        AttribGfxBuffer* gfxBuffer;
+        GfxAttribBuffer* gfxBuffer;
         const glm::mat4 transform;
     };
 } // namespace brl

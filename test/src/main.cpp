@@ -27,7 +27,8 @@ auto fragmentShaderSource = "#version 330 core\n"
 
 int main(int argc, const char* argv[])
 {
-    brl::EcsEntityMgr entityMgr;
+    brl::IoEngine ioMgr;
+    brl::EcsEngine entityMgr;
 
 
     brl::GfxEngine engine;
@@ -52,7 +53,7 @@ int main(int argc, const char* argv[])
         -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
         0.5f, 0.5f, 0.5f, 1.0f, 0.0f, -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, -0.5f, 0.5f, -0.5f, 0.0f, 1.0f};
 
-    auto attribBuffer = new brl::AttribGfxBuffer();
+    auto attribBuffer = new brl::GfxAttribBuffer();
 
 
     attribBuffer->use();
@@ -60,14 +61,7 @@ int main(int argc, const char* argv[])
     buffer->use();
     buffer->updateData(GL_STATIC_DRAW, vertices, sizeof(vertices));
 
-    //auto elementBuffer = new brl::GfxBuffer(GL_ELEMENT_ARRAY_BUFFER);
-    //elementBuffer->use();
-    //elementBuffer->updateData(GL_STATIC_DRAW, indices, sizeof(indices));
-
-
     attribBuffer->assignBuffer(buffer);
-    //attribBuffer->assignElementBuffer(elementBuffer, GL_UNSIGNED_INT);
-
 
     attribBuffer->insertAttribute(brl::GfxAttribute{3, 5 * sizeof(float), static_cast<void*>(0)});
     attribBuffer->insertAttribute(brl::GfxAttribute{2, 5 * sizeof(float), (void*)(3 * sizeof(float))});

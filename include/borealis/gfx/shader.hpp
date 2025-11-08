@@ -12,7 +12,7 @@ namespace brl
     struct GfxShaderUniform;
     struct GfxTexture;
     struct GfxDrawCall;
-    struct AttribGfxBuffer;
+    struct GfxAttribBuffer;
     struct GfxMaterial;
     using GfxUniformList = std::map<GfxShaderUniform*, GfxShaderValue>;
     
@@ -168,7 +168,7 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void draw(AttribGfxBuffer* buffer, GfxUniformList runtimeOverrides = {});
+        void draw(GfxAttribBuffer* buffer, GfxUniformList runtimeOverrides = {});
 
 
     private:

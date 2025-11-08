@@ -1,6 +1,6 @@
 #include "borealis/ecs/entity.hpp"
 
-brl::EcsEntityMgr* brl::EcsEntityMgr::instance;
+brl::EcsEngine* brl::EcsEngine::instance;
 
 glm::vec3 brl::EcsEntity::position()
 {
@@ -35,7 +35,7 @@ glm::vec3 brl::EcsEntity::scale()
 void brl::EcsEntity::destroy()
 {
 
-    EcsEntityMgr::instance->destroyEntity(this);
+    EcsEngine::instance->destroyEntity(this);
 
     for (auto child : children)
     {
@@ -77,7 +77,7 @@ bool brl::EcsEntity::isGlobalActive()
 
 brl::EcsEntity::EcsEntity()
 {
-    EcsEntityMgr::instance->entities.push_back(this);
+    EcsEngine::instance->entities.push_back(this);
 }
 
 void brl::EcsEntity::awake()
@@ -122,17 +122,17 @@ void brl::EcsEntity::calculateTransform()
 
 }
 
-void brl::EcsEntityMgr::destroyEntity(EcsEntity* e)
+void brl::EcsEngine::destroyEntity(EcsEntity* e)
 {
     std::erase(entities, e);
 }
 
-brl::EcsEntityMgr::EcsEntityMgr()
+brl::EcsEngine::EcsEngine()
 {
     instance = this;
 }
 
-void brl::EcsEntityMgr::update()
+void brl::EcsEngine::update()
 {
     // early update
     for (auto entity : entities)

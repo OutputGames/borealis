@@ -1,6 +1,6 @@
 #include "borealis/gfx/gfx.hpp"
 
-int brl::AttribGfxBuffer::getSize()
+int brl::GfxAttribBuffer::getSize()
 {
     if (ebo)
     {
@@ -46,19 +46,19 @@ void brl::GfxBuffer::destroy()
     glDeleteBuffers(1, &id);
 }
 
-brl::AttribGfxBuffer::AttribGfxBuffer()
+brl::GfxAttribBuffer::GfxAttribBuffer()
 {
     glGenVertexArrays(1, &id);
 }
 
-void brl::AttribGfxBuffer::assignBuffer(GfxBuffer* buffer)
+void brl::GfxAttribBuffer::assignBuffer(GfxBuffer* buffer)
 {
     use();
     buffer->use();
     vbo = buffer;
 }
 
-void brl::AttribGfxBuffer::assignElementBuffer(GfxBuffer* buffer, GLenum format)
+void brl::GfxAttribBuffer::assignElementBuffer(GfxBuffer* buffer, GLenum format)
 {
     use();
     buffer->use();
@@ -67,7 +67,7 @@ void brl::AttribGfxBuffer::assignElementBuffer(GfxBuffer* buffer, GLenum format)
     ebo = buffer;
 }
 
-void brl::AttribGfxBuffer::insertAttribute(GfxAttribute attribute)
+void brl::GfxAttribBuffer::insertAttribute(GfxAttribute attribute)
 {
     use();
     vbo->use();
@@ -81,12 +81,12 @@ void brl::AttribGfxBuffer::insertAttribute(GfxAttribute attribute)
     attributeCount++;
 }
 
-void brl::AttribGfxBuffer::use()
+void brl::GfxAttribBuffer::use()
 {
     glBindVertexArray(id);
 }
 
-void brl::AttribGfxBuffer::destroy()
+void brl::GfxAttribBuffer::destroy()
 {
     glDeleteVertexArrays(1, &id);
 }

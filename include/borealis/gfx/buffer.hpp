@@ -11,7 +11,7 @@ namespace brl
     struct GfxShaderUniform;
     struct GfxTexture;
     struct GfxDrawCall;
-    struct AttribGfxBuffer;
+    struct GfxAttribBuffer;
     struct GfxMaterial;
     
     struct IGfxBuffer 
@@ -24,7 +24,7 @@ namespace brl
 
     private:
         friend struct GfxBuffer;
-        friend struct AttribGfxBuffer;
+        friend struct GfxAttribBuffer;
 
         IGfxBuffer() {};
         unsigned int id = -1;
@@ -38,7 +38,7 @@ namespace brl
         void destroy();
 
     private:
-        friend struct AttribGfxBuffer;
+        friend struct GfxAttribBuffer;
         GLenum format;
         size_t size;
     };
@@ -52,8 +52,8 @@ namespace brl
         bool normalized = false;
     };
 
-    struct AttribGfxBuffer : public IGfxBuffer {
-        AttribGfxBuffer();
+    struct GfxAttribBuffer : public IGfxBuffer {
+        GfxAttribBuffer();
 
         void assignBuffer(GfxBuffer* buffer);
         void assignElementBuffer(GfxBuffer* buffer, GLenum format);

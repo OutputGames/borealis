@@ -25,7 +25,7 @@ namespace brl
         EcsEntity();
 
     protected:
-        friend struct EcsEntityMgr;
+        friend struct EcsEngine;
         virtual void awake();
         virtual void start();
         virtual void earlyUpdate();
@@ -44,16 +44,16 @@ namespace brl
         bool active = true;
     };
 
-    struct EcsEntityMgr {
+    struct EcsEngine {
 
-        EcsEntityMgr();
+        EcsEngine();
 
         void update();
 
     private:
         friend EcsEntity;
 
-        static EcsEntityMgr* instance;
+        static EcsEngine* instance;
 
         void destroyEntity(EcsEntity* e);
 
