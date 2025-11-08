@@ -1,0 +1,173 @@
+#include "borealis/gfx/gfx.hpp"
+
+brl::GfxEngine* brl::GfxEngine::instance;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
+}
+
+
+brl::GfxWindow::GfxWindow(int w, int h, const char* title)
+{
+    window = glfwCreateWindow(w, h, title, NULL, NULL);
+    if (window == NULL)
+    {
+        printf("Failed to create GLFW window\n");
+        return;
+    }
+
+    width = w;
+    height = h;
+
+
+    glfwSetFramebufferSizeCallback(static_cast<GLFWwindow*>(window), framebuffer_size_callback);
+
+
+}
+
+void brl::GfxWindow::pollEvents()
+{
+    glfwPollEvents();
+}
+
+void brl::GfxWindow::swapBuffers()
+{
+    glfwSwapBuffers(static_cast<GLFWwindow*>(window));
+}
+
+int brl::GfxWindow::getWidth()
+{
+    return width;
+}
+
+int brl::GfxWindow::getHeight()
+{
+    return height;
+}
+
+brl::GfxEngine::GfxEngine()
+{
+    initialized = false;
+
+}
+
+brl::GfxEngine::~GfxEngine()
+{
+
+}
+
+
+void brl::GfxEngine::initialize()
+{
+    if (initialized)
+        return;
+
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+    mainWindow = new GfxWindow(800, 600, "LearnOpenGL");
+    glfwMakeContextCurrent(static_cast<GLFWwindow*>(mainWindow->window));
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+    }
+
+
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_CULL_FACE);
+
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+                              const GLchar* message, const void* userParam)
+                           {
+                               std::cerr << "GL Debug: " << message << std::endl;
+                           },
+                           nullptr);
+    instance = this;
+
+    auto vertexShaderSource = "#version 330 core\n"
+        "layout (location = 0) in vec2 aPos;\n"
+        "layout (location = 1) in vec2 aUV;\n"
+        "out vec2 texCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   texCoords = aUV;"
+        "   gl_Position = vec4(aPos,0, 1.0);\n"
+        "}\0";
+    auto fragmentShaderSource = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "in vec2 texCoords;\n"
+        "uniform sampler2D _sourceTexture;\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = vec4(texture(_sourceTexture,texCoords).rgb,1);\n"
+        "}\n\0";
+
+    auto shaderBins = new GfxShader*[2];
+
+    shaderBins[0] = new GfxShader(GL_VERTEX_SHADER, vertexShaderSource);
+    shaderBins[1] = new GfxShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+    auto shader = new GfxShaderProgram(shaderBins, 2, true);
+
+
+    blitMaterial = new GfxMaterial(shader);
+
+}
+
+void brl::GfxEngine::update()
+{
+
+    GfxCamera::mainCamera->draw(calls);
+
+    calls.clear();
+
+    mainWindow->clear();
+    GfxCamera::mainCamera->cachedFramebuffer->getAttachment(0)->draw(blitMaterial);
+
+    mainWindow->pollEvents();
+    mainWindow->swapBuffers();
+
+    frameCount++;
+
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+        std::cerr << "OpenGL Error: " << err << std::endl;
+}
+
+void brl::GfxEngine::insertCall(const GfxDrawCall& call)
+{
+    calls.push_back(call);
+}
+
+int brl::GfxEngine::getFrameCount()
+{
+    return frameCount;
+}
+
+float brl::GfxEngine::getAspectRatio()
+{
+    return static_cast<float>(mainWindow->getWidth()) / static_cast<float>(mainWindow->getHeight());
+}
+
+
+void brl::GfxWindow::clear()
+{
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void brl::GfxEngine::shutdown() { glfwTerminate(); }

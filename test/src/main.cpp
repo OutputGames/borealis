@@ -27,6 +27,9 @@ auto fragmentShaderSource = "#version 330 core\n"
 
 int main(int argc, const char* argv[])
 {
+    brl::EcsEntityMgr entityMgr;
+
+
     brl::GfxEngine engine;
     engine.initialize();
 
@@ -87,8 +90,8 @@ int main(int argc, const char* argv[])
                                  glm::vec3(1.3f, -2.0f, -2.5f), glm::vec3(1.5f, 2.0f, -2.5f),
                                  glm::vec3(1.5f, 0.2f, -1.5f), glm::vec3(-1.3f, 1.0f, -1.5f)};
 
-    auto camera = new brl::GfxCamera();
-    camera->position = {0, 0, -10};
+    auto camera = new brl::EcsCamera();
+    camera->localPosition = {0, 0, -15.f};
 
     while (engine.isRunning())
     {
@@ -104,7 +107,7 @@ int main(int argc, const char* argv[])
             engine.insertCall(call);
         }
 
-
+        entityMgr.update();
         engine.update();
     }
 
