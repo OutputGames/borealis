@@ -30,3 +30,16 @@
 *.exe
 *.out
 *.app
+
+# project files
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.make
+*.sln
+/.vs
+/build
+/ext/glad/build
+/ext/glad/lib
+/lib
+/out

@@ -13,6 +13,10 @@ namespace brl
 
     struct GfxWindow {
         bool isOpen() { return !glfwWindowShouldClose((GLFWwindow*)window); }
+
+        int getWidth();
+        int getHeight();
+
     private:
         friend struct GfxEngine;
         void* window;
@@ -25,12 +29,12 @@ namespace brl
         void swapBuffers();
         void clear();
 
-        int getWidth();
-        int getHeight();
     };
     
     struct GfxEngine
     {
+        static GfxEngine* instance;
+
         GfxEngine();
         ~GfxEngine();
 
@@ -38,13 +42,17 @@ namespace brl
         void shutdown();
         void update();
         bool isRunning() {return mainWindow->isOpen();}
-        void insertCall(GfxDrawCall* call);
+        void insertCall(const GfxDrawCall& call);
         int getFrameCount();
+
+        float getAspectRatio();
+        int getMainWidth() { return mainWindow->getWidth(); }
+        int getMainHeight() { return mainWindow->getHeight(); }
         
     private:
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;
-        std::vector<GfxDrawCall*> calls;
+        std::vector<GfxDrawCall> calls;
 
         int frameCount = 0;
     };
@@ -92,7 +100,10 @@ namespace brl
         GfxShaderUniform* getUniform(std::string name) {
             for(int i=0; i<uniformCount; i++){
                 if (uniforms[i].name == name)
-                    return &uniforms[i]; 
+                {
+                    uniforms[i].location = glGetUniformLocation(id, name.c_str());
+                    return &uniforms[i];
+                }
             }
             return nullptr;
         }
@@ -182,19 +193,13 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void draw(AttribGfxBuffer* buffer);
+        void draw(AttribGfxBuffer* buffer, glm::mat4 transform);
 
     private:
         GfxShaderProgram* shader;
         std::map<GfxShaderUniform*, GfxShaderValue> overrides;
 
-        void setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair) {
-            if (overrides.contains(pair.first)) {
-                overrides[pair.first] = pair.second;
-            } else {
-                overrides.insert(pair);
-            }
-        }
+        void setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair);
     };
 
     struct IGfxBuffer 
@@ -249,7 +254,7 @@ namespace brl
 
     private:
         friend GfxMaterial;
-        GfxBuffer* vbo, *ebo;
+        GfxBuffer* vbo = nullptr, *ebo = nullptr;
         GLenum eboFormat = GL_UNSIGNED_INT;
         int attributeCount = 0;
         size_t vertexSize;
@@ -258,6 +263,50 @@ namespace brl
     struct GfxDrawCall {
         GfxMaterial* material;
         AttribGfxBuffer* gfxBuffer;
+        const glm::mat4 transform;
+    };
+
+    struct GfxFramebufferAttachment
+    {
+        GLenum format, internalFormat;
+        GLenum type;
+    private:
+        friend struct GfxFramebuffer;
+        unsigned id = UINT32_MAX;
+    };
+
+    struct GfxFramebuffer
+    {
+
+        GfxFramebuffer(int width, int height, GfxFramebufferAttachment* attachments = nullptr, int attachmentCount = -1);
+
+        void use();
+        void clear();
+
+    private:
+        int width, height;
+        GfxFramebufferAttachment* attachments;
+        int attachmentCount;
+
+        unsigned id;
+    };
+
+    struct GfxCamera
+    {
+        static GfxCamera* mainCamera;
+
+        GfxCamera();
+
+        glm::vec3 position;
+        glm::quat rotation;
+
+        GfxFramebuffer* targetFramebuffer;
+
+        void draw(const std::vector<GfxDrawCall>& calls);
+
+    private:
+
+        GfxFramebuffer* cachedFramebuffer = nullptr;
     };
 
 } // namespace 

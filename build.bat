@@ -1,1 +1,1 @@
-make && start out/myapp.exe
+premake5 gmake && make && start out/borealis-test.exe
