@@ -96,15 +96,44 @@ void brl::GfxEngine::initialize()
                            nullptr);
     instance = this;
 
+    auto vertexShaderSource = "#version 330 core\n"
+        "layout (location = 0) in vec2 aPos;\n"
+        "layout (location = 1) in vec2 aUV;\n"
+        "out vec2 texCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   texCoords = aUV;"
+        "   gl_Position = vec4(aPos,0, 1.0);\n"
+        "}\0";
+    auto fragmentShaderSource = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "in vec2 texCoords;\n"
+        "uniform sampler2D _sourceTexture;\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = vec4(texture(_sourceTexture,texCoords).rgb,1);\n"
+        "}\n\0";
+
+    auto shaderBins = new GfxShader*[2];
+
+    shaderBins[0] = new GfxShader(GL_VERTEX_SHADER, vertexShaderSource);
+    shaderBins[1] = new GfxShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+    auto shader = new GfxShaderProgram(shaderBins, 2, true);
+
+
+    blitMaterial = new GfxMaterial(shader);
+
 }
 
 void brl::GfxEngine::update()
 {
-    mainWindow->clear();
 
     GfxCamera::mainCamera->draw(calls);
 
     calls.clear();
+
+    mainWindow->clear();
+    GfxCamera::mainCamera->cachedFramebuffer->getAttachment(0)->draw(blitMaterial);
 
     mainWindow->pollEvents();
     mainWindow->swapBuffers();
@@ -135,7 +164,8 @@ float brl::GfxEngine::getAspectRatio()
 void brl::GfxWindow::clear()
 {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
 }
 
 void brl::GfxEngine::shutdown() { glfwTerminate(); }
@@ -271,6 +301,9 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
 
     uniformCount = totalUniforms;
 
+    textureSlots = 0;
+    std::vector<std::string> _textures;
+
     for (int i = 0; i < totalUniforms; i++)
     {
         GLint nameLength = -1;
@@ -304,45 +337,40 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
             case GL_FLOAT_MAT4:
                 typeName = "mat4";
                 break;
-            case GL_TEXTURE_2D:
+            case GL_SAMPLER_2D:
                 typeName = "texture2D";
+                textureSlots++;
+                _textures.push_back(name);
                 break;
         }
 
         std::cout << "\t" << name << " - " << typeName << std::endl;
     }
 
+    textures = new std::string[textureSlots];
+
+    use();
+
+    for (int i = 0; i < textureSlots; ++i)
+    {
+        textures[i] = _textures[i];
+        glUniform1i(getUniform(textures[i])->location, i);
+    }
 
 }
 
 void brl::GfxShaderProgram::use()
 {
     glUseProgram(id);
+
+
 }
 
-void brl::GfxMaterial::draw(AttribGfxBuffer* buffer, glm::mat4 transform)
+void brl::GfxMaterial::draw(AttribGfxBuffer* buffer,
+                            std::map<GfxShaderUniform*, GfxShaderValue> runtimeOverrides)
 {
     buffer->use();
     shader->use();
-
-    /*
-    auto model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-    auto view = glm::mat4(1.0f);
-    auto projection = glm::mat4(1.0f);
-    model = rotate(model, static_cast<float>(glfwGetTime()) * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-    view = translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-    projection = glm::perspective(glm::radians(45.0f), static_cast<float>(800) / static_cast<float>(600), 0.1f, 100.0f);
-    // retrieve the matrix uniform locations
-    unsigned int modelLoc = glGetUniformLocation(shader->id, "model");
-    unsigned int viewLoc = glGetUniformLocation(shader->id, "view");
-    unsigned int projLoc = glGetUniformLocation(shader->id, "proj");
-    // pass them to the shaders (3 different ways)
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, value_ptr(model));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, value_ptr(projection));
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
-    // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's
-    // often best practice to set it outside the main loop only once.
-    */
 
 
     for (const auto& _override : overrides)
@@ -369,15 +397,51 @@ void brl::GfxMaterial::draw(AttribGfxBuffer* buffer, glm::mat4 transform)
             case GL_INT:
                 glUniform1i(_override.first->location, _override.second.intValue);
                 break;
+            case GL_SAMPLER_2D:
+                glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex(_override.first->name));
+                glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
+                break;
             default:
                 break;
         }
     }
 
-    if (shader->getUniform("model"))
+    for (const auto& _override : runtimeOverrides)
     {
-        //std::cout << "overriding uniform at " << shader->getUniform("_internalModel")->location << "(" <<"_internalModel" << ")"<< std::endl;
-        glUniformMatrix4fv(shader->getUniform("model")->location, 1, GL_FALSE, value_ptr(transform));
+        if (!_override.first)
+            continue;
+
+        switch (_override.first->type)
+        {
+            case GL_FLOAT:
+                glUniform1f(_override.first->location, _override.second.floatValue);
+                break;
+            case GL_FLOAT_VEC2:
+                glUniform2f(_override.first->location, _override.second.v2value.x, _override.second.v2value.y);
+                break;
+            case GL_FLOAT_VEC3:
+                glUniform3f(_override.first->location, _override.second.v3value.x, _override.second.v3value.y,
+                            _override.second.v3value.z);
+                break;
+            case GL_FLOAT_VEC4:
+                glUniform4fv(_override.first->location, 1, value_ptr(_override.second.v4value));
+                break;
+            case GL_FLOAT_MAT4:
+                glUniformMatrix4fv(_override.first->location, 1, GL_FALSE, value_ptr(_override.second.m4value));
+                break;
+            case GL_INT:
+                glUniform1i(_override.first->location, _override.second.intValue);
+                break;
+            case GL_SAMPLER_2D:
+            {
+                int i = shader->getTextureIndex(_override.first->name);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
+            }
+            break;
+            default:
+                break;
+        }
     }
 
     if (buffer->ebo)
@@ -429,20 +493,59 @@ int brl::AttribGfxBuffer::getSize()
     return vbo->size / vertexSize;
 }
 
-brl::GfxFramebuffer::GfxFramebuffer(int width, int height, GfxFramebufferAttachment* attachments, int attachmentCount)
+brl::AttribGfxBuffer* brl::GfxFramebufferAttachment::fullscreenQuadBuffer = nullptr;
+
+void brl::GfxFramebufferAttachment::draw(GfxMaterial* material)
+{
+    if (!fullscreenQuadBuffer)
+    {
+        float quadVertices[] = {
+            // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+            // positions   // texCoords
+            -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
+            -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
+        auto attribBuffer = new AttribGfxBuffer();
+
+
+        attribBuffer->use();
+        auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
+        buffer->use();
+        buffer->updateData(GL_STATIC_DRAW, quadVertices, sizeof(quadVertices));
+        attribBuffer->assignBuffer(buffer);
+
+
+        attribBuffer->insertAttribute(GfxAttribute{2, 4 * sizeof(float), static_cast<void*>(0)});
+        attribBuffer->insertAttribute(GfxAttribute{2, 4 * sizeof(float), (void*)(2 * sizeof(float))});
+
+        fullscreenQuadBuffer = attribBuffer;
+    }
+
+    GfxUniformList uniforms = {};
+
+    GfxShaderValue sourceValue = {};
+    sourceValue.txValue = this;
+    uniforms.insert({material->getShader()->getUniform("_sourceTexture"), sourceValue});
+
+    material->draw(fullscreenQuadBuffer, uniforms);
+}
+
+brl::GfxFramebuffer::GfxFramebuffer(int width, int height, GfxFramebufferAttachment** attachments, int attachmentCount)
 {
     this->width = width;
     this->height = height;
 
     if (attachments == nullptr || attachmentCount == -1)
     {
-        GfxFramebufferAttachment defaultAttachment{};
-        defaultAttachment.format = GL_RGB;
-        defaultAttachment.internalFormat = GL_RGB;
-        defaultAttachment.type = GL_UNSIGNED_BYTE;
+        auto defaultAttachment = new GfxFramebufferAttachment;
+        defaultAttachment->format = GL_RGB;
+        defaultAttachment->internalFormat = GL_RGB;
+        defaultAttachment->type = GL_UNSIGNED_BYTE;
 
-        attachments = &defaultAttachment;
+        attachments = new GfxFramebufferAttachment*[1];
         attachmentCount = 1;
+
+        attachments[0] = defaultAttachment;
     }
 
     this->attachments = attachments;
@@ -454,19 +557,20 @@ brl::GfxFramebuffer::GfxFramebuffer(int width, int height, GfxFramebufferAttachm
     for (int i = 0; i < attachmentCount; ++i)
     {
         // generate texture
-        if (this->attachments[i].id == UINT32_MAX)
+        if (this->attachments[i]->id == UINT32_MAX)
         {
-            glGenTextures(1, &this->attachments[i].id);
-            glBindTexture(GL_TEXTURE_2D, this->attachments[i].id);
-            glTexImage2D(GL_TEXTURE_2D, 0, attachments[i].internalFormat, width, height, 0, attachments->format,
-                         attachments[i].type, NULL);
+            glGenTextures(1, &this->attachments[i]->id);
+            glBindTexture(GL_TEXTURE_2D, this->attachments[i]->id);
+            glTexImage2D(GL_TEXTURE_2D, 0, this->attachments[i]->internalFormat, width, height, 0,
+                         this->attachments[i]->format,
+                         this->attachments[i]->type, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
         // attach it to currently bound framebuffer object
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->attachments[i].id, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->attachments[i]->id, 0);
     }
 
     unsigned int rbo;
@@ -487,6 +591,12 @@ void brl::GfxFramebuffer::clear()
 {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+}
+
+brl::GfxFramebufferAttachment* brl::GfxFramebuffer::getAttachment(int i)
+{
+    return attachments[i];
 }
 
 brl::GfxCamera::GfxCamera()
@@ -510,12 +620,52 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls)
     cachedFramebuffer->use();
     cachedFramebuffer->clear();
 
+    GfxShaderValue viewValue{};
+    GfxShaderValue projValue{};
+    viewValue.m4value = GetViewMatrix();
+    projValue.m4value = GetProjMatrix();
+
     for (const GfxDrawCall& call : calls)
     {
-        call.material->draw(call.gfxBuffer, call.transform);
+        GfxShaderValue modelValue{};
+        modelValue.m4value = call.transform;
+        std::map<GfxShaderUniform*, GfxShaderValue> overrides;
+        overrides.insert({call.material->getShader()->getUniform("_internalView"), viewValue});
+        overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
+        overrides.insert({call.material->getShader()->getUniform("_internalModel"), modelValue});
+
+        call.material->draw(call.gfxBuffer, overrides);
+
+        overrides.clear();
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+glm::mat4 brl::GfxCamera::GetViewMatrix()
+{
+    auto view = glm::mat4(1.0);
+
+    glm::vec3 fwd = glm::vec3(0, 0, 1) * rotation;
+    glm::vec3 up = glm::vec3(0, 1, 0) * rotation;
+
+    view = lookAt(position, position + fwd, up);
+
+    return view;
+}
+
+glm::mat4 brl::GfxCamera::GetProjMatrix()
+{
+    auto proj = glm::mat4(1.0);
+
+    proj = glm::perspective(fieldOfView, getAspectRatio(), minLimit, maxLimit);
+
+    return proj;
+}
+
+float brl::GfxCamera::getAspectRatio()
+{
+    return GfxEngine::instance->getAspectRatio();
 }
 
 brl::GfxTexture2d::GfxTexture2d(std::string path)
@@ -536,8 +686,29 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     if (data)
     {
         GLenum format = GL_RGB;
+        GLenum internalFormat = GL_RGB8;
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        switch (nrChannels)
+        {
+            case 1:
+                format = GL_R;
+                internalFormat = GL_R8;
+                break;
+            case 2:
+                format = GL_RG;
+                internalFormat = GL_RG8;
+                break;
+            case 3:
+                format = GL_RGB;
+                internalFormat = GL_RGB8;
+                break;
+            case 4:
+                format = GL_RGBA;
+                internalFormat = GL_RGBA8;
+        }
+
+
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else

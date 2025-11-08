@@ -7,9 +7,16 @@
 
 namespace brl
 {
+    struct GfxShaderValue;
+    struct GfxShaderUniform;
+    struct GfxTexture;
 
     struct GfxDrawCall;
     struct AttribGfxBuffer;
+    struct GfxMaterial;
+
+    using GfxUniformList = std::map<GfxShaderUniform*, GfxShaderValue>;
+
 
     struct GfxWindow {
         bool isOpen() { return !glfwWindowShouldClose((GLFWwindow*)window); }
@@ -53,6 +60,7 @@ namespace brl
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;
         std::vector<GfxDrawCall> calls;
+        GfxMaterial* blitMaterial;
 
         int frameCount = 0;
     };
@@ -82,6 +90,7 @@ namespace brl
         glm::vec3 v3value;
         glm::vec4 v4value;
         glm::mat4 m4value;
+        GfxTexture* txValue;
     };
 
     struct GfxShaderProgram 
@@ -92,10 +101,15 @@ namespace brl
 
     private:
         friend struct GfxMaterial;
+        friend struct GfxCamera;
+        friend struct GfxFramebufferAttachment;
         unsigned int id;
 
         GfxShaderUniform* uniforms;
         int uniformCount;
+
+        std::string* textures;
+        int textureSlots;
 
         GfxShaderUniform* getUniform(std::string name) {
             for(int i=0; i<uniformCount; i++){
@@ -107,9 +121,31 @@ namespace brl
             }
             return nullptr;
         }
+
+        int getTextureIndex(std::string name)
+        {
+            for (int i = 0; i < textureSlots; i++)
+            {
+                if (textures[i] == name)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
     };
 
-    struct GfxTexture2d {
+    struct GfxTexture
+    {
+    private:
+        friend struct GfxMaterial;
+        friend struct GfxShader;
+        friend struct GfxTexture2d;
+        friend struct GfxFramebuffer;
+        unsigned id = UINT_MAX;
+    };
+
+    struct GfxTexture2d : GfxTexture {
 
         GfxTexture2d(std::string path);
 
@@ -117,7 +153,7 @@ namespace brl
         int getHeight() {return height;}
 
     private:
-        unsigned id;
+
         int width, height;
     };
 
@@ -193,11 +229,22 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void draw(AttribGfxBuffer* buffer, glm::mat4 transform);
+        void setTexture(std::string name, GfxTexture* value)
+        {
+            if (!shader->getUniform(name))
+                return;
+
+            GfxShaderValue val;
+            val.txValue = value;
+            setOverride({shader->getUniform(name), val});
+        }
+
+        void draw(AttribGfxBuffer* buffer, GfxUniformList runtimeOverrides = {});
+
 
     private:
         GfxShaderProgram* shader;
-        std::map<GfxShaderUniform*, GfxShaderValue> overrides;
+        GfxUniformList overrides;
 
         void setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair);
     };
@@ -266,26 +313,32 @@ namespace brl
         const glm::mat4 transform;
     };
 
-    struct GfxFramebufferAttachment
+    struct GfxFramebufferAttachment : GfxTexture
     {
         GLenum format, internalFormat;
         GLenum type;
+
+        void draw(GfxMaterial* material);
+
     private:
-        friend struct GfxFramebuffer;
-        unsigned id = UINT32_MAX;
+
+        static AttribGfxBuffer* fullscreenQuadBuffer;
+
     };
 
     struct GfxFramebuffer
     {
 
-        GfxFramebuffer(int width, int height, GfxFramebufferAttachment* attachments = nullptr, int attachmentCount = -1);
+        GfxFramebuffer(int width, int height, GfxFramebufferAttachment** attachments = nullptr, int attachmentCount = -1);
 
         void use();
         void clear();
 
+        GfxFramebufferAttachment* getAttachment(int i );
+
     private:
         int width, height;
-        GfxFramebufferAttachment* attachments;
+        GfxFramebufferAttachment** attachments;
         int attachmentCount;
 
         unsigned id;
@@ -300,11 +353,19 @@ namespace brl
         glm::vec3 position;
         glm::quat rotation;
 
+        float fieldOfView = 45;
+        float minLimit = 0.01f;
+        float maxLimit = 100.0f;
+
         GfxFramebuffer* targetFramebuffer;
 
         void draw(const std::vector<GfxDrawCall>& calls);
 
     private:
+        friend GfxEngine;
+        glm::mat4 GetViewMatrix();
+        glm::mat4 GetProjMatrix();
+        float getAspectRatio();
 
         GfxFramebuffer* cachedFramebuffer = nullptr;
     };

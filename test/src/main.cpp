@@ -6,14 +6,14 @@
 auto vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "layout (location = 1) in vec2 aUV;\n"
-    "uniform mat4 model;\n"
-    "uniform mat4 view;\n"
-    "uniform mat4 proj;\n"
+    "uniform mat4 _internalModel;\n"
+    "uniform mat4 _internalView;\n"
+    "uniform mat4 _internalProj;\n"
     "out vec2 texCoords;\n"
     "void main()\n"
     "{\n"
     "   texCoords = aUV;"
-    "   gl_Position = proj * view * model * vec4(aPos, 1.0);\n"
+    "   gl_Position = _internalProj * _internalView * _internalModel * vec4(aPos, 1.0);\n"
     "}\0";
 auto fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
@@ -79,6 +79,7 @@ int main(int argc, const char* argv[])
 
     auto material = new brl::GfxMaterial(shader);
     //material->setVec3("color", brl::vector3{1,0,0});
+    material->setTexture("tex", texture);
 
     glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(2.0f, 5.0f, -15.0f),
                                  glm::vec3(-1.5f, -2.2f, -2.5f), glm::vec3(-3.8f, -2.0f, -12.3f),
@@ -87,28 +88,10 @@ int main(int argc, const char* argv[])
                                  glm::vec3(1.5f, 0.2f, -1.5f), glm::vec3(-1.3f, 1.0f, -1.5f)};
 
     auto camera = new brl::GfxCamera();
+    camera->position = {0, 0, -10};
 
     while (engine.isRunning())
     {
-
-        auto view = glm::mat4(1.0f);
-        auto projection = glm::mat4(1.0f);
-        auto model = glm::mat4(1.0f);
-
-        view = translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        projection = glm::perspective(glm::radians(45.0f), engine.getAspectRatio(), 0.01f, 100.0f);
-
-
-        int i = 1;
-
-        model = rotate(model, static_cast<float>(glfwGetTime()) * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-
-        //material->setMat4("model", model);
-
-        material->setMat4("proj", projection);
-
-        material->setMat4("view", view);
-
 
         for (unsigned int i = 0; i < 10; i++)
         {
