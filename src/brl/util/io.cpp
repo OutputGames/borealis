@@ -2,67 +2,62 @@
 
 brl::IoEngine* brl::IoEngine::engine = nullptr;
 
+brl::IoEngine::IoEngine()
+{
+    engine = this;
+    std::ifstream file("assets.res", std::ios::binary);
+    if (!file)
+        throw std::runtime_error("Failed to open resource path");
+
+    file_map = {};
+
+    // infinite reading loop
+    while (true)
+    {
+        uint32_t strLen = 0;
+        file.read(reinterpret_cast<char*>(&strLen), sizeof(strLen));
+
+        IoFile block{};
+
+        // --- Read string ---
+        if (strLen > 0)
+        {
+            std::vector<char> strBuf(strLen);
+            file.read(strBuf.data(), strLen);
+            block.filePath.assign(strBuf.begin(), strBuf.end());
+            std::replace(block.filePath.begin(), block.filePath.end(), '\\', '/');
+        }
+
+        // --- Read data size ---
+        file.read(reinterpret_cast<char*>(&block.dataSize), sizeof(block.dataSize));
+
+        // --- Read binary data ---
+        if (block.dataSize > 0)
+        {
+            block.data = new unsigned char[block.dataSize];
+            file.read(reinterpret_cast<char*>(block.data), block.dataSize);
+        }
+
+        file_map.insert({block.filePath, block});
+
+        if (file.eof())
+            break;
+    }
+}
+
 void brl::IoEngine::print(std::string s)
 {
     std::cout << s << std::endl;
 }
 
-brl::IoBinaryData brl::IoEngine::readFileBinary(std::string path)
+brl::IoFile brl::IoEngine::readFileBinary(std::string path)
 {
+    std::replace(path.begin(), path.end(), '\\', '/');
 
-    // Open the file in binary mode
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-
-    if (!file.is_open())
-    {
-        std::cerr << "Error opening file: " << path << std::endl;
-        return static_cast<IoBinaryData>(nullptr);
-    }
-
-    // Get the file size
-    std::streamsize file_size = file.tellg();
-    file.seekg(0, std::ios::beg); // Reset file pointer to the beginning
-
-    // Create a std::vector of unsigned char to store the file content
-    std::vector<unsigned char> buffer(file_size);
-
-    // Read the file content into the buffer
-    if (file.read(reinterpret_cast<char*>(buffer.data()), file_size))
-    {
-
-        file.close(); // Close the file
-
-        IoBinaryData d;
-
-        d.size = buffer.size();
-        d.mem = new unsigned char[buffer.size()];
-
-        std::copy(buffer.begin(), buffer.end(), d.mem);
-
-        return d;
-    }
-    std::cerr << "Error reading file: " << path << std::endl;
-    return static_cast<IoBinaryData>(nullptr);
+    return file_map[path];
 }
 
 std::string brl::IoEngine::readFileString(std::string path)
 {
-    std::ifstream inputFile(path); // Open the file named "example.txt"
-    std::string fileContent;
-
-    if (inputFile.is_open())
-    {
-        // Check if the file was opened successfully
-        std::ostringstream ss; // Create a stringstream object
-        ss << inputFile.rdbuf(); // Read the entire file buffer into the stringstream
-        fileContent = ss.str(); // Extract the content from the stringstream into the string
-        inputFile.close(); // Close the input file stream
-    }
-    else
-    {
-        std::cerr << "Error: Could not open the file." << std::endl;
-        return "";
-    }
-
-    return fileContent;
+    return reinterpret_cast<const char*>(readFileBinary(path).data);
 }

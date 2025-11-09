@@ -41,5 +41,7 @@
 /build
 /ext/glad/build
 /ext/glad/lib
+
 /lib
 /out
+/tools/out

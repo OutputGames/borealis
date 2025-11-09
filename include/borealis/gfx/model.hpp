@@ -3,6 +3,8 @@
 
 #include <borealis/util/util.h>
 
+#include "buffer.hpp"
+
 namespace brl
 {
     struct GfxVertex {
@@ -12,7 +14,7 @@ namespace brl
     };
 
     struct GfxMesh {
-        
+        GfxAttribBuffer* buffer;
     private:
     };
 

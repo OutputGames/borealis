@@ -23,7 +23,8 @@ project "borealis"
         "ext/glad/include",
         "ext/glm",
         "ext/stb/include",
-        "ext/glfw/include"
+        "ext/glfw/include",
+        "ext/assimp/include"
     }
 
     libdirs {
@@ -33,13 +34,43 @@ project "borealis"
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64" }
     filter { "_ACTION:vs*" }
-            libdirs { "ext/glfw/lib-vc2022" }
+            libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
 
     links {
         "glad",
         "glfw3",
         "opengl32",
-        "gdi32"
+        "gdi32",
+        "assimp"
+    }
+
+    filter "configurations:Debug"
+        symbols "On"
+        defines { "DEBUG" }
+        buildoptions { "-Wall", "-fcompare-debug-second" }
+
+    filter "configurations:Release"
+        optimize "On"
+        defines { "NDEBUG" }
+        buildoptions { "-Wall", "-fcompare-debug-second" }
+
+project "resource_packer"
+
+    kind "ConsoleApp"
+    language "C++"
+    cppdialect "C++20"
+    targetdir "tools/out/"
+    objdir "build"
+
+    files {
+        "tools/src/**.cpp",
+        "tools/src/**.c",
+        "tools/include/**.h",
+        "tools/include/**.hpp"
+    }
+
+    includedirs {
+        "tools/include",
     }
 
     filter "configurations:Debug"
@@ -58,7 +89,8 @@ project "borealis-test"
     cppdialect "C++20"
     targetdir "out"
     objdir "build"
-    dependson "borealis"
+    debugdir "out"
+    dependson {"borealis", "resource_packer"}
 
     files {
         "test/src/**.cpp",
@@ -83,6 +115,8 @@ project "borealis-test"
     links {
         "borealis"
     }
+
+    prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/" }
 
     filter "configurations:Debug"
         symbols "On"

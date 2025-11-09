@@ -7,28 +7,31 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <map>
 
 namespace brl
 {
-
-
-    struct IoBinaryData
+    struct IoFile
     {
-        unsigned char* mem;
-        size_t size;
+        std::string filePath;
+        unsigned char* data;
+        uint32_t dataSize;
     };
 
     struct IoEngine
     {
         static IoEngine* engine;
 
+        std::map<std::string, IoFile> file_map;
+        IoEngine();
+
         void print(std::string s);
-        IoBinaryData readFileBinary(std::string path);
+        IoFile readFileBinary(std::string path);
         std::string readFileString(std::string path);
     };
 
     inline void print(std::string s) { IoEngine::engine->print(s); }
-    inline IoBinaryData readFileBinary(std::string path) { return IoEngine::engine->readFileBinary(path); }
+    inline IoFile readFileBinary(std::string path) { return IoEngine::engine->readFileBinary(path); }
     inline std::string readFileString(std::string path) { return IoEngine::engine->readFileString(path); }
 
 

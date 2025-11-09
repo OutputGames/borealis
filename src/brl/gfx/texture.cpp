@@ -17,10 +17,10 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
 
     int nrChannels;
 
-    IoBinaryData file = readFileBinary(path);
+    IoFile file = readFileBinary(path);
 
 
-    unsigned char* data = stbi_load_from_memory(file.mem, file.size, &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load_from_memory(file.data, file.dataSize, &width, &height, &nrChannels, 0);
     if (data)
     {
         GLenum format = GL_RGB;
