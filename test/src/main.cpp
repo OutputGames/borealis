@@ -2,6 +2,8 @@
 #include <iostream>
 #include <borealis/gfx/gfx.hpp>
 
+#include "borealis/gfx/sprite.hpp"
+
 int main(int argc, const char* argv[])
 {
     system("..\\tools\\out\\resource_packer.exe ../test/resources/ ../out/");
@@ -24,22 +26,28 @@ int main(int argc, const char* argv[])
     shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/test/frg.glsl"));
     auto shader = new brl::GfxShaderProgram(shaderBins, 2, true);
 
-    auto texture = new brl::GfxTexture2d("textures/test.png");
+
+    auto texture = new brl::GfxTexture2d("textures/Archer_Idle.png");
+    auto sprites = brl::GfxSprite::extractSprites(texture, 192, 192);
 
     auto material = new brl::GfxMaterial(shader);
     // material->setVec3("color", brl::vector3{1,0,0});
-    material->setTexture("tex", texture);
-
+    material->setTexture("tex", sprites[0]);
 
     auto renderer = new brl::GfxMeshRenderer();
     renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
     renderer->material = material;
     renderer->localPosition = {0, 1.f, 0};
 
+    auto floorTexture = new brl::GfxTexture2d("textures/test.png");
+
+    auto floorMaterial = new brl::GfxMaterial(shader);
+    // material->setVec3("color", brl::vector3{1,0,0});
+    floorMaterial->setTexture("tex", floorTexture);
 
     auto floorRenderer = new brl::GfxMeshRenderer();
     floorRenderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
-    floorRenderer->material = material;
+    floorRenderer->material = floorMaterial;
     floorRenderer->setEulerAngles({-90, 0, 0});
     floorRenderer->localScale = glm::vec3(2.5);
 

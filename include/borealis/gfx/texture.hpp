@@ -17,14 +17,22 @@ namespace brl
         unsigned id = UINT_MAX;
     };
 
+    struct Color32
+    {
+        unsigned char r,g,b,a;
+    };
+
     struct GfxTexture2d : GfxTexture {
 
         GfxTexture2d(std::string path);
+        GfxTexture2d(Color32* pixels, int width, int height);
 
         int getWidth() {return width;}
         int getHeight() {return height;}
 
     private:
+        friend struct GfxSprite;
+        Color32* pixels;
 
         int width, height;
     };
