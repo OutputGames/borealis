@@ -85,8 +85,7 @@ brl::GfxTexture2d::GfxTexture2d(Color32* pixels, int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     GLenum format = GL_RGBA;
-    GLenum internalFormat = GL_RGBA8;
-
+    GLenum internalFormat = GL_RGBA;
 
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
     glGenerateMipmap(GL_TEXTURE_2D);

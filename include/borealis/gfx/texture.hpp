@@ -17,10 +17,14 @@ namespace brl
         unsigned id = UINT_MAX;
     };
 
-    struct Color32
-    {
-        unsigned char r,g,b,a;
+    #pragma pack(push, 1)
+    struct Color32 {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
     };
+    #pragma pack(pop)
 
     struct GfxTexture2d : GfxTexture {
 

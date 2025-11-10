@@ -1,8 +1,10 @@
 #include "borealis/gfx/model.hpp"
 
+/*
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+*/
 
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
@@ -46,6 +48,7 @@ brl::GfxMaterial* brl::GfxMaterialDescription::createMaterial(GfxShaderProgram* 
 
 brl::GfxModel::GfxModel(std::string path)
 {
+    /*
     Assimp::Importer importer;
 
     IoFile file = readFileBinary(path);
@@ -142,6 +145,7 @@ brl::GfxModel::GfxModel(std::string path)
     }
 
     rootNode = processNode(scene->mRootNode, scene);
+    */
 }
 
 brl::EcsEntity* brl::GfxModel::createEntity()
@@ -149,6 +153,7 @@ brl::EcsEntity* brl::GfxModel::createEntity()
     return rootNode->createEntity();
 }
 
+/*
 brl::GfxModelNode* brl::GfxModel::processNode(aiNode* aNode, const aiScene* scene)
 {
     auto node = new GfxModelNode;
@@ -182,6 +187,7 @@ brl::GfxModelNode* brl::GfxModel::processNode(aiNode* aNode, const aiScene* scen
 
     return node;
 }
+*/
 
 void brl::GfxMeshRenderer::lateUpdate()
 {

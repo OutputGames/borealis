@@ -11,5 +11,5 @@ void main()
    vec3 norm = normalize(normal);
    vec3 lightDir = normalize(vec3(sin(_internalTime)*3,2,cos(_internalTime)*3) - pos);
     float d =max(dot(norm, lightDir), 0.0) + 0.25f;
-   FragColor = vec4(d*texture(tex,texCoords).rgb,1.0);
+   FragColor = vec4(d*texture(tex,texCoords));
 }

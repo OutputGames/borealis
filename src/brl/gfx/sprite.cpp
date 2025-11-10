@@ -18,7 +18,7 @@ brl::GfxTexture2d** brl::GfxSprite::extractSprites(GfxTexture2d* tex, int sprite
         for (int y = 0; y < spriteCountY; ++y)
         {
             auto spritePixels = new Color32[spriteWidth * spriteHeight];
-            for (int i = offset; i < spriteWidth * spriteHeight; i++)
+            for (int i = offset; i < offset+(spriteWidth * spriteHeight); i++)
             {
                 spritePixels[i - offset] = tex->pixels[i];
             }

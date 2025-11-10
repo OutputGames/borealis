@@ -6,7 +6,7 @@
 
 int main(int argc, const char* argv[])
 {
-    system("..\\tools\\out\\resource_packer.exe ../test/resources/ ../out/");
+    //system("..\\tools\\out\\resource_packer.exe ../test/resources/ ../out/");
 
     brl::IoEngine ioMgr;
     brl::EcsEngine entityMgr;

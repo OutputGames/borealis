@@ -41,7 +41,7 @@ project "borealis"
         "glfw3",
         "opengl32",
         "gdi32",
-        "assimp"
+        --"assimp"
     }
 
     filter "configurations:Debug"
@@ -91,7 +91,6 @@ project "borealis-test"
     objdir "build"
     debugdir "out"
     dependson {"borealis", "resource_packer"}
-
     files {
         "test/src/**.cpp",
         "test/src/**.c",
@@ -119,7 +118,7 @@ project "borealis-test"
         "glfw3",
         "opengl32",
         "gdi32",
-        "assimp"
+        --"assimp"
     }
 
     filter { "_ACTION:gmake" }

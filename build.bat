@@ -1,1 +1,1 @@
-premake5 gmake && make && start out/borealis-test.exe
+make -j config=release && start out/borealis-test.exe
