@@ -116,7 +116,7 @@ project "borealis-test"
         "borealis"
     }
 
-    prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/" }
+    prebuildcommands { "..\\tools\\out\\resource_packer.exe test/resources/ out/" }
 
     filter "configurations:Debug"
         symbols "On"

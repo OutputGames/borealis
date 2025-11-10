@@ -50,12 +50,16 @@ namespace brl
         int getMainHeight() { return mainWindow->getHeight(); }
         
     private:
+        friend GfxAttribBuffer;
+
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;
         std::vector<GfxDrawCall> calls;
         GfxMaterial* blitMaterial;
 
         int frameCount = 0;
+
+        GfxAttribBuffer* quadBuffer;
     };
 
     struct GfxDrawCall {

@@ -63,19 +63,13 @@ int main(int argc, const char* argv[])
 
             {
                 uint32_t length = fileSize;
+                length += 1;
                 outFile.write(reinterpret_cast<const char*>(&length), sizeof(length));
 
-                // Write file data in chunks
-                constexpr std::size_t chunkSize = 4096;
-                std::vector<char> buffer(chunkSize);
-                std::streamsize bytesLeft = fileSize;
-                while (bytesLeft > 0)
-                {
-                    std::streamsize toRead = std::min(bytesLeft, static_cast<std::streamsize>(chunkSize));
-                    inFile.read(buffer.data(), toRead);
-                    outFile.write(buffer.data(), inFile.gcount());
-                    bytesLeft -= inFile.gcount();
-                }
+                std::vector<char> buffer(length);
+                inFile.read(buffer.data(), length - 1);
+                buffer.push_back('\0');
+                outFile.write(buffer.data(), length);
             }
 
             // Close the file

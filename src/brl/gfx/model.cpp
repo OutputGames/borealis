@@ -4,6 +4,46 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "borealis/gfx/engine.hpp"
+#include "borealis/gfx/shader.hpp"
+
+brl::EcsEntity* brl::GfxModelNode::createEntity()
+{
+    auto entity = new EcsEntity;
+
+    entity->name = name;
+    entity->localPosition = position;
+    entity->localRotation = rotation;
+    entity->localScale = scale;
+
+    for (int i = 0; i < childCount; ++i)
+    {
+        EcsEntity* e = children[i]->createEntity();
+        e->setParent(entity);
+    }
+
+    for (int i = 0; i < meshCount; ++i)
+    {
+        GfxMesh* mesh = model->meshes[meshIndices[i]];
+
+        auto renderer = new GfxMeshRenderer();
+        renderer->name = mesh->name;
+        renderer->mesh = mesh->buffer;
+        renderer->material = model->materials[mesh->materialIndex]->
+            createMaterial(GfxShaderProgram::GetDefaultShader());
+        renderer->setParent(entity);
+    }
+
+    return entity;
+}
+
+brl::GfxMaterial* brl::GfxMaterialDescription::createMaterial(GfxShaderProgram* shader)
+{
+    auto material = new GfxMaterial(shader);
+
+    return material;
+}
+
 brl::GfxModel::GfxModel(std::string path)
 {
     Assimp::Importer importer;
@@ -16,7 +56,7 @@ brl::GfxModel::GfxModel(std::string path)
     if (!scene)
     {
         std::cerr << importer.GetErrorString() << std::endl;
-        return;
+        exit(-1);
     }
     for (int i = 0; i < scene->mNumMeshes; ++i)
     {
@@ -84,8 +124,68 @@ brl::GfxModel::GfxModel(std::string path)
         attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
 
         mesh->buffer = attribBuffer;
+        mesh->name = aMesh->mName.C_Str();
+
+        mesh->materialIndex = aMesh->mMaterialIndex;
 
         meshes.push_back(mesh);
 
     }
+
+    for (int i = 0; i < scene->mNumMaterials; ++i)
+    {
+        aiMaterial* aiMaterial = scene->mMaterials[i];
+
+        auto desc = new GfxMaterialDescription;
+
+        materials.push_back(desc);
+    }
+
+    rootNode = processNode(scene->mRootNode, scene);
+}
+
+brl::EcsEntity* brl::GfxModel::createEntity()
+{
+    return rootNode->createEntity();
+}
+
+brl::GfxModelNode* brl::GfxModel::processNode(aiNode* aNode, const aiScene* scene)
+{
+    auto node = new GfxModelNode;
+    node->name = aNode->mName.C_Str();
+
+    aiVector3D p, s;
+    aiQuaternion r;
+
+    aNode->mTransformation.Decompose(s, r, p);
+
+    node->position = {p.x, p.y, p.z};
+    node->rotation = {r.w, r.x, r.y, r.z};
+    node->scale = {s.x, s.y, s.z};
+
+    node->meshIndices = new unsigned int[aNode->mNumMeshes];
+    for (int i = 0; i < aNode->mNumMeshes; ++i)
+    {
+        node->meshIndices[i] = aNode->mMeshes[i];
+    }
+
+    node->children = new GfxModelNode*[aNode->mNumChildren];
+    for (int i = 0; i < aNode->mNumChildren; ++i)
+    {
+        node->children[i] = processNode(aNode->mChildren[i], scene);
+    }
+
+    node->childCount = aNode->mNumChildren;
+    node->meshCount = aNode->mNumMeshes;
+
+    node->model = this;
+
+    return node;
+}
+
+void brl::GfxMeshRenderer::lateUpdate()
+{
+    EcsEntity::lateUpdate();
+
+    GfxEngine::instance->insertCall(GfxDrawCall{material, mesh, calculateTransform()});
 }

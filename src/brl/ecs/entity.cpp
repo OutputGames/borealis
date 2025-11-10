@@ -32,6 +32,21 @@ glm::vec3 brl::EcsEntity::scale()
     return p;
 }
 
+void brl::EcsEntity::lookAt(glm::vec3 point, glm::vec3 worldUp)
+{
+    glm::vec3 forward = normalize(point - position());
+    glm::vec3 right = normalize(cross(worldUp, forward));
+    glm::vec3 up = cross(forward, right);
+
+    // Build rotation matrix (like Unity’s Transform rotation basis)
+    glm::mat3 rotationMatrix(right, up, forward);
+
+    // Convert matrix to quaternion
+    localRotation = quat_cast(rotationMatrix);
+}
+
+void brl::EcsEntity::setEulerAngles(glm::vec3 euler) { localRotation = glm::quat(radians(euler)); }
+
 void brl::EcsEntity::destroy()
 {
 
@@ -73,6 +88,17 @@ bool brl::EcsEntity::isGlobalActive()
         return parent->isGlobalActive() && isSelfActive();
     }
     return isSelfActive();
+}
+
+void brl::EcsEntity::setParent(EcsEntity* e)
+{
+    if (parent)
+    {
+        parent->children.erase(std::find(parent->children.begin(), parent->children.end(), this));
+    }
+
+    parent = e;
+    parent->children.push_back(this);
 }
 
 brl::EcsEntity::EcsEntity()
@@ -117,9 +143,15 @@ void brl::EcsEntity::onDestroy()
 
 }
 
-void brl::EcsEntity::calculateTransform()
+glm::mat4 brl::EcsEntity::calculateTransform()
 {
+    glm::mat4 t(1.0);
 
+    t = translate(t, position());
+    t *= toMat4(rotation());
+    t = glm::scale(t, scale());
+
+    return t;
 }
 
 void brl::EcsEngine::destroyEntity(EcsEntity* e)

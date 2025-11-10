@@ -52,6 +52,11 @@ namespace brl
         bool normalized = false;
     };
 
+    enum GfxPrimitiveType
+    {
+        QUAD
+    };
+ 
     struct GfxAttribBuffer : public IGfxBuffer {
         GfxAttribBuffer();
 
@@ -63,6 +68,8 @@ namespace brl
         void destroy();
 
         int getSize();
+
+        static GfxAttribBuffer* GetPrimitive(GfxPrimitiveType type);
 
     private:
         friend GfxMaterial;

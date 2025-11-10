@@ -15,12 +15,16 @@ namespace brl
         glm::vec3 position();
         glm::quat rotation();
         glm::vec3 scale();
+        void lookAt(glm::vec3 point, glm::vec3 up = glm::vec3{0,1,0});
+        void setEulerAngles(glm::vec3 euler);
 
         void destroy();
         void setActive(bool active);
 
         bool isSelfActive();
         bool isGlobalActive();
+
+        void setParent(EcsEntity* e);
 
         EcsEntity();
 
@@ -37,7 +41,7 @@ namespace brl
         virtual void onDisable();
         virtual void onDestroy();
 
-        void calculateTransform();
+        glm::mat4 calculateTransform();
 
         std::vector<EcsEntity*> children;
         EcsEntity* parent = nullptr;

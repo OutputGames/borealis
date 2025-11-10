@@ -85,7 +85,7 @@ void brl::GfxEngine::initialize()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
 
 
     glEnable(GL_DEBUG_OUTPUT);
@@ -101,19 +101,29 @@ void brl::GfxEngine::initialize()
     auto vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec2 aPos;\n"
         "layout (location = 1) in vec2 aUV;\n"
+
+
         "out vec2 texCoords;\n"
+
+
         "void main()\n"
         "{\n"
         "   texCoords = aUV;"
         "   gl_Position = vec4(aPos,0, 1.0);\n"
+
+
         "}\0";
     auto fragmentShaderSource = "#version 330 core\n"
         "out vec4 FragColor;\n"
         "in vec2 texCoords;\n"
         "uniform sampler2D _sourceTexture;\n"
+
+
         "void main()\n"
         "{\n"
         "   FragColor = vec4(texture(_sourceTexture,texCoords).rgb,1);\n"
+
+
         "}\n\0";
 
     auto shaderBins = new GfxShader*[2];
@@ -124,6 +134,42 @@ void brl::GfxEngine::initialize()
 
 
     blitMaterial = new GfxMaterial(shader);
+
+    {
+        std::vector<GfxVertex> vertices = {
+            {{-1, -1, 0}, {0, 0, 1}, {0, 0}},
+            {{-1, 1, 0}, {0, 0, 1}, {0, 1}},
+            {{1, 1, 0}, {0, 0, 1}, {1, 1}},
+            {{1, -1, 0}, {0, 0, 1}, {1, 0}},
+
+        };
+
+        std::vector<unsigned> indices = {0, 1, 2, 2, 3, 0};
+
+        auto attribBuffer = new GfxAttribBuffer();
+
+
+        attribBuffer->use();
+
+        auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
+        buffer->use();
+        buffer->updateData(GL_STATIC_DRAW, vertices.data(), sizeof(GfxVertex) * vertices.size());
+
+        auto elementBuffer = new GfxBuffer(GL_ELEMENT_ARRAY_BUFFER);
+        elementBuffer->use();
+        elementBuffer->updateData(GL_STATIC_DRAW, indices.data(), sizeof(unsigned) * indices.size());
+
+
+        attribBuffer->assignBuffer(buffer);
+        attribBuffer->assignElementBuffer(elementBuffer, GL_UNSIGNED_INT);
+
+
+        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), static_cast<void*>(0)});
+        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), (void*)(3 * sizeof(float))});
+        attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
+
+        quadBuffer = attribBuffer;
+    }
 
 }
 

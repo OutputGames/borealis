@@ -15,12 +15,63 @@ brl::GfxShader::GfxShader(GLenum type, std::string data)
     {
         glGetShaderInfoLog(id, 512, NULL, infoLog);
         std::cerr << "Shader compilation failed.\n" << infoLog << std::endl;
+        exit(-1);
     }
 }
 
 void brl::GfxShader::destroy()
 {
     glDeleteShader(id);
+}
+
+static brl::GfxShaderProgram* defaultShader = nullptr;
+
+brl::GfxShaderProgram* brl::GfxShaderProgram::GetDefaultShader()
+{
+    if (!defaultShader)
+    {
+
+        auto shaderBins = new GfxShader*[2];
+
+        auto vertexShaderSource = "#version 330 core\n"
+            "layout (location = 0) in vec3 aPos;\n"
+            "layout (location = 1) in vec3 aNorm;\n"
+            "layout (location = 2) in vec2 aUV;\n"
+            "uniform mat4 _internalModel;\n"
+            "uniform mat4 _internalView;\n"
+            "uniform mat4 _internalProj;\n"
+            "out vec2 texCoords;\n"
+            "out vec3 normal;\n"
+            "out vec3 pos;\n"
+            "void main()\n"
+            "{\n"
+            "   texCoords = aUV;"
+            "   normal = mat3(transpose(inverse(_internalModel))) * aNorm;"
+            "   pos = vec3(_internalModel * vec4(aPos, 1.0));"
+            "   gl_Position = _internalProj * _internalView * _internalModel * vec4(aPos, 1.0);\n"
+            "}\0";
+        auto fragmentShaderSource = "#version 330 core\n"
+            "out vec4 FragColor;\n"
+            "in vec2 texCoords;\n"
+            "in vec3 normal;\n"
+            "in vec3 pos;\n"
+            "uniform vec3 color;\n"
+            "uniform sampler2D tex;\n"
+            "void main()\n"
+            "{\n"
+            "   FragColor = vec4(texture(tex, texCoords));\n"
+            "   vec3 norm = normalize(normal);\n"
+            "   vec3 lightDir = normalize(vec3(0,10,-5) - pos);\n "
+            "   float d =max(dot(norm, lightDir), 0.0) + 0.25f;\n"
+            "   FragColor = vec4(d*texture(tex,texCoords).rgb,1.0);\n"
+            "}\n\0";
+
+        shaderBins[0] = new GfxShader(GL_VERTEX_SHADER, vertexShaderSource);
+        shaderBins[1] = new GfxShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+        defaultShader = new GfxShaderProgram(shaderBins, 2, true);
+    }
+
+    return defaultShader;
 }
 
 brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bool deleteOnLoad)
@@ -41,7 +92,7 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
     {
         glGetProgramInfoLog(id, 512, NULL, infoLog);
         std::cerr << "Shader linking failed.\n" << infoLog << std::endl;
-        return;
+        exit(-1);
     }
 
     if (deleteOnLoad)

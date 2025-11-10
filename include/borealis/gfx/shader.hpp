@@ -7,6 +7,7 @@
 
 namespace brl
 {
+    struct GfxShaderProgram;
 
     struct GfxShaderValue;
     struct GfxShaderUniform;
@@ -21,6 +22,8 @@ namespace brl
         GfxShader(GLenum type,std::string data);
 
         void destroy();
+
+
 
     private:
         friend struct GfxShaderProgram;
@@ -49,6 +52,8 @@ namespace brl
         GfxShaderProgram(GfxShader** shaders, int shaderCount, bool deleteOnLoad);
 
         void use();
+
+        static GfxShaderProgram* GetDefaultShader();
 
     private:
         friend struct GfxMaterial;

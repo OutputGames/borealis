@@ -20,7 +20,7 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     IoFile file = readFileBinary(path);
 
 
-    unsigned char* data = stbi_load_from_memory(file.data, file.dataSize, &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load_from_memory(file.data, file.dataSize, &width, &height, &nrChannels, 4);
     if (data)
     {
         GLenum format = GL_RGB;
@@ -37,8 +37,8 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
                 internalFormat = GL_RG8;
                 break;
             case 3:
-                format = GL_RGB;
-                internalFormat = GL_RGB8;
+                format = GL_RGBA;
+                internalFormat = GL_RGBA;
                 break;
             case 4:
                 format = GL_RGBA;
@@ -51,7 +51,8 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     }
     else
     {
-        std::cout << "Failed to load texture" << std::endl;
+        std::cout << "Failed to load texture at" << path << std::endl;
+        exit(-1);
     }
     stbi_image_free(data);
 }
