@@ -32,7 +32,7 @@ project "borealis"
     }
 
     filter { "_ACTION:gmake" }
-            libdirs { "ext/glfw/lib-mingw-w64" }
+            libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
 
@@ -109,14 +109,26 @@ project "borealis-test"
     }
 
     libdirs {
-        "lib/"
+        "../lib/",
+        "ext/glad/lib"
     }
 
     links {
-        "borealis"
+        "borealis",
+        "glad",
+        "glfw3",
+        "opengl32",
+        "gdi32",
+        "assimp"
     }
 
-    prebuildcommands { "..\\tools\\out\\resource_packer.exe test/resources/ out/" }
+    filter { "_ACTION:gmake" }
+            libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
+            prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/" }
+    filter { "_ACTION:vs*" }
+            libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
+            prebuildcommands { "..\\tools\\out\\resource_packer.exe test/resources/ out/" }
+
 
     filter "configurations:Debug"
         symbols "On"

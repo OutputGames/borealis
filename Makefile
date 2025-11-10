@@ -10,37 +10,55 @@ endif
 
 ifeq ($(config),debug)
   borealis_config = debug
+  resource_packer_config = debug
   borealis_test_config = debug
+  glad_config = debug
 
 else ifeq ($(config),release)
   borealis_config = release
+  resource_packer_config = release
   borealis_test_config = release
+  glad_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := borealis borealis-test
+PROJECTS := borealis resource_packer borealis-test glad
 
 .PHONY: all clean help $(PROJECTS) 
 
 all: $(PROJECTS)
 
-borealis:
+borealis: glad
 ifneq (,$(borealis_config))
 	@echo "==== Building borealis ($(borealis_config)) ===="
 	@${MAKE} --no-print-directory -C . -f borealis.make config=$(borealis_config)
 endif
 
-borealis-test: borealis
+resource_packer:
+ifneq (,$(resource_packer_config))
+	@echo "==== Building resource_packer ($(resource_packer_config)) ===="
+	@${MAKE} --no-print-directory -C . -f resource_packer.make config=$(resource_packer_config)
+endif
+
+borealis-test: borealis glad resource_packer
 ifneq (,$(borealis_test_config))
 	@echo "==== Building borealis-test ($(borealis_test_config)) ===="
 	@${MAKE} --no-print-directory -C . -f borealis-test.make config=$(borealis_test_config)
 endif
 
+glad:
+ifneq (,$(glad_config))
+	@echo "==== Building glad ($(glad_config)) ===="
+	@${MAKE} --no-print-directory -C ext/glad -f Makefile config=$(glad_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f borealis.make clean
+	@${MAKE} --no-print-directory -C . -f resource_packer.make clean
 	@${MAKE} --no-print-directory -C . -f borealis-test.make clean
+	@${MAKE} --no-print-directory -C ext/glad -f Makefile clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -53,6 +71,8 @@ help:
 	@echo "   all (default)"
 	@echo "   clean"
 	@echo "   borealis"
+	@echo "   resource_packer"
 	@echo "   borealis-test"
+	@echo "   glad"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

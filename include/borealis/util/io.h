@@ -8,6 +8,11 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
+#include <algorithm>
 
 namespace brl
 {
