@@ -42,42 +42,42 @@ void PlayerController::update()
 
     glm::vec3 moveDir =
         glm::vec3{horizontal, 0, vertical} *
-        brl::GfxEngine::instance->getDeltaTime() * 5.f;
+        brl::GfxEngine::instance->getDeltaTime() * 2.5f;
 
     localPosition += moveDir;
 
     material->setVec2("moveDir", {horizontal, vertical});
 
-        if (brl::InputMgr::getMouseButtonUp(GLFW_MOUSE_BUTTON_LEFT))
-        {
-            material->setFloat("attackTime", glfwGetTime());
-        }
+    if (brl::InputMgr::getMouseButtonUp(GLFW_MOUSE_BUTTON_LEFT))
+    {
+        material->setFloat("attackTime", glfwGetTime());
+    }
 
-        if (brl::InputMgr::getMouseButton(GLFW_MOUSE_BUTTON_RIGHT))
+    if (brl::InputMgr::getMouseButton(GLFW_MOUSE_BUTTON_RIGHT))
+    {
+        material->setInt("guarding", 1);
+    }
+    else
+    {
+        material->setInt("guarding", 0);
+    }
+
+    if (glm::abs(length(moveDir)) <= 0.0001f)
+    {
+    }
+    else
+    {
+
+
+        if (horizontal > 0)
         {
-            material->setInt("guarding", 1);
+            material->setInt("flip", 0);
         }
         else
         {
-            material->setInt("guarding", 0);
+            material->setInt("flip", 1);
         }
+    }
 
-        if (glm::abs(length(moveDir)) <= 0.0001f)
-        {
-        }
-        else
-        {
-
-
-            if (horizontal > 0)
-            {
-                material->setInt("flip", 0);
-            }
-            else
-            {
-                material->setInt("flip", 1);
-            }
-        }
-
-        renderer->lookAt(brl::GfxCamera::mainCamera->position);
+    renderer->lookAt(brl::GfxCamera::mainCamera->position);
 }

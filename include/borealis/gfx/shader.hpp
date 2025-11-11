@@ -173,6 +173,17 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
+        GfxShaderValue getUniform(std::string name) {
+            for (const auto& uniform : overrides)
+            {
+                if (uniform.first->name == name)
+                    return uniform.second;
+            }
+
+            return {};
+            
+        }
+
         void draw(GfxAttribBuffer* buffer, GfxUniformList runtimeOverrides = {});
 
 

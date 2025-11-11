@@ -9,15 +9,20 @@ namespace brl
 {
     struct GfxTexture
     {
+        int getWidth() { return width; }
+        int getHeight() { return height; }
+
+
     private:
         friend struct GfxMaterial;
         friend struct GfxShader;
-
+        friend struct GfxSprite;
         friend struct GfxTexture2d;
         friend struct GfxTexture2dArray;
         friend struct GfxFramebuffer;
 
         unsigned id = UINT_MAX;
+        int width, height;
     };
 
     #pragma pack(push, 1)
@@ -33,15 +38,9 @@ namespace brl
 
         GfxTexture2d(std::string path);
         GfxTexture2d(Color32* pixels, int width, int height);
-
-        int getWidth() {return width;}
-        int getHeight() {return height;}
-
     private:
         friend struct GfxSprite;
         Color32* pixels;
-
-        int width, height;
     };
 
 
@@ -49,14 +48,10 @@ namespace brl
     {
 
         GfxTexture2dArray(Color32* pixels, int width, int height, int layerCount);
-        int getWidth() { return width; }
-        int getHeight() { return height; }
 
     private:
         friend struct GfxSprite;
         Color32* pixels;
-
-        int width, height;
     };
 
 } // namespace brl
