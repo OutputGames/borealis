@@ -126,7 +126,7 @@ project "borealis-test"
             prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/" }
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
-            prebuildcommands { "..\\tools\\out\\resource_packer.exe test/resources/ out/" }
+            prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/" }
 
 
     filter "configurations:Debug"

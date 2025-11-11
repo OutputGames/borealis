@@ -51,7 +51,7 @@ namespace brl
         float fieldOfView = 75.f;
         float orthographicSize = 5.f;
 
-        float minLimit = 0.01f;
+        float minLimit = 0.001f;
         float maxLimit = 100.f;
 
 

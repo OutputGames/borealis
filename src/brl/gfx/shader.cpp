@@ -138,6 +138,9 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
             case GL_INT:
                 typeName = "int";
                 break;
+            case GL_BOOL:
+                typeName = "bool";
+                break;
             case GL_FLOAT_VEC2:
                 typeName = "vec2";
                 break;
@@ -152,6 +155,11 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
                 break;
             case GL_SAMPLER_2D:
                 typeName = "texture2D";
+                textureSlots++;
+                _textures.push_back(name);
+                break;
+            case GL_SAMPLER_2D_ARRAY:
+                typeName = "texture2DArray";
                 textureSlots++;
                 _textures.push_back(name);
                 break;
@@ -210,10 +218,20 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
             case GL_INT:
                 glUniform1i(_override.first->location, _override.second.intValue);
                 break;
+            case GL_BOOL:
+                glUniform1i(_override.first->location, _override.second.intValue);
+                break;
             case GL_SAMPLER_2D:
                 glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex(_override.first->name));
                 glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
                 break;
+            case GL_SAMPLER_2D_ARRAY:
+            {
+                int i = shader->getTextureIndex(_override.first->name);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.second.txValue->id);
+            }
+            break;
             default:
                 break;
         }
@@ -250,6 +268,13 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
                 int i = shader->getTextureIndex(_override.first->name);
                 glActiveTexture(GL_TEXTURE0 + i);
                 glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
+            }
+            break;
+            case GL_SAMPLER_2D_ARRAY:
+            {
+                int i = shader->getTextureIndex(_override.first->name);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.second.txValue->id);
             }
             break;
             default:

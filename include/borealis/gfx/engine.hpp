@@ -48,6 +48,7 @@ namespace brl
         float getAspectRatio();
         int getMainWidth() { return mainWindow->getWidth(); }
         int getMainHeight() { return mainWindow->getHeight(); }
+        float getDeltaTime() { return deltaTime; }
         
     private:
         friend GfxAttribBuffer;
@@ -58,6 +59,7 @@ namespace brl
         GfxMaterial* blitMaterial;
 
         int frameCount = 0;
+        double lastFrameTime = 0, deltaTime = 0;
 
         GfxAttribBuffer* quadBuffer;
     };

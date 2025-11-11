@@ -1,4 +1,5 @@
 #include "borealis/gfx/gfx.hpp"
+#include "borealis/util/input.hpp"
 
 brl::GfxEngine* brl::GfxEngine::instance;
 
@@ -171,6 +172,8 @@ void brl::GfxEngine::initialize()
         quadBuffer = attribBuffer;
     }
 
+    InputMgr::init(static_cast<GLFWwindow*>(mainWindow->window));
+
 }
 
 void brl::GfxEngine::update()
@@ -183,14 +186,17 @@ void brl::GfxEngine::update()
     mainWindow->clear();
     GfxCamera::mainCamera->cachedFramebuffer->getAttachment(0)->draw(blitMaterial);
 
+
+    InputMgr::update();
     mainWindow->pollEvents();
     mainWindow->swapBuffers();
 
     frameCount++;
 
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR)
-        std::cerr << "OpenGL Error: " << err << std::endl;
+    double frameTime = glfwGetTime();
+    deltaTime = frameTime - lastFrameTime;
+    lastFrameTime = frameTime;
+
 }
 
 void brl::GfxEngine::insertCall(const GfxDrawCall& call)

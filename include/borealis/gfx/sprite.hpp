@@ -8,7 +8,8 @@ namespace brl
     struct GfxSprite
     {
         GfxSprite();
-        static GfxTexture2d** extractSprites(GfxTexture2d* tex, int spriteWidth, int spriteHeight);
+        static GfxTexture2d** extractSpritesToTextures(GfxTexture2d* tex, int spriteWidth, int spriteHeight);
+        static GfxTexture2dArray* extractSpritesToArray(GfxTexture2d* tex, int spriteWidth, int spriteHeight);
 
     private:
     };

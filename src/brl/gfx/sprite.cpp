@@ -5,29 +5,72 @@ brl::GfxSprite::GfxSprite()
 
 }
 
-brl::GfxTexture2d** brl::GfxSprite::extractSprites(GfxTexture2d* tex, int spriteWidth, int spriteHeight)
+brl::GfxTexture2d** brl::GfxSprite::extractSpritesToTextures(GfxTexture2d* tex, int spriteWidth, int spriteHeight)
 {
     int spriteCountX = tex->width / spriteWidth;
     int spriteCountY = tex->height / spriteHeight;
 
     auto textures = new GfxTexture2d*[spriteCountX * spriteCountY];
 
-    int offset = 0;
-    for (int x = 0; x < spriteCountX; ++x)
+    for (int y = 0; y < spriteCountY; ++y)
     {
-        for (int y = 0; y < spriteCountY; ++y)
+        for (int x = 0; x < spriteCountX; ++x)
         {
             auto spritePixels = new Color32[spriteWidth * spriteHeight];
-            for (int i = offset; i < offset+(spriteWidth * spriteHeight); i++)
+
+            // Copy row by row for this sprite
+            for (int row = 0; row < spriteHeight; ++row)
             {
-                spritePixels[i - offset] = tex->pixels[i];
+                // Start position in the full texture
+                int srcY = y * spriteHeight + row;
+                int srcX = x * spriteWidth;
+
+                int srcOffset = srcY * tex->width + srcX;
+                int dstOffset = row * spriteWidth;
+
+                // Copy the row’s pixels
+                memcpy(&spritePixels[dstOffset], &tex->pixels[srcOffset], spriteWidth * sizeof(Color32));
             }
 
-            textures[(x * spriteCountX) + y] = new GfxTexture2d(spritePixels, spriteWidth, spriteHeight);
-
-            offset += spriteWidth * spriteHeight;
+            // Store sprite texture
+            textures[y * spriteCountX + x] = new GfxTexture2d(spritePixels, spriteWidth, spriteHeight);
         }
     }
 
     return textures;
+}
+
+brl::GfxTexture2dArray* brl::GfxSprite::extractSpritesToArray(GfxTexture2d* tex, int spriteWidth, int spriteHeight)
+{
+    int spriteCountX = tex->width / spriteWidth;
+    int spriteCountY = tex->height / spriteHeight;
+    int totalSprites = spriteCountX * spriteCountY;
+    auto spritePixels = new Color32[spriteWidth * spriteHeight * totalSprites];
+
+    int spriteIndex = 0;
+    for (int y = 0; y < spriteCountY; ++y)
+    {
+        for (int x = 0; x < spriteCountX; ++x)
+        {
+            // Calculate the base offset for this sprite in the destination array
+            int spriteOffset = spriteIndex * spriteWidth * spriteHeight;
+
+            // Copy row by row for this sprite
+            for (int row = 0; row < spriteHeight; ++row)
+            {
+                // Start position in the full texture
+                int srcY = y * spriteHeight + row;
+                int srcX = x * spriteWidth;
+                int srcOffset = srcY * tex->width + srcX;
+
+                // Destination position in the sprite array
+                int dstOffset = spriteOffset + row * spriteWidth;
+
+                // Copy the row's pixels
+                memcpy(&spritePixels[dstOffset], &tex->pixels[srcOffset], spriteWidth * sizeof(Color32));
+            }
+            spriteIndex++;
+        }
+    }
+    return new GfxTexture2dArray(spritePixels, spriteWidth, spriteHeight, totalSprites);
 }

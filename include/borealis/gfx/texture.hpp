@@ -12,8 +12,11 @@ namespace brl
     private:
         friend struct GfxMaterial;
         friend struct GfxShader;
+
         friend struct GfxTexture2d;
+        friend struct GfxTexture2dArray;
         friend struct GfxFramebuffer;
+
         unsigned id = UINT_MAX;
     };
 
@@ -33,6 +36,21 @@ namespace brl
 
         int getWidth() {return width;}
         int getHeight() {return height;}
+
+    private:
+        friend struct GfxSprite;
+        Color32* pixels;
+
+        int width, height;
+    };
+
+
+    struct GfxTexture2dArray : GfxTexture
+    {
+
+        GfxTexture2dArray(Color32* pixels, int width, int height, int layerCount);
+        int getWidth() { return width; }
+        int getHeight() { return height; }
 
     private:
         friend struct GfxSprite;

@@ -13,12 +13,13 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int nrChannels;
 
     IoFile file = readFileBinary(path);
 
+    stbi_set_flip_vertically_on_load(true);
 
     unsigned char* data = stbi_load_from_memory(file.data, file.dataSize, &width, &height, &nrChannels, 4);
     if (data)
@@ -82,11 +83,43 @@ brl::GfxTexture2d::GfxTexture2d(Color32* pixels, int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     GLenum format = GL_RGBA;
     GLenum internalFormat = GL_RGBA;
 
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+brl::GfxTexture2dArray::GfxTexture2dArray(Color32* pixels, int width, int height, int layerCount)
+{
+    this->width = width;
+    this->height = height;
+    this->pixels = pixels;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, id);
+
+    // Set texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    GLenum format = GL_RGBA;
+    GLenum internalFormat = GL_RGBA8; // Changed from GL_RGBA
+
+    // Calculate number of mipmap levels
+    int mipLevels = 1 + floor(log2(std::max(width, height)));
+
+    // Allocate storage with proper mipmap levels
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevels, internalFormat, width, height, layerCount);
+
+    // Upload the pixel data
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, format, GL_UNSIGNED_BYTE, pixels);
+
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 }
