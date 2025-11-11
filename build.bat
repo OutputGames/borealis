@@ -1,1 +1,1 @@
-make -j config=release && start out/borealis-test.exe
+make -j config=release && cd out/ start borealis-test.exe

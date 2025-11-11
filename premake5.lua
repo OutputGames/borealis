@@ -94,6 +94,8 @@ project "borealis-test"
     files {
         "test/src/**.cpp",
         "test/src/**.c",
+        "test/include/**.hpp",
+        "test/include/**.h",
         "include/**.h",
         "include/**.hpp"
     }
