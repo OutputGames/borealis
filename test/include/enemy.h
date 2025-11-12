@@ -9,6 +9,6 @@ private:
 
 
 
-}
+};
 
 #endif // ENEMY_H
