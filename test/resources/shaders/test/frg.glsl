@@ -17,6 +17,8 @@ uniform vec2 moveDir;
 
 uniform bool guarding;
 uniform float attackTime;
+uniform float damageTime;
+
 uniform bool flip;
 
 void main()
@@ -48,7 +50,16 @@ void main()
       color = texture(attackSprite,vec3(coords,mod(diff*10.0f, 4)));
    }
 
-   vec3 final = color.rgb * d;
+   float damageDiff = _internalTime - damageTime;
+   if (damageDiff*10.0f < 2.0f) {
+      float t = (damageDiff*10.0f) / 2.0f;
+      color.rgb += mix(vec3(1,0,0), vec3(0,0,0), t);
+   }
+
+   if (color.a < 0.1)
+      discard;
+
+   vec3 final = color.rgb;
 
    FragColor = vec4(final, color.a);
 }

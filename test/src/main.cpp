@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <iostream>
 
+#include "enemy.h"
 #include "player.h"
 #include "map.h"
 
@@ -79,7 +80,9 @@ int main(int argc, const char* argv[])
 
         {
             auto material = new brl::GfxMaterial(anim_shader);
-            material->setTexture("tex", brl::GfxSprite::extractSpritesToArray( new brl::GfxTexture2d("textures/Trees/Tree1.png"), 192, 256));
+            material->setTexture(
+                "tex", brl::GfxSprite::extractSpritesToArray(new brl::GfxTexture2d("textures/Trees/Tree1.png"), 192,
+                                                             256));
 
             auto renderer = new brl::GfxMeshRenderer();
             renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
@@ -92,12 +95,14 @@ int main(int argc, const char* argv[])
             renderer->localScale.y *= uni.txValue->getHeight() / uni.txValue->getWidth();
 
             auto mapObject = new MapObject(renderer);
-            mapObject->localPosition = {-5,(renderer->localScale.y/2)+1,5};
+            mapObject->localPosition = {-5, (renderer->localScale.y / 2) + 1, 5};
         }
 
         {
             auto material = new brl::GfxMaterial(anim_shader);
-            material->setTexture("tex", brl::GfxSprite::extractSpritesToArray( new brl::GfxTexture2d("textures/Trees/Tree2.png"), 192, 256));
+            material->setTexture(
+                "tex", brl::GfxSprite::extractSpritesToArray(new brl::GfxTexture2d("textures/Trees/Tree2.png"), 192,
+                                                             256));
 
             auto renderer = new brl::GfxMeshRenderer();
             renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
@@ -110,12 +115,16 @@ int main(int argc, const char* argv[])
             renderer->localScale.y *= uni.txValue->getHeight() / uni.txValue->getWidth();
 
             auto mapObject = new MapObject(renderer);
-            mapObject->localPosition = {5,(renderer->localScale.y/2)+1,5};
+            mapObject->localPosition = {5, (renderer->localScale.y / 2) + 1, 5};
         }
     }
 
 
-    PlayerController* player = new PlayerController();
+    auto player = new PlayerController();
+
+
+    auto enemy = new EnemyController();
+    enemy->localPosition = {0, 0, -5};
 
 
     while (engine.isRunning())
@@ -123,10 +132,16 @@ int main(int argc, const char* argv[])
 
 
         player->update();
+        enemy->update();
 
-        camera->localPosition = player->position() + glm::vec3{0, 5, 5};
-
+        camera->localPosition = mix(camera->localPosition, player->position() + glm::vec3{0, 5, 5},
+                                    engine.getDeltaTime() * 7.5f);
+        glm::quat rotPrev = camera->localRotation;
         camera->lookAt(player->position());
+        camera->localRotation = lerp(rotPrev, camera->localRotation,
+                                     glm::clamp(engine.getDeltaTime() * 7.5f, 0.f, 1.f));
+
+        //camera->type = brl::ORTHOGRAPHIC;
 
         entityMgr.update();
         engine.update();

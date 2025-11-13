@@ -72,7 +72,7 @@ void brl::GfxEngine::initialize()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    mainWindow = new GfxWindow(800, 600, "LearnOpenGL");
+    mainWindow = new GfxWindow(800, 600, "untitled cp1 game");
     glfwMakeContextCurrent(static_cast<GLFWwindow*>(mainWindow->window));
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -196,6 +196,19 @@ void brl::GfxEngine::update()
     double frameTime = glfwGetTime();
     deltaTime = frameTime - lastFrameTime;
     lastFrameTime = frameTime;
+
+    for (auto it = active_coroutines.begin(); it != active_coroutines.end();)
+    {
+        it->resume(deltaTime);
+        if (it->is_done())
+        {
+            it = active_coroutines.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
 
 }
 

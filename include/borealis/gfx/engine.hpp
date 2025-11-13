@@ -48,10 +48,17 @@ namespace brl
         float getAspectRatio();
         int getMainWidth() { return mainWindow->getWidth(); }
         int getMainHeight() { return mainWindow->getHeight(); }
-        float getDeltaTime() { return deltaTime; }
+        float getDeltaTime()
+        {
+            return deltaTime;
+        }
+
         
+        std::vector<UtilCoroutine> active_coroutines;
+
     private:
         friend GfxAttribBuffer;
+        friend UtilCoroutine;
 
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;
@@ -62,6 +69,7 @@ namespace brl
         double lastFrameTime = 0, deltaTime = 0;
 
         GfxAttribBuffer* quadBuffer;
+
     };
 
     struct GfxDrawCall {

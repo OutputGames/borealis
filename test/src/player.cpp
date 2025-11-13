@@ -1,13 +1,25 @@
 #include "player.h"
 
+#include "enemy.h"
+
+std::vector<PlayerEntity*> PlayerEntity::cachedEntities;
+
+PlayerEntity::PlayerEntity()
+{
+    cachedEntities.push_back(this);
+}
+
+void PlayerEntity::handleAttack(glm::vec3 dir, float power)
+{
+}
+
 PlayerController::PlayerController()
 {
 
-
-    auto texture = new brl::GfxTexture2d("textures/Warrior/Warrior_Idle.png");
-    auto walkTexture = new brl::GfxTexture2d("textures/Warrior/Warrior_Run.png");
-    auto attackTexture = new brl::GfxTexture2d("textures/Warrior/Warrior_Attack1.png");
-    auto guardTexture = new brl::GfxTexture2d("textures/Warrior/Warrior_Guard.png");
+    auto texture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Idle.png");
+    auto walkTexture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Run.png");
+    auto attackTexture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Attack1.png");
+    auto guardTexture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Guard.png");
     idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192);
     walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192);
     attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192);
@@ -40,9 +52,10 @@ void PlayerController::update()
     float horizontal = brl::InputMgr::getAxisRaw("Horizontal");
     float vertical = -brl::InputMgr::getAxisRaw("Vertical");
 
+    float deltatime = brl::GfxEngine::instance->getDeltaTime();
+
     glm::vec3 moveDir =
-        glm::vec3{horizontal, 0, vertical} *
-        brl::GfxEngine::instance->getDeltaTime() * 2.5f;
+        (glm::vec3{horizontal, 0, vertical} * 2.5f) * deltatime;
 
     localPosition += moveDir;
 
@@ -51,9 +64,23 @@ void PlayerController::update()
     if (brl::InputMgr::getMouseButtonUp(GLFW_MOUSE_BUTTON_LEFT))
     {
         material->setFloat("attackTime", glfwGetTime());
+
+        for (auto cachedEntity : EnemyController::cachedEnemies)
+        {
+            glm::vec3 pos = cachedEntity->position();
+
+            float distance = glm::distance(pos, position());
+
+            if (distance < 2.5f)
+            {
+                cachedEntity->handleAttack(normalize(pos - position()), cachedEntity->isGuarding ? 5.0f : 12.5f);
+            }
+        }
     }
 
-    if (brl::InputMgr::getMouseButton(GLFW_MOUSE_BUTTON_RIGHT))
+    isGuarding = brl::InputMgr::getMouseButton(GLFW_MOUSE_BUTTON_RIGHT);
+
+    if (isGuarding)
     {
         material->setInt("guarding", 1);
     }
@@ -80,4 +107,33 @@ void PlayerController::update()
     }
 
     renderer->lookAt(brl::GfxCamera::mainCamera->position);
+}
+
+void PlayerController::handleAttack(glm::vec3 dir, float power)
+{
+    PlayerEntity::handleAttack(dir, power);
+    brl::GfxEngine::instance->active_coroutines.push_back(AttackCoroutine(dir, power));
+}
+
+brl::UtilCoroutine PlayerController::AttackCoroutine(glm::vec3 dir, float power)
+{
+    float start = glfwGetTime();
+
+    float diff = 0;
+
+    while (diff * 10 <= 2.0f)
+    {
+        diff = glfwGetTime() - start;
+        co_yield brl::GfxEngine::instance->getDeltaTime();
+    }
+
+    material->setFloat("damageTime", glfwGetTime());
+
+    while (diff * 10.0f > 2.0f && diff * 10.0f < 4.0f)
+    {
+        localPosition += (dir * power) * brl::GfxEngine::instance->getDeltaTime();
+        co_yield brl::GfxEngine::instance->getDeltaTime();
+
+        diff = glfwGetTime() - start;
+    }
 }

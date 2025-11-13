@@ -15,6 +15,9 @@ void main()
 
    vec4 color = texture(tex,vec3(texCoords,mod(_internalTime*10.0f,  textureSize(tex, 0).z)));
 
+   if (color.a < 0.1)
+      discard;
+
    vec3 final = color.rgb * d;
 
    FragColor = vec4(final, color.a);
