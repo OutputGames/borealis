@@ -14,10 +14,10 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "D:/Code/ImportantRepos/animated-octo-invention/w64devkit/bin/g++.exe",
+            "compilerPath": "C:/MinGW/bin/g++.exe",
             "cStandard": "c17",
-            "cppStandard": "gnu++20",
-            "intelliSenseMode": "windows-gcc-x86"
+            "cppStandard": "c++20",
+            "intelliSenseMode": "macos-gcc-x64"
         }
     ],
     "version": 4

@@ -44,7 +44,10 @@ EnemyController::EnemyController()
 
 void EnemyController::update()
 {
-    EcsEntity::update();
+    ActorBehaviour::update();
+
+    if (!isAlive)
+        return;
 
     float deltaTime = brl::GfxEngine::instance->getDeltaTime();
 
@@ -155,6 +158,13 @@ void EnemyController::handleAttack(glm::vec3 dir, float power)
     //brl::UtilCoroutine::startCoroutine([this, dir] { return AttackCoroutine(dir, 7.5f); });
 }
 
+void EnemyController::onDeath() {
+    ActorBehaviour::onDeath();
+
+    brl::GfxEngine::instance->active_coroutines.push_back(DeathCoroutine());
+
+}
+
 brl::UtilCoroutine EnemyController::AttackCoroutine(glm::vec3 dir, float power)
 {
     float start = glfwGetTime();
@@ -175,6 +185,26 @@ brl::UtilCoroutine EnemyController::AttackCoroutine(glm::vec3 dir, float power)
         co_yield brl::GfxEngine::instance->getDeltaTime();
 
         diff = glfwGetTime() - start;
+    }
+
+    health -= power / 100.0f;
+}
+
+brl::UtilCoroutine EnemyController::DeathCoroutine() {
+    co_yield 2.0f;
+
+    float distance = glm::distance(localScale, glm::vec3(0.1));
+
+    glm::vec3 start = localPosition;
+
+    float timeToReach = distance / 5.f;
+    float t = 0;
+    while (t < timeToReach) {
+        localScale = glm::mix(start,glm::vec3(0.1), t/timeToReach);
+
+        t += brl::GfxEngine::instance->getDeltaTime();
+
+        co_yield brl::GfxEngine::instance->getDeltaTime();
     }
 
 }

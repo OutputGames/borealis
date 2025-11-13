@@ -1,15 +1,18 @@
 #if !defined(ENEMY_H)
 #define ENEMY_H
+
+
 #include "borealis/ecs/entity.hpp"
 #include "borealis/gfx/model.hpp"
 #include "borealis/gfx/texture.hpp"
+#include "actor.h"
 
-struct EnemyController : brl::EcsEntity
+struct EnemyController : ActorBehaviour
 {
 
     EnemyController();
     void update() override;
-    void handleAttack(glm::vec3 dir, float power);
+    void handleAttack(glm::vec3 dir, float power) override;
 
     static std::vector<EnemyController*> cachedEnemies;
 
@@ -27,8 +30,10 @@ private:
 
     float startAttackDistance = 0;
 
+    void onDeath() override;
 
     brl::UtilCoroutine AttackCoroutine(glm::vec3 dir, float power);
+    brl::UtilCoroutine DeathCoroutine();
 
 
 };
