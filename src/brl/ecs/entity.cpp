@@ -56,6 +56,8 @@ void brl::EcsEntity::destroy()
     {
         child->destroy();
     }
+
+    onDestroy();
 }
 
 void brl::EcsEntity::setActive(bool active)

@@ -12,13 +12,14 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls)
 {
     if (targetFramebuffer != cachedFramebuffer && targetFramebuffer != nullptr)
     {
-        // destroy old buffer
+        delete cachedFramebuffer;
+        cachedFramebuffer = targetFramebuffer;
     }
 
     if (cachedFramebuffer == nullptr)
     {
-        cachedFramebuffer =
-            new GfxFramebuffer(GfxEngine::instance->getMainWidth(), GfxEngine::instance->getMainHeight());
+        cachedFramebuffer = new GfxFramebuffer(GfxEngine::instance->getMainWidth(),
+                                               GfxEngine::instance->getMainHeight());
     }
 
     cachedFramebuffer->use();
@@ -67,12 +68,12 @@ glm::mat4 brl::GfxCamera::GetProjMatrix()
 
     if (type == PERSPECTIVE)
     {
-        proj = glm::perspective(glm::radians(fieldOfView), getAspectRatio(), minLimit, maxLimit);
+        proj = glm::perspective(glm::radians(fieldOfView), cachedFramebuffer->getAspectRatio(), minLimit, maxLimit);
     }
     else
     {
         float halfHeight = orthographicSize;
-        float halfWidth = halfHeight * getAspectRatio();
+        float halfWidth = halfHeight * cachedFramebuffer->getAspectRatio();
 
         float left = -halfWidth;
         float right = halfWidth;
@@ -86,10 +87,7 @@ glm::mat4 brl::GfxCamera::GetProjMatrix()
     return proj;
 }
 
-float brl::GfxCamera::getAspectRatio()
-{
-    return GfxEngine::instance->getAspectRatio();
-}
+float brl::GfxCamera::getAspectRatio() { return cachedFramebuffer->getAspectRatio(); }
 
 void brl::EcsCamera::earlyUpdate()
 {
@@ -103,4 +101,6 @@ void brl::EcsCamera::earlyUpdate()
 
     gfxCamera->position = position();
     gfxCamera->rotation = rotation();
+
+    gfxCamera->targetFramebuffer = targetFramebuffer;
 }

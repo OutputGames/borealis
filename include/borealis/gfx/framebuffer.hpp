@@ -35,8 +35,10 @@ namespace brl
 
         void use();
         void clear();
+        ~GfxFramebuffer();
 
         GfxFramebufferAttachment* getAttachment(int i );
+        float getAspectRatio() { return (float)width / (float)height; }
 
     private:
         int width, height;
@@ -44,6 +46,7 @@ namespace brl
         int attachmentCount;
 
         unsigned id;
+        unsigned rbo;
     };
 
 } // namespace brl

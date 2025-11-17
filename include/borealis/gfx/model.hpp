@@ -8,6 +8,7 @@
 #include "texture.hpp"
 #include "borealis/ecs/entity.hpp"
 
+struct aiMaterial;
 struct aiScene;
 struct aiNode;
 
@@ -53,9 +54,34 @@ namespace brl
 
     struct GfxMaterialDescription
     {
+        struct GfxMaterialKey
+        {
+            std::string id;
+            unsigned int type;
+            unsigned int idx;
+
+            bool operator<(const GfxMaterialKey& other) const
+            {
+                if (id != other.id)
+                    return id < other.id;
+                if (type != other.type)
+                    return type < other.type;
+                return idx < other.idx;
+            }
+        };
+
         std::string name;
 
-        static GfxMaterial* createMaterial(GfxShaderProgram* shader);
+        std::map<GfxMaterialKey, glm::vec3> color_uniforms;
+        std::map<unsigned, GfxTexture2d*> texture_uniforms;
+
+        GfxMaterial* createMaterial(GfxShaderProgram* shader);
+
+    private:
+        friend GfxModel;
+
+        void deriveColor(aiMaterial* material, std::string str, unsigned type, unsigned idx);
+        void deriveTexture(aiMaterial* material, unsigned type, const aiScene* scn=nullptr);
     };
 
     struct GfxModel {

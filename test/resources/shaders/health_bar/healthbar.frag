@@ -3,8 +3,10 @@ out vec4 FragColor;
 in vec2 texCoords;
 in vec3 normal;
 in vec3 pos;
-uniform vec3 color;
+
 uniform sampler2D tex;
+uniform float health;
+
 uniform float _internalTime;
 void main()
 {
@@ -15,9 +17,19 @@ void main()
 
    vec4 color = texture(tex,texCoords);
 
-   if (color.a < 0.1)
-      discard;
+	if (color.a < 0.1) discard;
 
+	if (color.r > 0.5f) {
+		color.rgb = vec3(0.125f);
+	} else {
+		if (texCoords.x > health) {
+			color.rgb = vec3(0.25f);
+		} else {
+			color.rgb = vec3(0,1,1);
+			color.rgb *= clamp(texCoords.y+0.25f,0,1);
+		}
+	}
+ 
 
    vec3 final = color.rgb;
 

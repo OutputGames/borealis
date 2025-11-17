@@ -12,6 +12,8 @@ namespace brl
         int getWidth() { return width; }
         int getHeight() { return height; }
 
+        ~GfxTexture();
+
 
     private:
         friend struct GfxMaterial;
@@ -36,9 +38,17 @@ namespace brl
 
     struct GfxTexture2d : GfxTexture {
 
-        GfxTexture2d(std::string path);
+        static GfxTexture2d* loadTexture(std::string path);
+
         GfxTexture2d(Color32* pixels, int width, int height);
+
+        static GfxTexture2d* getWhiteTexture();
+
     private:
+
+        
+        GfxTexture2d(std::string path);
+
         friend struct GfxSprite;
         Color32* pixels;
     };

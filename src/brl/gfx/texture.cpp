@@ -3,8 +3,20 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+auto cachedTextures = std::map<std::string, brl::GfxTexture2d*>();
+
+brl::GfxTexture2d* whiteTexture = nullptr;
+
+
+brl::GfxTexture::~GfxTexture()
+{
+    glDeleteTextures(1, &id);
+}
+
 brl::GfxTexture2d::GfxTexture2d(std::string path)
 {
+    cachedTextures.insert_or_assign(path, this);
+
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_2D, id); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
     // set the texture wrapping parameters
@@ -12,7 +24,7 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     // set texture wrapping to GL_REPEAT (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int nrChannels;
@@ -48,7 +60,6 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
 
 
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
 
         pixels = new Color32[width * height * 4];
         for (int i = 0; i < width * height * 4; i += 4)
@@ -69,6 +80,14 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     stbi_image_free(data);
 }
 
+brl::GfxTexture2d* brl::GfxTexture2d::loadTexture(std::string path)
+{
+    if (cachedTextures.contains(path))
+        return cachedTextures[path];
+
+    return new GfxTexture2d(path);
+}
+
 brl::GfxTexture2d::GfxTexture2d(Color32* pixels, int width, int height)
 {
     this->width = width;
@@ -82,14 +101,32 @@ brl::GfxTexture2d::GfxTexture2d(Color32* pixels, int width, int height)
     // set texture wrapping to GL_REPEAT (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     GLenum format = GL_RGBA;
     GLenum internalFormat = GL_RGBA;
 
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
-    glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+brl::GfxTexture2d* brl::GfxTexture2d::getWhiteTexture()
+{
+
+    if (!whiteTexture)
+    {
+        auto c = new Color32[4];
+
+        c[0] = {255, 255, 255, 255};
+        c[1] = {255, 255, 255, 255};
+        c[2] = {255, 255, 255, 255};
+        c[3] = {255, 255, 255, 255};
+
+        whiteTexture = new GfxTexture2d(c, 2, 2);
+    }
+
+    return whiteTexture;
+
 }
 
 brl::GfxTexture2dArray::GfxTexture2dArray(Color32* pixels, int width, int height, int layerCount)
@@ -105,7 +142,7 @@ brl::GfxTexture2dArray::GfxTexture2dArray(Color32* pixels, int width, int height
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     // Set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     GLenum format = GL_RGBA;
@@ -119,7 +156,4 @@ brl::GfxTexture2dArray::GfxTexture2dArray(Color32* pixels, int width, int height
 
     // Upload the pixel data
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, format, GL_UNSIGNED_BYTE, pixels);
-
-    // Generate mipmaps
-    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 }

@@ -16,10 +16,10 @@ void PlayerEntity::handleAttack(glm::vec3 dir, float power)
 PlayerController::PlayerController()
 {
 
-    auto texture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Idle.png");
-    auto walkTexture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Run.png");
-    auto attackTexture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Attack1.png");
-    auto guardTexture = new brl::GfxTexture2d("textures/Units/Yellow Units/Warrior/Warrior_Guard.png");
+    auto texture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Idle.png");
+    auto walkTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Run.png");
+    auto attackTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Attack1.png");
+    auto guardTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Guard.png");
     idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192);
     walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192);
     attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192);

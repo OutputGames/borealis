@@ -50,6 +50,7 @@ namespace brl
     struct GfxShaderProgram 
     {
         GfxShaderProgram(GfxShader** shaders, int shaderCount, bool deleteOnLoad);
+        ~GfxShaderProgram();
 
         void use();
 

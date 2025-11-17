@@ -16,12 +16,18 @@ int main(int argc, const char* argv[])
     brl::GfxEngine engine;
     engine.initialize();
 
+    float framebufferScale = 0.75f;
+
     auto camera = new brl::EcsCamera();
     camera->localPosition = {0, 5.0f, 5.f};
     camera->fieldOfView = 90.f;
+    camera->targetFramebuffer =
+        new brl::GfxFramebuffer(brl::GfxEngine::instance->getMainWidth() * framebufferScale,
+                                brl::GfxEngine::instance->getMainHeight() * framebufferScale);
+
     //camera->type = brl::ORTHOGRAPHIC;
 
-    auto tilemapTexture = new brl::GfxTexture2d("textures/Tilemap_color1.png");
+    auto tilemapTexture = brl::GfxTexture2d::loadTexture("textures/Tilemap_color1.png");
     auto tilemapSprites = brl::GfxSprite::extractSpritesToArray(tilemapTexture, 64, 64);
 
 
@@ -33,7 +39,7 @@ int main(int argc, const char* argv[])
         auto shader = new brl::GfxShaderProgram(shaderBins, 2, true);
 
 
-        auto floorTexture = new brl::GfxTexture2d("textures/test.png");
+        auto floorTexture = brl::GfxTexture2d::loadTexture("textures/test.png");
 
         auto floorMaterial = new brl::GfxMaterial(shader);
         // material->setVec3("color", brl::vector3{1,0,0});
@@ -61,7 +67,7 @@ int main(int argc, const char* argv[])
         /*
         {
             auto material = new brl::GfxMaterial(shader);
-            material->setTexture("tex", new brl::GfxTexture2d("textures/YellowBuildings/Tower.png"));
+            material->setTexture("tex", brl::GfxTexture2d::loadTexture("textures/YellowBuildings/Tower.png"));
 
             auto renderer = new brl::GfxMeshRenderer();
             renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
@@ -81,7 +87,8 @@ int main(int argc, const char* argv[])
         {
             auto material = new brl::GfxMaterial(anim_shader);
             material->setTexture(
-                "tex", brl::GfxSprite::extractSpritesToArray(new brl::GfxTexture2d("textures/Trees/Tree1.png"), 192,
+                "tex", brl::GfxSprite::extractSpritesToArray(brl::GfxTexture2d::loadTexture("textures/Trees/Tree1.png"),
+                                                             192,
                                                              256));
 
             auto renderer = new brl::GfxMeshRenderer();
@@ -101,7 +108,8 @@ int main(int argc, const char* argv[])
         {
             auto material = new brl::GfxMaterial(anim_shader);
             material->setTexture(
-                "tex", brl::GfxSprite::extractSpritesToArray(new brl::GfxTexture2d("textures/Trees/Tree2.png"), 192,
+                "tex", brl::GfxSprite::extractSpritesToArray(brl::GfxTexture2d::loadTexture("textures/Trees/Tree2.png"),
+                                                             192,
                                                              256));
 
             auto renderer = new brl::GfxMeshRenderer();
@@ -117,6 +125,14 @@ int main(int argc, const char* argv[])
             auto mapObject = new MapObject(renderer);
             mapObject->localPosition = {5, (renderer->localScale.y / 2) + 1, 5};
         }
+
+        {
+            auto tower = brl::GfxModel("models/tower/tower.glb");
+            auto towerEntity = tower.createEntity();
+            towerEntity->localPosition = {5, 0, -10};
+            towerEntity->setEulerAngles({0, 180, 0});
+            towerEntity->localScale = glm::vec3(1.25f);
+        }
     }
 
 
@@ -124,7 +140,7 @@ int main(int argc, const char* argv[])
 
 
     auto enemy = new EnemyController();
-    enemy->localPosition = {0, 0, -5};
+    enemy->localPosition = {0, 0, -10};
 
 
     while (engine.isRunning())
@@ -135,11 +151,11 @@ int main(int argc, const char* argv[])
         enemy->update();
 
         camera->localPosition = mix(camera->localPosition, player->position() + glm::vec3{0, 5, 5},
-                                    engine.getDeltaTime() * 7.5f);
+                                    engine.getDeltaTime() * 10.f);
         glm::quat rotPrev = camera->localRotation;
         camera->lookAt(player->position());
         camera->localRotation = lerp(rotPrev, camera->localRotation,
-                                     glm::clamp(engine.getDeltaTime() * 7.5f, 0.f, 1.f));
+                                     glm::clamp(engine.getDeltaTime() * 10.f, 0.f, 1.f));
 
         //camera->type = brl::ORTHOGRAPHIC;
 

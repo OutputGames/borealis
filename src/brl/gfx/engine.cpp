@@ -1,3 +1,5 @@
+#include <thread>
+
 #include "borealis/gfx/gfx.hpp"
 #include "borealis/util/input.hpp"
 
@@ -67,12 +69,14 @@ void brl::GfxEngine::initialize()
         return;
 
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+
+    glfwWindowHint(GLFW_SAMPLES, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    mainWindow = new GfxWindow(800, 600, "untitled cp1 game");
+    mainWindow = new GfxWindow(640, 360, "untitled cp1 game");
     glfwMakeContextCurrent(static_cast<GLFWwindow*>(mainWindow->window));
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -85,6 +89,9 @@ void brl::GfxEngine::initialize()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glDisable(GL_MULTISAMPLE);
+
 
     //glEnable(GL_CULL_FACE);
 
@@ -176,8 +183,23 @@ void brl::GfxEngine::initialize()
 
 }
 
+auto start_time = std::chrono::high_resolution_clock::now();
+
 void brl::GfxEngine::update()
 {
+
+    /*
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> frame_time = end_time - start_time;
+
+    double target_frame_time_ms = 1000.0 / 60.f; // e.g., 60.0 for 60 FPS
+
+    if (frame_time.count() < target_frame_time_ms)
+    {
+        std::this_thread::sleep_for(
+            std::chrono::duration<double, std::milli>(target_frame_time_ms - frame_time.count()));
+    }
+    */
 
     GfxCamera::mainCamera->draw(calls);
 
@@ -210,6 +232,8 @@ void brl::GfxEngine::update()
         }
     }
 
+    start_time = std::chrono::high_resolution_clock::now();
+
 }
 
 void brl::GfxEngine::insertCall(const GfxDrawCall& call)
@@ -233,6 +257,7 @@ void brl::GfxWindow::clear()
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
+    glViewport(0, 0, width, height);
 }
 
 void brl::GfxEngine::shutdown() { glfwTerminate(); }

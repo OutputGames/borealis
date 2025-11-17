@@ -55,7 +55,8 @@ namespace brl
         float maxLimit = 100.f;
 
 
-            GfxCameraType type = PERSPECTIVE;
+        GfxCameraType type = PERSPECTIVE;
+        GfxFramebuffer* targetFramebuffer;
 
     private:
         GfxCamera* gfxCamera = new GfxCamera;

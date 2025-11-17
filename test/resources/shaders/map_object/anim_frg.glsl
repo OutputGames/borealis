@@ -18,7 +18,7 @@ void main()
    if (color.a < 0.1)
       discard;
 
-   vec3 final = color.rgb * d;
+   vec3 final = color.rgb;
 
    FragColor = vec4(final, color.a);
 }

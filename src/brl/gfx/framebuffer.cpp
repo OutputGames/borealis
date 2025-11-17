@@ -71,8 +71,9 @@ brl::GfxFramebuffer::GfxFramebuffer(int width, int height, GfxFramebufferAttachm
             glTexImage2D(GL_TEXTURE_2D, 0, this->attachments[i]->internalFormat, width, height, 0,
                          this->attachments[i]->format,
                          this->attachments[i]->type, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
@@ -80,10 +81,9 @@ brl::GfxFramebuffer::GfxFramebuffer(int width, int height, GfxFramebufferAttachm
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, this->attachments[i]->id, 0);
     }
 
-    unsigned int rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -92,6 +92,7 @@ brl::GfxFramebuffer::GfxFramebuffer(int width, int height, GfxFramebufferAttachm
 void brl::GfxFramebuffer::use()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, id);
+    glViewport(0, 0, width, height);
 }
 
 void brl::GfxFramebuffer::clear()
@@ -99,6 +100,12 @@ void brl::GfxFramebuffer::clear()
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+}
+
+brl::GfxFramebuffer::~GfxFramebuffer()
+{
+    glDeleteRenderbuffers(1, &rbo);
+    glDeleteFramebuffers(1, &id);
 }
 
 brl::GfxFramebufferAttachment* brl::GfxFramebuffer::getAttachment(int i)

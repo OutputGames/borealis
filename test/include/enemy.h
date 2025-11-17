@@ -13,6 +13,7 @@ struct EnemyController : ActorBehaviour
     EnemyController();
     void update() override;
     void handleAttack(glm::vec3 dir, float power) override;
+    void onDestroy() override;
 
     static std::vector<EnemyController*> cachedEnemies;
 
@@ -21,6 +22,8 @@ struct EnemyController : ActorBehaviour
 private:
     brl::GfxMaterial* material = nullptr;
     brl::GfxMeshRenderer* renderer;
+
+    HealthBarBehavior* healthBar;
 
     brl::GfxTexture2dArray *idleSprites, *walkSprites, *attackSprites, *guardSprites;
 

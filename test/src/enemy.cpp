@@ -11,10 +11,10 @@ EnemyController::EnemyController()
 {
     cachedEnemies.push_back(this);
 
-    auto texture = new brl::GfxTexture2d("textures/Units/Black Units/Warrior/Warrior_Idle.png");
-    auto walkTexture = new brl::GfxTexture2d("textures/Units/Black Units/Warrior/Warrior_Run.png");
-    auto attackTexture = new brl::GfxTexture2d("textures/Units/Black Units/Warrior/Warrior_Attack1.png");
-    auto guardTexture = new brl::GfxTexture2d("textures/Units/Black Units/Warrior/Warrior_Guard.png");
+    auto texture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Idle.png");
+    auto walkTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Run.png");
+    auto attackTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Attack1.png");
+    auto guardTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Guard.png");
     idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192);
     walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192);
     attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192);
@@ -40,16 +40,26 @@ EnemyController::EnemyController()
     renderer->localPosition = {0, 1.f, 0};
     renderer->localScale = glm::vec3(2.5f);
     renderer->setParent(this);
+
+    healthBar = new HealthBarBehavior;
+    healthBar->localPosition = {0, 2.5f, 0};
+    healthBar->setParent(this);
+
+
 }
 
 void EnemyController::update()
 {
     ActorBehaviour::update();
 
+
+    float deltaTime = brl::GfxEngine::instance->getDeltaTime();
+
+    healthBar->health = glm::mix(healthBar->health, health, deltaTime * 7.5f);
+
     if (!isAlive)
         return;
 
-    float deltaTime = brl::GfxEngine::instance->getDeltaTime();
 
     auto entityPosition = glm::vec3(0);
     float entityDistance = 0;
@@ -158,7 +168,17 @@ void EnemyController::handleAttack(glm::vec3 dir, float power)
     //brl::UtilCoroutine::startCoroutine([this, dir] { return AttackCoroutine(dir, 7.5f); });
 }
 
-void EnemyController::onDeath() {
+void EnemyController::onDestroy()
+{
+    ActorBehaviour::onDestroy();
+
+    auto enemy = new EnemyController();
+    enemy->localPosition = {0, 0, -10};
+
+}
+
+void EnemyController::onDeath()
+{
     ActorBehaviour::onDeath();
 
     brl::GfxEngine::instance->active_coroutines.push_back(DeathCoroutine());
@@ -190,21 +210,23 @@ brl::UtilCoroutine EnemyController::AttackCoroutine(glm::vec3 dir, float power)
     health -= power / 100.0f;
 }
 
-brl::UtilCoroutine EnemyController::DeathCoroutine() {
-    co_yield 2.0f;
+brl::UtilCoroutine EnemyController::DeathCoroutine()
+{
+    glm::vec3 startScale = renderer->localScale;
+    glm::vec3 startPos = renderer->localPosition;
 
-    float distance = glm::distance(localScale, glm::vec3(0.1));
-
-    glm::vec3 start = localPosition;
-
-    float timeToReach = distance / 5.f;
+    float timeToReach = 0.5f;
     float t = 0;
-    while (t < timeToReach) {
-        localScale = glm::mix(start,glm::vec3(0.1), t/timeToReach);
+    while (t < timeToReach)
+    {
+        renderer->localScale = mix(startScale, glm::vec3(0.1f), t / timeToReach);
+        renderer->localPosition = mix(startPos, glm::vec3(0), t / timeToReach);
 
         t += brl::GfxEngine::instance->getDeltaTime();
 
         co_yield brl::GfxEngine::instance->getDeltaTime();
     }
+
+    destroy();
 
 }

@@ -120,7 +120,7 @@ project "borealis-test"
         "glfw3",
         "opengl32",
         "gdi32",
-        --"assimp"
+        "assimp"
     }
 
     filter { "_ACTION:gmake" }
@@ -128,7 +128,10 @@ project "borealis-test"
             prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/" }
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
-            prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/" }
+            prebuildcommands { 
+                "premake5 vs2022",
+                ".\\tools\\out\\resource_packer.exe test/resources/ out/"
+            }
 
 
     filter "configurations:Debug"

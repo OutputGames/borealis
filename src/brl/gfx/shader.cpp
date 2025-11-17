@@ -1,5 +1,6 @@
 #include "borealis/gfx/gfx.hpp"
 
+
 brl::GfxShader::GfxShader(GLenum type, std::string data)
 {
     this->type = type;
@@ -57,13 +58,30 @@ brl::GfxShaderProgram* brl::GfxShaderProgram::GetDefaultShader()
             "in vec3 pos;\n"
             "uniform vec3 color;\n"
             "uniform sampler2D tex;\n"
+            "uniform sampler2D norm;\n"
+            "vec3 getNormalFromMap()\n"
+            "{\n"
+            "    vec3 tangentNormal = texture(norm, texCoords).xyz * 2.0 - 1.0;\n"
+            "\n"
+            "    vec3 Q1  = dFdx(pos);\n"
+            "    vec3 Q2  = dFdy(pos);\n"
+            "    vec2 st1 = dFdx(texCoords);\n"
+            "    vec2 st2 = dFdy(texCoords);\n"
+            "\n"
+            "    vec3 N   = normalize(normal);\n"
+            "    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);\n"
+            "    vec3 B  = -normalize(cross(N, T));\n"
+            "    mat3 TBN = mat3(T, B, N);\n"
+            "\n"
+            "    return normalize(TBN * tangentNormal);\n"
+            "}"
             "void main()\n"
             "{\n"
             "   FragColor = vec4(texture(tex, texCoords));\n"
-            "   vec3 norm = normalize(normal);\n"
-            "   vec3 lightDir = normalize(vec3(0,10,-5) - pos);\n "
+            "   vec3 norm = getNormalFromMap();\n"
+            "   vec3 lightDir = -normalize(vec3(1,-1,-1));\n "
             "   float d =max(dot(norm, lightDir), 0.0) + 0.25f;\n"
-            "   FragColor = vec4(d*texture(tex,texCoords).rgb,1.0);\n"
+            "   FragColor = vec4(texture(tex,texCoords).rgb,1.0);\n"
             "}\n\0";
 
         shaderBins[0] = new GfxShader(GL_VERTEX_SHADER, vertexShaderSource);
@@ -180,6 +198,11 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
 
 }
 
+brl::GfxShaderProgram::~GfxShaderProgram()
+{
+    glDeleteProgram(id);
+}
+
 void brl::GfxShaderProgram::use()
 {
     glUseProgram(id);
@@ -223,7 +246,15 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
                 break;
             case GL_SAMPLER_2D:
                 glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex(_override.first->name));
-                glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
+                if (_override.second.txValue)
+                {
+                    glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
+                }
+                else
+                {
+                    glBindTexture(GL_TEXTURE_2D, GfxTexture2d::getWhiteTexture()->id);
+
+                }
                 break;
             case GL_SAMPLER_2D_ARRAY:
             {
