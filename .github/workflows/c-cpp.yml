@@ -12,9 +12,6 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
     - name: premake
       run: ./premake.exe gmake
     - name: make
