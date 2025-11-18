@@ -44,6 +44,8 @@ namespace brl
 
         static GfxTexture2d* getWhiteTexture();
 
+        ~GfxTexture2d();
+
     private:
 
         

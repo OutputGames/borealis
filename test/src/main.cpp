@@ -28,7 +28,7 @@ int main(int argc, const char* argv[])
     //camera->type = brl::ORTHOGRAPHIC;
 
     auto tilemapTexture = brl::GfxTexture2d::loadTexture("textures/Tilemap_color1.png");
-    auto tilemapSprites = brl::GfxSprite::extractSpritesToArray(tilemapTexture, 64, 64);
+    auto tilemapSprites = brl::GfxSprite::extractSpritesToArray(tilemapTexture, 64, 64, true);
 
     /*
     {
@@ -90,7 +90,7 @@ int main(int argc, const char* argv[])
             material->setTexture(
                 "tex", brl::GfxSprite::extractSpritesToArray(brl::GfxTexture2d::loadTexture("textures/Trees/Tree1.png"),
                                                              192,
-                                                             256));
+                                                             256, true));
 
             auto renderer = new brl::GfxMeshRenderer();
             renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
@@ -111,7 +111,7 @@ int main(int argc, const char* argv[])
             material->setTexture(
                 "tex", brl::GfxSprite::extractSpritesToArray(brl::GfxTexture2d::loadTexture("textures/Trees/Tree2.png"),
                                                              192,
-                                                             256));
+                                                             256, true));
 
             auto renderer = new brl::GfxMeshRenderer();
             renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);

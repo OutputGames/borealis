@@ -20,10 +20,10 @@ PlayerController::PlayerController()
     auto walkTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Run.png");
     auto attackTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Attack1.png");
     auto guardTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Guard.png");
-    idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192);
-    walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192);
-    attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192);
-    guardSprites = brl::GfxSprite::extractSpritesToArray(guardTexture, 192, 192);
+    idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192, false);
+    walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192, false);
+    attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192, false);
+    guardSprites = brl::GfxSprite::extractSpritesToArray(guardTexture, 192, 192, false);
 
     auto shaderBins = new brl::GfxShader*[2];
 

@@ -5,7 +5,7 @@ brl::GfxSprite::GfxSprite()
 
 }
 
-brl::GfxTexture2d** brl::GfxSprite::extractSpritesToTextures(GfxTexture2d* tex, int spriteWidth, int spriteHeight)
+brl::GfxTexture2d** brl::GfxSprite::extractSpritesToTextures(GfxTexture2d* tex, int spriteWidth, int spriteHeight, bool deleteTexture)
 {
     int spriteCountX = tex->width / spriteWidth;
     int spriteCountY = tex->height / spriteHeight;
@@ -28,7 +28,7 @@ brl::GfxTexture2d** brl::GfxSprite::extractSpritesToTextures(GfxTexture2d* tex, 
                 int srcOffset = srcY * tex->width + srcX;
                 int dstOffset = row * spriteWidth;
 
-                // Copy the row’s pixels
+                // Copy the rowï¿½s pixels
                 memcpy(&spritePixels[dstOffset], &tex->pixels[srcOffset], spriteWidth * sizeof(Color32));
             }
 
@@ -37,12 +37,13 @@ brl::GfxTexture2d** brl::GfxSprite::extractSpritesToTextures(GfxTexture2d* tex, 
         }
     }
 
-    delete[] tex->pixels;
+    if (deleteTexture)
+        delete tex;
 
     return textures;
 }
 
-brl::GfxTexture2dArray* brl::GfxSprite::extractSpritesToArray(GfxTexture2d* tex, int spriteWidth, int spriteHeight)
+brl::GfxTexture2dArray* brl::GfxSprite::extractSpritesToArray(GfxTexture2d* tex, int spriteWidth, int spriteHeight, bool deleteTextures)
 {
     int spriteCountX = tex->width / spriteWidth;
     int spriteCountY = tex->height / spriteHeight;
@@ -76,7 +77,8 @@ brl::GfxTexture2dArray* brl::GfxSprite::extractSpritesToArray(GfxTexture2d* tex,
     }
     auto array = new GfxTexture2dArray(spritePixels, spriteWidth, spriteHeight, totalSprites);
 
-    delete[] tex->pixels;
+    if (deleteTextures)
+        delete tex;
 
     return array;
 }
