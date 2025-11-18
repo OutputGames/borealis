@@ -7,15 +7,26 @@
 #include "borealis/gfx/sprite.hpp"
 #include "borealis/util/input.hpp"
 
-struct MapObject : brl::EcsEntity {
+struct MapObject : brl::EcsEntity
+{
 
     MapObject(brl::GfxMeshRenderer* renderer);
 
-    void update();
+    void update() override;
 
 private:
-
     brl::GfxMeshRenderer* renderer;
+
+};
+
+struct MapController : brl::EcsEntity
+{
+
+    MapController() = default;
+
+    void loadMap();
+
+    void update() override;
 
 };
 

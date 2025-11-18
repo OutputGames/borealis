@@ -8,6 +8,8 @@
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
 
+std::map<std::string, brl::GfxModel*> cachedModels;
+
 brl::GfxMesh* brl::GfxMesh::GetPrimitive(GfxPrimitiveType type)
 {
     switch (type)
@@ -77,6 +79,7 @@ brl::GfxMaterial* brl::GfxMaterialDescription::createMaterial(GfxShaderProgram* 
 
 brl::GfxModel::GfxModel(std::string path)
 {
+    cachedModels.insert_or_assign(path, this);
 
     IoFile file = readFileBinary(path);
 
@@ -135,7 +138,7 @@ brl::GfxModel::GfxModel(std::string path)
 
                 vtx.position = {positions[h * 3 + 0], positions[h * 3 + 1], positions[h * 3 + 2]};
                 vtx.normal = {normals[h * 3 + 0], normals[h * 3 + 1], normals[h * 3 + 2]};
-                vtx.uv = {tx0s[h * 2 + 0], tx0s[h * 2 + 1]};
+                vtx.uv = {tx0s[h * 2 + 0], 1.0 - tx0s[h * 2 + 1]};
                 vertices.push_back(vtx);
             }
 
@@ -237,10 +240,6 @@ brl::GfxModel::GfxModel(std::string path)
             desc->baseColorValue = {val[0], val[1], val[2], val[3]};
         }
 
-        //desc->deriveColor(aiMaterial, AI_MATKEY_BASE_COLOR);
-        //desc->deriveTexture(aiMaterial, aiTextureType_DIFFUSE, scene);
-        //desc->deriveTexture(aiMaterial, aiTextureType_NORMALS, scene);
-
         materials.push_back(desc);
     }
 
@@ -253,6 +252,14 @@ brl::GfxModel::GfxModel(std::string path)
     {
         rootNode->children[i] = processNode(model.nodes[model.scenes[0].nodes[i]], model);
     }
+}
+
+brl::GfxModel* brl::GfxModel::loadModel(std::string path)
+{
+    if (cachedModels.contains(path))
+        return cachedModels[path];
+
+    return new GfxModel(path);
 }
 
 brl::EcsEntity* brl::GfxModel::createEntity()

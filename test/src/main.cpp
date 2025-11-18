@@ -30,7 +30,7 @@ int main(int argc, const char* argv[])
     auto tilemapTexture = brl::GfxTexture2d::loadTexture("textures/Tilemap_color1.png");
     auto tilemapSprites = brl::GfxSprite::extractSpritesToArray(tilemapTexture, 64, 64);
 
-
+    /*
     {
         auto shaderBins = new brl::GfxShader*[2];
 
@@ -52,6 +52,7 @@ int main(int argc, const char* argv[])
         floorRenderer->localScale = glm::vec3(15.0f);
         floorRenderer->localPosition = {0, 0, -5.f};
     }
+    */
 
     {
         auto shaderBins = new brl::GfxShader*[2];
@@ -127,13 +128,18 @@ int main(int argc, const char* argv[])
         }
 
         {
-            auto tower = brl::GfxModel("models/tower/tower.glb");
-            auto towerEntity = tower.createEntity();
+            auto tower = brl::GfxModel::loadModel("models/tower/tower.glb");
+            auto towerEntity = tower->createEntity();
             towerEntity->localPosition = {5, 0, -10};
-            towerEntity->setEulerAngles({0, 180, 0});
+            towerEntity->setEulerAngles({0, 0, 0});
             towerEntity->localScale = glm::vec3(1.25f);
         }
+
+
     }
+
+    auto map = new MapController();
+    map->loadMap();
 
 
     auto player = new PlayerController();

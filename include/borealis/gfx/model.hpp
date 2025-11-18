@@ -84,11 +84,13 @@ friend GfxMeshRenderer;
         std::vector<GfxMesh*> meshes;
         std::vector<GfxTexture2d*> textures;
         std::vector<GfxMaterialDescription*> materials;
-        
-        GfxModel(std::string path);
+
+        static GfxModel* loadModel(std::string path);
+
         EcsEntity* createEntity();
 
     private:
+        GfxModel(std::string path);
         GfxModelNode* rootNode;
 
         GfxModelNode* processNode(tinygltf::Node node, tinygltf::Model scene);
