@@ -108,6 +108,8 @@ brl::GfxTexture2d::GfxTexture2d(Color32* pixels, int width, int height)
     GLenum internalFormat = GL_RGBA;
 
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
+
+    delete[] pixels;
 }
 
 brl::GfxTexture2d* brl::GfxTexture2d::getWhiteTexture()
@@ -156,4 +158,6 @@ brl::GfxTexture2dArray::GfxTexture2dArray(Color32* pixels, int width, int height
 
     // Upload the pixel data
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, format, GL_UNSIGNED_BYTE, pixels);
+
+    delete[] pixels;
 }

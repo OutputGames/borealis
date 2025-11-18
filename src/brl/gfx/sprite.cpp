@@ -37,6 +37,8 @@ brl::GfxTexture2d** brl::GfxSprite::extractSpritesToTextures(GfxTexture2d* tex, 
         }
     }
 
+    delete[] tex->pixels;
+
     return textures;
 }
 
@@ -72,5 +74,9 @@ brl::GfxTexture2dArray* brl::GfxSprite::extractSpritesToArray(GfxTexture2d* tex,
             spriteIndex++;
         }
     }
-    return new GfxTexture2dArray(spritePixels, spriteWidth, spriteHeight, totalSprites);
+    auto array = new GfxTexture2dArray(spritePixels, spriteWidth, spriteHeight, totalSprites);
+
+    delete[] tex->pixels;
+
+    return array;
 }
