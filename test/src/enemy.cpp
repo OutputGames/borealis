@@ -35,8 +35,8 @@ EnemyController::EnemyController()
     material->setTexture("guardSprite", guardSprites);
 
     renderer = new brl::GfxMeshRenderer();
-    renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
-    renderer->material = material;
+    renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
+    renderer->setMaterial(material);
     renderer->localPosition = {0, 1.f, 0};
     renderer->localScale = glm::vec3(2.5f);
     renderer->setParent(this);

@@ -176,7 +176,7 @@ void brl::GfxEngine::initialize()
         attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), (void*)(3 * sizeof(float))});
         attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
 
-        quadBuffer = attribBuffer;
+        quadMesh = new GfxMesh(attribBuffer);
     }
 
     InputMgr::init(static_cast<GLFWwindow*>(mainWindow->window));

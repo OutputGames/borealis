@@ -38,8 +38,8 @@ HealthBarBehavior::HealthBarBehavior()
     material->setTexture("tex", texture);
 
     renderer = new brl::GfxMeshRenderer();
-    renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
-    renderer->material = material;
+    renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
+    renderer->setMaterial(material);
     renderer->localPosition = {0, 0.f, 0};
 
     renderer->localScale = glm::vec3(0.25f);

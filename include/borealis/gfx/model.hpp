@@ -8,9 +8,12 @@
 #include "texture.hpp"
 #include "borealis/ecs/entity.hpp"
 
-struct aiMaterial;
-struct aiScene;
-struct aiNode;
+namespace tinygltf
+{
+    class Model;
+    struct Material;
+    class Node;
+}
 
 namespace brl
 {
@@ -24,25 +27,36 @@ namespace brl
         glm::vec2 uv;
     };
 
+    struct GfxSubMesh
+    {
+        GfxAttribBuffer* buffer;
+        int materialIndex;
+    };
+
     struct GfxMesh {
         std::string name;
-        int materialIndex;
+        static GfxMesh* GetPrimitive(GfxPrimitiveType type);
+
+        GfxMesh() = default;
+        GfxMesh(GfxAttribBuffer* buffer);
+
     private:
         friend GfxModel;
         friend GfxModelNode;
-        GfxAttribBuffer* buffer;
+friend GfxMeshRenderer;
+        GfxSubMesh** subMeshes;
+        int subMeshCount;
     };
 
     struct GfxModelNode {
         std::string name;
-        glm::vec3 position;
-        glm::quat rotation;
-        glm::vec3 scale;
+        glm::vec3 position = glm::vec3(0);
+        glm::quat rotation = glm::quat(); 
+        glm::vec3 scale = glm::vec3(1);
 
-        unsigned int* meshIndices;
+        int mesh;
         GfxModelNode** children;
 
-        int meshCount;
         int childCount;
 
         EcsEntity* createEntity();
@@ -54,34 +68,16 @@ namespace brl
 
     struct GfxMaterialDescription
     {
-        struct GfxMaterialKey
-        {
-            std::string id;
-            unsigned int type;
-            unsigned int idx;
-
-            bool operator<(const GfxMaterialKey& other) const
-            {
-                if (id != other.id)
-                    return id < other.id;
-                if (type != other.type)
-                    return type < other.type;
-                return idx < other.idx;
-            }
-        };
 
         std::string name;
 
-        std::map<GfxMaterialKey, glm::vec3> color_uniforms;
-        std::map<unsigned, GfxTexture2d*> texture_uniforms;
+        GfxTexture2d* baseColorTexture = nullptr;
+        glm::vec4 baseColorValue;
 
         GfxMaterial* createMaterial(GfxShaderProgram* shader);
 
     private:
         friend GfxModel;
-
-        void deriveColor(aiMaterial* material, std::string str, unsigned type, unsigned idx);
-        void deriveTexture(aiMaterial* material, unsigned type, const aiScene* scn=nullptr);
     };
 
     struct GfxModel {
@@ -95,13 +91,24 @@ namespace brl
     private:
         GfxModelNode* rootNode;
 
-        GfxModelNode* processNode(aiNode* node, const aiScene* scene);
+        GfxModelNode* processNode(tinygltf::Node node, tinygltf::Model scene);
     };
 
     struct GfxMeshRenderer : EcsEntity
     {
-        GfxAttribBuffer* mesh;
-        GfxMaterial* material;
+        GfxMesh* mesh = nullptr;
+
+        GfxMeshRenderer();
+
+        std::vector<GfxMaterial*> materials;
+
+        GfxMaterial* material() { return materials[0]; }
+        void setMaterial(GfxMaterial* material)
+        {
+            materials[0] = material;
+        }
+
+
         void lateUpdate() override;
     };
 

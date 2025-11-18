@@ -56,7 +56,7 @@ brl::GfxShaderProgram* brl::GfxShaderProgram::GetDefaultShader()
             "in vec2 texCoords;\n"
             "in vec3 normal;\n"
             "in vec3 pos;\n"
-            "uniform vec3 color;\n"
+            "uniform vec4 color;\n"
             "uniform sampler2D tex;\n"
             "uniform sampler2D norm;\n"
             "vec3 getNormalFromMap()\n"

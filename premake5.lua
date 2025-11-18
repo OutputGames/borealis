@@ -9,7 +9,7 @@ project "borealis"
     cppdialect "C++20"
     targetdir "lib"
     objdir "build"
-    dependson "glad"
+    dependson {"glad", "tinygltf"}
 
     files {
         "src/**.cpp",
@@ -24,11 +24,12 @@ project "borealis"
         "ext/glm",
         "ext/stb/include",
         "ext/glfw/include",
-        "ext/assimp/include"
+        "ext/assimp/include",
+        "ext/tinygltf",
     }
 
     libdirs {
-        "ext/glad/lib"
+        "ext/glad/lib",
     }
 
     filter { "_ACTION:gmake" }
@@ -41,7 +42,6 @@ project "borealis"
         "glfw3",
         "opengl32",
         "gdi32",
-        --"assimp"
     }
 
     filter "configurations:Debug"
@@ -106,12 +106,12 @@ project "borealis-test"
         "ext/glad/include",
         "ext/glm",
         "ext/stb/include",
-        "ext/glfw/include"
+        "ext/glfw/include",
     }
 
     libdirs {
         "../lib/",
-        "ext/glad/lib"
+        "ext/glad/lib",
     }
 
     links {
@@ -120,7 +120,6 @@ project "borealis-test"
         "glfw3",
         "opengl32",
         "gdi32",
-        "assimp"
     }
 
     filter { "_ACTION:gmake" }

@@ -7,6 +7,11 @@
 
 namespace brl
 {
+    struct GfxMesh;
+}
+
+namespace brl
+{
     struct GfxDrawCall;
     struct GfxAttribBuffer;
     struct GfxMaterial;
@@ -58,6 +63,7 @@ namespace brl
 
     private:
         friend GfxAttribBuffer;
+        friend GfxMesh;
         friend UtilCoroutine;
 
         bool initialized = false;
@@ -68,7 +74,7 @@ namespace brl
         int frameCount = 0;
         double lastFrameTime = 0, deltaTime = 0;
 
-        GfxAttribBuffer* quadBuffer;
+        GfxMesh* quadMesh;
 
     };
 

@@ -46,8 +46,8 @@ int main(int argc, const char* argv[])
         floorMaterial->setTexture("tex", tilemapSprites);
 
         auto floorRenderer = new brl::GfxMeshRenderer();
-        floorRenderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
-        floorRenderer->material = floorMaterial;
+        floorRenderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
+        floorRenderer->setMaterial(floorMaterial);
         floorRenderer->setEulerAngles({-90, 0, 0});
         floorRenderer->localScale = glm::vec3(15.0f);
         floorRenderer->localPosition = {0, 0, -5.f};
@@ -92,8 +92,8 @@ int main(int argc, const char* argv[])
                                                              256));
 
             auto renderer = new brl::GfxMeshRenderer();
-            renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
-            renderer->material = material;
+            renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
+            renderer->setMaterial(material);
             renderer->setEulerAngles({-90, 0, 0});
             renderer->localScale = glm::vec3(2.5f);
 
@@ -113,8 +113,8 @@ int main(int argc, const char* argv[])
                                                              256));
 
             auto renderer = new brl::GfxMeshRenderer();
-            renderer->mesh = brl::GfxAttribBuffer::GetPrimitive(brl::QUAD);
-            renderer->material = material;
+            renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
+            renderer->setMaterial(material);
             renderer->setEulerAngles({-90, 0, 0});
             renderer->localScale = glm::vec3(2.5f);
 

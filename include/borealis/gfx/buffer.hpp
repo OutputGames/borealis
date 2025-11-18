@@ -69,8 +69,6 @@ namespace brl
 
         int getSize();
 
-        static GfxAttribBuffer* GetPrimitive(GfxPrimitiveType type);
-
     private:
         friend GfxMaterial;
         GfxBuffer* vbo = nullptr, *ebo = nullptr;

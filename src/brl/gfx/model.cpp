@@ -1,14 +1,29 @@
 #include "borealis/gfx/model.hpp"
 
-
-#include <stb_image.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
+#define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NO_EXTERNAL_IMAGE
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#include <tiny_gltf.h>
 
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
+
+brl::GfxMesh* brl::GfxMesh::GetPrimitive(GfxPrimitiveType type)
+{
+    switch (type)
+    {
+        case QUAD:
+            return GfxEngine::instance->quadMesh;
+            break;
+    }
+    return nullptr;
+}
+
+brl::GfxMesh::GfxMesh(GfxAttribBuffer* buffer)
+{
+    subMeshes = new GfxSubMesh*{new GfxSubMesh{buffer, 0}};
+    subMeshCount = 1;
+}
 
 brl::EcsEntity* brl::GfxModelNode::createEntity()
 {
@@ -25,15 +40,22 @@ brl::EcsEntity* brl::GfxModelNode::createEntity()
         e->setParent(entity);
     }
 
-    for (int i = 0; i < meshCount; ++i)
+    if (mesh > -1)
     {
-        GfxMesh* mesh = model->meshes[meshIndices[i]];
+        GfxMesh* mesh = model->meshes[this->mesh];
 
         auto renderer = new GfxMeshRenderer();
         renderer->name = mesh->name;
-        renderer->mesh = mesh->buffer;
-        renderer->material = model->materials[mesh->materialIndex]->
-            createMaterial(GfxShaderProgram::GetDefaultShader());
+        renderer->mesh = mesh;
+
+        renderer->materials.clear();
+        for (int i = 0; i < mesh->subMeshCount; ++i)
+        {
+            auto subMesh = mesh->subMeshes[i];
+            renderer->materials.push_back(
+                model->materials[subMesh->materialIndex]->createMaterial(GfxShaderProgram::GetDefaultShader()));
+        }
+
         renderer->setParent(entity);
     }
 
@@ -44,203 +66,193 @@ brl::GfxMaterial* brl::GfxMaterialDescription::createMaterial(GfxShaderProgram* 
 {
     auto material = new GfxMaterial(shader);
 
-    material->setVec3("color", color_uniforms[{AI_MATKEY_BASE_COLOR}]);
-    material->setTexture("tex", texture_uniforms[aiTextureType_DIFFUSE]);
-    material->setTexture("nrm", texture_uniforms[aiTextureType_NORMALS]);
+
+    material->setVec4("color", baseColorValue);
+    material->setTexture("tex", baseColorTexture);
+
 
     return material;
 }
 
-void brl::GfxMaterialDescription::deriveColor(aiMaterial* material, std::string id, unsigned type, unsigned idx)
-{
-    aiColor3D v;
-
-    material->Get(id.c_str(), type, idx, v);
-
-
-    auto key = GfxMaterialKey{id, type, idx};
-
-    color_uniforms.insert_or_assign(key, glm::vec3{v.r, v.g, v.b});
-
-}
-
-void brl::GfxMaterialDescription::deriveTexture(aiMaterial* material, unsigned type, const aiScene* scene)
-{
-    aiString path;
-
-    material->GetTexture(static_cast<aiTextureType>(type), 0, &path);
-
-    auto tex = scene->GetEmbeddedTexture(path.C_Str());
-
-    if (tex)
-    {
-        // add internal texture loading
-
-        int width, height, nrChannels;
-
-        unsigned char* data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(tex->pcData), tex->mWidth, &width,
-                                                    &height, &nrChannels, 4);
-        if (data)
-        {
-            GLenum format = GL_RGB;
-            GLenum internalFormat = GL_RGB8;
-
-            auto pcData = new Color32[width * height];
-
-
-            switch (nrChannels)
-            {
-                case 1:
-                    format = GL_R;
-                    internalFormat = GL_R8;
-                    break;
-                case 2:
-                    format = GL_RG;
-                    internalFormat = GL_RG8;
-                    break;
-                case 3:
-                    format = GL_RGBA;
-                    internalFormat = GL_RGBA;
-                    break;
-                case 4:
-                    format = GL_RGBA;
-                    internalFormat = GL_RGBA8;
-            }
-
-            for (int i = 0; i < width * height * 4; i += 4)
-            {
-
-                unsigned char r = data[i]; // Red component
-                unsigned char g = data[i + 1]; // Green component
-                unsigned char b = data[i + 2]; // Blue component
-                unsigned char a = data[i + 3]; // Alpha component
-                pcData[i / 4] = Color32{r, g, b, a};
-            }
-
-            texture_uniforms.insert_or_assign(type, new GfxTexture2d(pcData, width, height));
-
-        }
-        else
-        {
-            exit(-1);
-        }
-        stbi_image_free(data);
-
-
-    }
-    else
-    {
-        // add external texture loading
-    }
-}
 
 brl::GfxModel::GfxModel(std::string path)
 {
 
-    Assimp::Importer importer;
-
     IoFile file = readFileBinary(path);
 
-    const aiScene* scene = importer.ReadFileFromMemory(file.data, file.dataSize,
-                                                       aiProcess_Triangulate | aiProcess_FlipUVs |
-                                                       aiProcess_RemoveRedundantMaterials | aiProcess_GenUVCoords);
+    tinygltf::Model model;
+    tinygltf::TinyGLTF loader;
+    std::string err, warn;
 
-    if (!scene)
+    bool ret = loader.LoadBinaryFromMemory(&model, &err, &warn, file.data, file.dataSize, "");
+
+
+    if (!ret)
     {
-        std::cerr << importer.GetErrorString() << std::endl;
+        std::cerr << err << std::endl;
         exit(-1);
     }
-    for (int i = 0; i < scene->mNumMeshes; ++i)
+
+
+    for (int i = 0; i < model.meshes.size(); ++i)
     {
-        aiMesh* aMesh = scene->mMeshes[i];
+        tinygltf::Mesh tmesh = model.meshes[i];
 
-        std::vector<GfxVertex> vertices;
-
-        for (int j = 0; j < aMesh->mNumVertices; ++j)
-        {
-            GfxVertex vtx{};
-
-            {
-                aiVector3D v = aMesh->mVertices[j];
-                vtx.position = {v.x, v.y, v.z};
-            }
-
-            if (aMesh->HasNormals())
-            {
-                aiVector3D v = aMesh->mNormals[j];
-                vtx.normal = {v.x, v.y, v.z};
-            }
-
-            if (aMesh->HasTextureCoords(0))
-            {
-                aiVector3D v = aMesh->mTextureCoords[0][j];
-                vtx.uv = {v.x, 1.0 - v.y};
-            }
-
-
-            vertices.push_back(vtx);
-
-        }
-
-        std::vector<unsigned> indices;
-
-        for (unsigned int i = 0; i < aMesh->mNumFaces; i++)
-        {
-            aiFace face = aMesh->mFaces[i];
-            for (unsigned int j = 0; j < face.mNumIndices; j++)
-                indices.push_back(face.mIndices[j]);
-        }
 
         auto mesh = new GfxMesh;
-
-        auto attribBuffer = new GfxAttribBuffer();
-
-
-        attribBuffer->use();
-
-        auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
-        buffer->use();
-        buffer->updateData(GL_STATIC_DRAW, vertices.data(), sizeof(GfxVertex) * vertices.size());
-
-        auto elementBuffer = new GfxBuffer(GL_ELEMENT_ARRAY_BUFFER);
-        elementBuffer->use();
-        elementBuffer->updateData(GL_STATIC_DRAW, indices.data(), sizeof(unsigned) * indices.size());
+        mesh->subMeshCount = tmesh.primitives.size();
+        mesh->subMeshes = new GfxSubMesh*[mesh->subMeshCount];
 
 
-        attribBuffer->assignBuffer(buffer);
-        attribBuffer->assignElementBuffer(elementBuffer, GL_UNSIGNED_INT);
+        for (int j = 0; j < tmesh.primitives.size(); ++j)
+        {
+            auto prim = tmesh.primitives[j];
+            const tinygltf::Accessor& pos_accessor = model.accessors[prim.attributes["POSITION"]];
+            const tinygltf::Accessor& nrm_accessor = model.accessors[prim.attributes["NORMAL"]];
+            const tinygltf::Accessor& tx0_accessor = model.accessors[prim.attributes["TEXCOORD_0"]];
+
+            const tinygltf::BufferView& pos_bufferView = model.bufferViews[pos_accessor.bufferView];
+            const tinygltf::BufferView& nrm_bufferView = model.bufferViews[nrm_accessor.bufferView];
+            const tinygltf::BufferView& tx0_bufferView = model.bufferViews[tx0_accessor.bufferView];
+
+            const tinygltf::Buffer& pos_buffer = model.buffers[pos_bufferView.buffer];
+            const tinygltf::Buffer& nrm_buffer = model.buffers[nrm_bufferView.buffer];
+            const tinygltf::Buffer& tx0_buffer = model.buffers[tx0_bufferView.buffer];
+
+            auto positions = reinterpret_cast<const float*>(&pos_buffer.data[pos_bufferView.byteOffset + pos_accessor.
+                byteOffset]);
+            auto normals = reinterpret_cast<const float*>(&nrm_buffer.data[nrm_bufferView.byteOffset + nrm_accessor.
+                byteOffset]);
+            auto tx0s = reinterpret_cast<const float*>(&tx0_buffer.data[tx0_bufferView.byteOffset + tx0_accessor.
+                byteOffset]);
+
+            std::vector<GfxVertex> vertices;
+
+            for (size_t h = 0; h < pos_accessor.count; ++h)
+            {
+
+                GfxVertex vtx{};
+
+                vtx.position = {positions[h * 3 + 0], positions[h * 3 + 1], positions[h * 3 + 2]};
+                vtx.normal = {normals[h * 3 + 0], normals[h * 3 + 1], normals[h * 3 + 2]};
+                vtx.uv = {tx0s[h * 2 + 0], tx0s[h * 2 + 1]};
+                vertices.push_back(vtx);
+            }
+
+            std::vector<unsigned> indices;
+            if (prim.indices >= 0)
+            {
+                const tinygltf::Accessor& indexAccessor = model.accessors[prim.indices];
+                const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
+                const tinygltf::Buffer& indexBuffer = model.buffers[indexView.buffer];
+
+                const void* indexData = &indexBuffer.data[indexView.byteOffset + indexAccessor.byteOffset];
+
+                for (size_t i = 0; i < indexAccessor.count; i++)
+                {
+                    uint32_t index = 0;
+
+                    switch (indexAccessor.componentType)
+                    {
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                            index = static_cast<const uint16_t*>(indexData)[i];
+                            break;
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                            index = static_cast<const uint32_t*>(indexData)[i];
+                            break;
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                            index = static_cast<const uint8_t*>(indexData)[i];
+                            break;
+                    }
+
+                    indices.push_back(index);
+                }
+            }
+
+            auto attribBuffer = new GfxAttribBuffer();
 
 
-        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), static_cast<void*>(0)});
-        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), (void*)(3 * sizeof(float))});
-        attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
+            attribBuffer->use();
 
-        mesh->buffer = attribBuffer;
-        mesh->name = aMesh->mName.C_Str();
+            auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
+            buffer->use();
+            buffer->updateData(GL_STATIC_DRAW, vertices.data(), sizeof(GfxVertex) * vertices.size());
 
-        mesh->materialIndex = aMesh->mMaterialIndex;
+            auto elementBuffer = new GfxBuffer(GL_ELEMENT_ARRAY_BUFFER);
+            elementBuffer->use();
+            elementBuffer->updateData(GL_STATIC_DRAW, indices.data(), sizeof(unsigned) * indices.size());
+
+
+            attribBuffer->assignBuffer(buffer);
+            attribBuffer->assignElementBuffer(elementBuffer, GL_UNSIGNED_INT);
+
+
+            attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), static_cast<void*>(nullptr)});
+            attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), (void*)(3 * sizeof(float))});
+            attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
+
+            auto subMesh = new GfxSubMesh;
+            subMesh->buffer = attribBuffer;
+            subMesh->materialIndex = prim.material;
+
+            mesh->subMeshes[j] = subMesh;
+
+        }
+
+        mesh->name = tmesh.name;
+
 
         meshes.push_back(mesh);
-
     }
 
-    for (int i = 0; i < scene->mNumMaterials; ++i)
+    std::vector<GfxTexture2d*> textures;
+    for (auto texture : model.textures)
     {
-        aiMaterial* aiMaterial = scene->mMaterials[i];
+        auto image = model.images[texture.source];
+        auto sampler = model.samplers[texture.sampler];
 
-        std::string name = aiMaterial->GetName().C_Str();
+        auto pixels = new Color32[image.width * image.height];
+        for (int i = 0; i < image.image.size(); i += 4)
+        {
+            pixels[i / 4] = {image.image[i], image.image[i + 1], image.image[i + 2], image.image[i + 3]};
+        }
+
+        textures.push_back(new GfxTexture2d(pixels, image.width, image.height));
+    }
+
+    for (int i = 0; i < model.materials.size(); ++i)
+    {
+        tinygltf::Material aiMaterial = model.materials[i];
+
+        std::string name = aiMaterial.name;
 
         auto desc = new GfxMaterialDescription;
 
-        desc->deriveColor(aiMaterial, AI_MATKEY_BASE_COLOR);
-        desc->deriveTexture(aiMaterial, aiTextureType_DIFFUSE, scene);
-        desc->deriveTexture(aiMaterial, aiTextureType_NORMALS, scene);
+        if (aiMaterial.pbrMetallicRoughness.baseColorTexture.index > -1)
+            desc->baseColorTexture = textures[aiMaterial.pbrMetallicRoughness.baseColorTexture.index];
+
+
+        {
+            auto val = aiMaterial.pbrMetallicRoughness.baseColorFactor;
+            desc->baseColorValue = {val[0], val[1], val[2], val[3]};
+        }
+
+        //desc->deriveColor(aiMaterial, AI_MATKEY_BASE_COLOR);
+        //desc->deriveTexture(aiMaterial, aiTextureType_DIFFUSE, scene);
+        //desc->deriveTexture(aiMaterial, aiTextureType_NORMALS, scene);
 
         materials.push_back(desc);
     }
 
-    rootNode = processNode(scene->mRootNode, scene);
 
+    rootNode = new GfxModelNode;
+
+    rootNode->childCount = model.scenes[0].nodes.size();
+    rootNode->children = new GfxModelNode*[rootNode->childCount];
+    for (int i = 0; i < model.scenes[0].nodes.size(); ++i)
+    {
+        rootNode->children[i] = processNode(model.nodes[model.scenes[0].nodes[i]], model);
+    }
 }
 
 brl::EcsEntity* brl::GfxModel::createEntity()
@@ -249,44 +261,54 @@ brl::EcsEntity* brl::GfxModel::createEntity()
 }
 
 
-brl::GfxModelNode* brl::GfxModel::processNode(aiNode* aNode, const aiScene* scene)
+brl::GfxModelNode* brl::GfxModel::processNode(tinygltf::Node aNode, tinygltf::Model scene)
 {
     auto node = new GfxModelNode;
-    node->name = aNode->mName.C_Str();
 
-    aiVector3D p, s;
-    aiQuaternion r;
 
-    aNode->mTransformation.Decompose(s, r, p);
+    node->name = aNode.name;
 
-    node->position = {p.x, p.y, p.z};
-    node->rotation = {r.w, r.x, r.y, r.z};
-    node->scale = {s.x, s.y, s.z};
-
-    node->meshIndices = new unsigned int[aNode->mNumMeshes];
-    for (int i = 0; i < aNode->mNumMeshes; ++i)
+    if (aNode.scale.size() == 3)
     {
-        node->meshIndices[i] = aNode->mMeshes[i];
+        node->position = {aNode.translation[0], aNode.translation[1], aNode.translation[2]};
+    }
+    if (aNode.rotation.size() == 4)
+    {
+
+        node->rotation = glm::quat{static_cast<float>(aNode.rotation[0]), static_cast<float>(aNode.rotation[1]),
+                                   static_cast<float>(aNode.rotation[2]), static_cast<float>(aNode.rotation[3])};
+    }
+    if (aNode.scale.size() == 3)
+    {
+        node->scale = {aNode.scale[0], aNode.scale[1], aNode.scale[2]};
     }
 
-    node->children = new GfxModelNode*[aNode->mNumChildren];
-    for (int i = 0; i < aNode->mNumChildren; ++i)
+    node->mesh = aNode.mesh;
+
+    node->children = new GfxModelNode*[aNode.children.size()];
+    for (int i = 0; i < aNode.children.size(); ++i)
     {
-        node->children[i] = processNode(aNode->mChildren[i], scene);
+        node->children[i] = processNode(scene.nodes[aNode.children[i]], scene);
     }
 
-    node->childCount = aNode->mNumChildren;
-    node->meshCount = aNode->mNumMeshes;
+    node->childCount = aNode.children.size();
+
 
     node->model = this;
 
     return node;
 }
 
+brl::GfxMeshRenderer::GfxMeshRenderer() { materials.push_back(new GfxMaterial(GfxShaderProgram::GetDefaultShader())); }
+
 
 void brl::GfxMeshRenderer::lateUpdate()
 {
     EcsEntity::lateUpdate();
 
-    GfxEngine::instance->insertCall(GfxDrawCall{material, mesh, calculateTransform()});
+    for (int i = 0; i < mesh->subMeshCount; ++i)
+    {
+        GfxSubMesh* subMesh = mesh->subMeshes[i];
+        GfxEngine::instance->insertCall(GfxDrawCall{materials[i], subMesh->buffer, calculateTransform()});
+    }
 }

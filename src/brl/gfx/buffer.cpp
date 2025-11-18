@@ -24,17 +24,6 @@ int brl::GfxAttribBuffer::getSize()
     return vbo->size / vertexSize;
 }
 
-brl::GfxAttribBuffer* brl::GfxAttribBuffer::GetPrimitive(GfxPrimitiveType type)
-{
-    switch (type)
-    {
-        case QUAD:
-            return GfxEngine::instance->quadBuffer;
-            break;
-    }
-    return nullptr;
-}
-
 brl::GfxBuffer::GfxBuffer(GLenum format)
 {
     this->format = format;
