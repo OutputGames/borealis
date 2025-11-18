@@ -20,6 +20,6 @@ jobs:
     - name: list files
       run: ls
     - name: premake
-      run: .\premake5.exe gmake
+      run: premake5 gmake
     - name: make
-      run: make
+      run: make -j8 config=release
