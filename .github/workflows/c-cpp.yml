@@ -1,0 +1,25 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup premake
+      uses: abel0b/setup-premake@v2.4
+      with:
+        version: "5.0.0-beta2"
+    - name: list files
+      run: ls
+    - name: premake
+      run: premake5 gmake
+    - name: make
+      run: make -j8 config=release
