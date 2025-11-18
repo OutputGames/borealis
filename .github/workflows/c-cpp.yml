@@ -13,6 +13,6 @@ jobs:
 
     steps:
     - name: premake
-      run: premake5 gmake
+      run: .\premake5 gmake
     - name: make
       run: make
