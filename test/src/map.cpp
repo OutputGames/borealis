@@ -15,20 +15,19 @@ void MapObject::update()
 
 void MapController::loadMap()
 {
-
-    auto mapData =
-        new int[]{
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-        };
+    int *mapData;
+    mapData = new int[]{
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    };
 
     int mapWidth = 10;
     int mapHeight = 10;
@@ -63,7 +62,7 @@ void MapController::loadMap()
                 }
 
                 auto blockEntity = block->createEntity();
-                blockEntity->localPosition = {blockX, -2 + (3 * i), blockY};
+                blockEntity->localPosition = {blockX, 0 + (1.5f * i), blockY};
                 blockEntity->setEulerAngles({0, 180, 0});
                 blockEntity->localScale = glm::vec3(1.5);
             }

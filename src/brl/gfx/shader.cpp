@@ -78,7 +78,7 @@ brl::GfxShaderProgram* brl::GfxShaderProgram::GetDefaultShader()
             "void main()\n"
             "{\n"
             "   FragColor = vec4(texture(tex, texCoords));\n"
-            "   vec3 norm = getNormalFromMap();\n"
+            "   vec3 norm = normalize(normal);\n"
             "   vec3 lightDir = -normalize(vec3(1,-1,-1));\n "
             "   float d =max(dot(norm, lightDir), 0.0) + 0.25f;\n"
             "   FragColor = vec4(texture(tex,texCoords).rgb,1.0);\n"
