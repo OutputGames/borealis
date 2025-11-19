@@ -20,6 +20,8 @@ jobs:
     - name: list files
       run: ls
     - name: premake
-      run: premake5 gmake
+      run: |
+        premake5 gmake
+        mkdir build
     - name: make
       run: make -j8 config=release
