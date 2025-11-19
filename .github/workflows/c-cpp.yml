@@ -28,4 +28,4 @@ jobs:
 
     - name: Build project with MSBuild
       run: |
-        msbuild.exe borealis.sln //p:Configuration=Release //m //p:WarningLevel=0 //clp:ErrorsOnly
+        msbuild.exe borealis.sln /p:Configuration=Release /m /p:WarningLevel=0 /clp:ErrorsOnly
