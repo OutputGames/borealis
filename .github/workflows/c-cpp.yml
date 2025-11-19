@@ -21,7 +21,11 @@ jobs:
         version: "5.0.0-beta2"
     - name: premake
       run: |
-        premake5 gmake
-    - name: make
-      shell: bash
-      run: make config=release
+        premake5 vs2022
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build project with MSBuild
+      run: |
+        msbuild.exe borealis.sln //p:Configuration=Release //m //p:WarningLevel=0 //clp:ErrorsOnly
