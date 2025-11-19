@@ -3,6 +3,10 @@ workspace "borealis"
     configurations { "Debug", "Release" }
     startproject "borealis-test"
 
+    filter "system:windows"
+        systemversion "latest"
+        defines { "_CRT_SECURE_NO_WARNINGS" }
+
 project "borealis"
     kind "StaticLib"
     language "C++"
