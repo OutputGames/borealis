@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
+      with:
+        submodules: true
     - name: Setup premake
       uses: abel0b/setup-premake@v2.4
       with:
@@ -20,12 +22,6 @@ jobs:
     - name: premake
       run: |
         premake5 gmake
-        cd ext
-        ls
-        cd glm
-        ls
-        cd glm
-        ls
     - name: make
       shell: bash
       run: make config=release
