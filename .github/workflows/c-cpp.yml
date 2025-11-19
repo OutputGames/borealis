@@ -24,4 +24,4 @@ jobs:
     - name: list files
       run: ls
     - name: make
-      run: make -j8 config=release
+      run: make config=release
