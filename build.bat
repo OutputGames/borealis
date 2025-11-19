@@ -1,1 +1,0 @@
-make -j config=release && cd out/ start borealis-test.exe

@@ -3,4 +3,4 @@
 	url = https://github.com/g-truc/glm
 [submodule "ext/tinygltf"]
 	path = ext/tinygltf
-	url = https://github.com/g-truc/glm
+	url = https://github.com/syoyo/tinygltf

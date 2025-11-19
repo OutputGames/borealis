@@ -13,15 +13,12 @@ ifeq ($(config),debug)
   resource_packer_config = debug
   borealis_test_config = debug
   glad_config = debug
-
-else ifeq ($(config),release)
+endif
+ifeq ($(config),release)
   borealis_config = release
   resource_packer_config = release
   borealis_test_config = release
   glad_config = release
-
-else
-  $(error "invalid configuration $(config)")
 endif
 
 PROJECTS := borealis resource_packer borealis-test glad
