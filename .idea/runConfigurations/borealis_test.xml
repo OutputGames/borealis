@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="borealis-test" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="school_opengl" TARGET_NAME="borealis-test" CONFIG_NAME="borealis-test" version="1" RUN_PATH="$PROJECT_DIR$/out/borealis-test.exe">
+  <configuration default="false" name="borealis-test" type="CLionNativeAppRunConfigurationType" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="borealis" TARGET_NAME="borealis-test" CONFIG_NAME="borealis-test" version="1" RUN_PATH="$PROJECT_DIR$/out/borealis-test.exe">
     <method v="2">
       <option name="CLION.COMPOUND.BUILD" enabled="true" />
     </method>

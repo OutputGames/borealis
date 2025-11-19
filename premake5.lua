@@ -148,3 +148,4 @@ project "borealis-test"
         buildoptions { "-Wall", "-fcompare-debug-second" }
 
 include("ext/glad/premake5.lua")
+include("ext/glfw/premake5.lua")
