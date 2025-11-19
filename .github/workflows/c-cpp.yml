@@ -22,6 +22,10 @@ jobs:
         premake5 gmake
         cd ext
         ls
+        cd glm
+        ls
+        cd glm
+        ls
     - name: make
       shell: bash
       run: make config=release
