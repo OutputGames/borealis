@@ -20,8 +20,8 @@ jobs:
     - name: premake
       run: |
         premake5 gmake
-    - name: list files
-      run: ls
+        cd ext
+        ls
     - name: make
       shell: bash
       run: make config=release
