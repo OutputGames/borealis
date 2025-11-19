@@ -4,6 +4,7 @@
 #include <borealis/util/util.h>
 
 #include "buffer.hpp"
+#include "engine.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
 #include "borealis/ecs/entity.hpp"
@@ -90,10 +91,14 @@ friend GfxMeshRenderer;
         EcsEntity* createEntity();
 
     private:
+        friend GfxEngine;
+
         GfxModel(std::string path);
         GfxModelNode* rootNode;
 
         GfxModelNode* processNode(tinygltf::Node node, tinygltf::Model scene);
+
+        static std::map<std::string, brl::GfxModel*> cachedModels;
     };
 
     struct GfxMeshRenderer : EcsEntity

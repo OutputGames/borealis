@@ -211,7 +211,7 @@ void brl::GfxShaderProgram::use()
 }
 
 void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
-                            std::map<GfxShaderUniform*, GfxShaderValue> runtimeOverrides)
+                            GfxUniformList runtimeOverrides)
 {
     buffer->use();
     shader->use();

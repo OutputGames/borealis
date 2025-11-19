@@ -41,6 +41,8 @@ namespace brl
         virtual void onDisable();
         virtual void onDestroy();
 
+        void internalDestroy();
+
         glm::mat4 calculateTransform();
 
         std::vector<EcsEntity*> children;
@@ -53,6 +55,7 @@ namespace brl
         EcsEngine();
 
         void update();
+        void shutdown();
 
     private:
         friend EcsEntity;

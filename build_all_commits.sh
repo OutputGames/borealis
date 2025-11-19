@@ -20,7 +20,7 @@ for commit in $commits; do
     # Detect Premake
     if [[ -f "premake5.lua" ]]; then
         echo "[INFO] premake5 found. Generating Visual Studio project..."
-        ./premake5 vs2022 2>/dev/null || ./premake5.exe vs2022 2>/dev/null || true
+        ./premake5 vs2026 2>/dev/null || ./premake5.exe vs2026 2>/dev/null || true
 
         sln_file=$(ls *.sln 2>/dev/null | head -n 1)
         if [[ -n "$sln_file" ]]; then
@@ -31,7 +31,7 @@ for commit in $commits; do
                 if [[ "$retry" =~ ^[Yy]$ ]]; then
                     echo "[INFO] Retrying build..."
                     rm -rf out
-                    ./premake5 vs2022 2>/dev/null || ./premake5.exe vs2022 2>/dev/null || true
+                    ./premake5 vs2026 2>/dev/null || ./premake5.exe vs2026 2>/dev/null || true
                     "/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe" "$sln_file" //p:Configuration=Release //m //p:WarningLevel=0 //clp:ErrorsOnly || {
                         echo "[ERROR] Retry failed. Skipping $commit."
                         rm -rf out

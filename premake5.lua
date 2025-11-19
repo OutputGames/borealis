@@ -132,7 +132,7 @@ project "borealis-test"
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
             prebuildcommands { 
-                "premake5 vs2022",
+                "premake5 vs2026",
                 ".\\tools\\out\\resource_packer.exe test/resources/ out/"
             }
 

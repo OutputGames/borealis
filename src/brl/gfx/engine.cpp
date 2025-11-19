@@ -59,7 +59,9 @@ brl::GfxEngine::GfxEngine()
 
 brl::GfxEngine::~GfxEngine()
 {
-
+    calls.clear();
+    delete blitMaterial;
+    delete quadMesh;
 }
 
 
@@ -260,4 +262,7 @@ void brl::GfxWindow::clear()
     glViewport(0, 0, width, height);
 }
 
-void brl::GfxEngine::shutdown() { glfwTerminate(); }
+void brl::GfxEngine::shutdown()
+{
+    glfwTerminate();
+}

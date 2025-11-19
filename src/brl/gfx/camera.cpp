@@ -36,7 +36,7 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls)
     {
         GfxShaderValue modelValue{};
         modelValue.m4value = call.transform;
-        std::map<GfxShaderUniform*, GfxShaderValue> overrides;
+        GfxUniformList overrides;
         overrides.insert({call.material->getShader()->getUniform("_internalView"), viewValue});
         overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
         overrides.insert({call.material->getShader()->getUniform("_internalModel"), modelValue});

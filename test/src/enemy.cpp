@@ -7,18 +7,26 @@
 
 std::vector<EnemyController*> EnemyController::cachedEnemies;
 
+brl::GfxTexture2dArray* EnemyController::idleSprites;
+brl::GfxTexture2dArray* EnemyController::walkSprites;
+brl::GfxTexture2dArray* EnemyController::attackSprites;
+brl::GfxTexture2dArray* EnemyController::guardSprites;
+
 EnemyController::EnemyController()
 {
     cachedEnemies.push_back(this);
 
-    auto texture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Idle.png");
-    auto walkTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Run.png");
-    auto attackTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Attack1.png");
-    auto guardTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Guard.png");
-    idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192, false);
-    walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192, false);
-    attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192, false);
-    guardSprites = brl::GfxSprite::extractSpritesToArray(guardTexture, 192, 192, false);
+    if (!idleSprites)
+    {
+        auto texture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Idle.png");
+        auto walkTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Run.png");
+        auto attackTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Attack1.png");
+        auto guardTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Guard.png");
+        idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192, true);
+        walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192, true);
+        attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192, true);
+        guardSprites = brl::GfxSprite::extractSpritesToArray(guardTexture, 192, 192, true);
+    }
 
     auto shaderBins = new brl::GfxShader*[2];
 
@@ -55,7 +63,7 @@ void EnemyController::update()
 
     float deltaTime = brl::GfxEngine::instance->getDeltaTime();
 
-    healthBar->health = glm::mix(healthBar->health, health, deltaTime * 7.5f);
+    healthBar->health = glm::mix(healthBar->health, health, deltaTime * 15.f);
 
     if (!isAlive)
         return;
@@ -120,7 +128,7 @@ void EnemyController::update()
     float horizontal = velocity.x;
     float vertical = velocity.y;
 
-    glm::vec3 moveDir = (glm::vec3{horizontal, 0, vertical} * 2.5f) * deltaTime;
+    glm::vec3 moveDir = (glm::vec3{horizontal, 0, vertical} * 5.f) * deltaTime;
 
     localPosition += moveDir;
 
@@ -172,8 +180,6 @@ void EnemyController::onDestroy()
 {
     ActorBehaviour::onDestroy();
 
-    auto enemy = new EnemyController();
-    enemy->localPosition = {0, 0, -10};
 
 }
 

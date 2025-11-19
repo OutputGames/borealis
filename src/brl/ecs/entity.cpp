@@ -50,14 +50,12 @@ void brl::EcsEntity::setEulerAngles(glm::vec3 euler) { localRotation = glm::quat
 void brl::EcsEntity::destroy()
 {
 
-    EcsEngine::instance->destroyEntity(this);
+    internalDestroy();
 
     for (auto child : children)
     {
         child->destroy();
     }
-
-    onDestroy();
 }
 
 void brl::EcsEntity::setActive(bool active)
@@ -145,6 +143,13 @@ void brl::EcsEntity::onDestroy()
 
 }
 
+void brl::EcsEntity::internalDestroy()
+{
+    EcsEngine::instance->destroyEntity(this);
+
+    onDestroy();
+}
+
 glm::mat4 brl::EcsEntity::calculateTransform()
 {
     glm::mat4 t(1.0);
@@ -187,5 +192,16 @@ void brl::EcsEngine::update()
     {
         if (entity->isGlobalActive())
             entity->lateUpdate();
+    }
+}
+
+void brl::EcsEngine::shutdown()
+{
+    std::vector<EcsEntity*> ent(entities);
+
+    for (const auto& ecsEntity : ent)
+    {
+        ecsEntity->internalDestroy();
+        delete ecsEntity;
     }
 }

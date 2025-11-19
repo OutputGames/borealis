@@ -59,6 +59,7 @@ namespace brl
  
     struct GfxAttribBuffer : public IGfxBuffer {
         GfxAttribBuffer();
+        ~GfxAttribBuffer();
 
         void assignBuffer(GfxBuffer* buffer);
         void assignElementBuffer(GfxBuffer* buffer, GLenum format);

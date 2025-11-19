@@ -20,10 +20,10 @@ PlayerController::PlayerController()
     auto walkTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Run.png");
     auto attackTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Attack1.png");
     auto guardTexture = brl::GfxTexture2d::loadTexture("textures/Units/Yellow Units/Warrior/Warrior_Guard.png");
-    idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192, false);
-    walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192, false);
-    attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192, false);
-    guardSprites = brl::GfxSprite::extractSpritesToArray(guardTexture, 192, 192, false);
+    idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192, true);
+    walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192, true);
+    attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192, true);
+    guardSprites = brl::GfxSprite::extractSpritesToArray(guardTexture, 192, 192, true);
 
     auto shaderBins = new brl::GfxShader*[2];
 
@@ -55,7 +55,7 @@ void PlayerController::update()
     float deltatime = brl::GfxEngine::instance->getDeltaTime();
 
     glm::vec3 moveDir =
-        (glm::vec3{horizontal, 0, vertical} * 2.5f) * deltatime;
+        (glm::vec3{horizontal, 0, vertical} * 5.f) * deltatime;
 
     localPosition += moveDir;
 

@@ -34,6 +34,9 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
     stbi_set_flip_vertically_on_load(true);
 
     unsigned char* data = stbi_load_from_memory(file.data, file.dataSize, &width, &height, &nrChannels, 4);
+
+    file.free(true);
+
     if (data)
     {
         GLenum format = GL_RGB;
@@ -131,7 +134,8 @@ brl::GfxTexture2d* brl::GfxTexture2d::getWhiteTexture()
 
 }
 
-brl::GfxTexture2d::~GfxTexture2d() {
+brl::GfxTexture2d::~GfxTexture2d()
+{
     GfxTexture::~GfxTexture();
     delete[] pixels;
 }

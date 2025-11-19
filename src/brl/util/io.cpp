@@ -2,6 +2,14 @@
 
 brl::IoEngine* brl::IoEngine::engine = nullptr;
 
+void brl::IoFile::free(bool remove)
+{
+    if (remove)
+        IoEngine::engine->file_map.erase(IoEngine::engine->file_map.find(filePath));
+
+    delete[] data;
+}
+
 brl::IoEngine::IoEngine()
 {
     engine = this;
@@ -9,9 +17,10 @@ brl::IoEngine::IoEngine()
     if (!file)
         throw std::runtime_error("Failed to open resource path");
 
-    /*
+
     file_map = {};
 
+    /*
     // infinite reading loop
     while (true)
     {
@@ -54,6 +63,9 @@ void brl::IoEngine::print(std::string s)
 
 brl::IoFile brl::IoEngine::readFileBinary(std::string path)
 {
+    if (file_map.contains(path))
+        return file_map[path];
+
     std::replace(path.begin(), path.end(), '\\', '/');
 
     std::ifstream file("assets.res", std::ios::binary);
@@ -79,7 +91,8 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
         // --- Read data size ---
         file.read(reinterpret_cast<char*>(&block.dataSize), sizeof(block.dataSize));
 
-        if (block.filePath == path) {
+        if (block.filePath == path)
+        {
 
             // --- Read binary data ---
             if (block.dataSize > 0)
@@ -88,21 +101,37 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
                 file.read(reinterpret_cast<char*>(block.data), block.dataSize);
             }
 
+
+            file_map.insert({block.filePath, block});
             return block;
 
-            //file_map.insert({block.filePath, block});
-        } else {
-            file.seekg(block.dataSize, std::ios::cur);
+
         }
+        file.seekg(block.dataSize, std::ios::cur);
 
         if (file.eof())
             break;
     }
 
-    return {"",nullptr};
+    return {"", nullptr};
 }
 
 std::string brl::IoEngine::readFileString(std::string path)
 {
-    return reinterpret_cast<const char*>(readFileBinary(path).data);
+    auto file = readFileBinary(path);
+    auto str = static_cast<char*>(malloc(file.dataSize));
+
+    strcpy(str, reinterpret_cast<const char*>(file.data));
+
+    file.free(true);
+
+    return str;
+}
+
+void brl::IoEngine::shutdown()
+{
+    for (auto fileMap : file_map)
+    {
+        fileMap.second.free(false);
+    }
 }

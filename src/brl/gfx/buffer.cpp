@@ -51,6 +51,11 @@ brl::GfxAttribBuffer::GfxAttribBuffer()
     glGenVertexArrays(1, &id);
 }
 
+brl::GfxAttribBuffer::~GfxAttribBuffer()
+{
+    destroy();
+}
+
 void brl::GfxAttribBuffer::assignBuffer(GfxBuffer* buffer)
 {
     use();
@@ -88,5 +93,7 @@ void brl::GfxAttribBuffer::use()
 
 void brl::GfxAttribBuffer::destroy()
 {
+    vbo->destroy();
+    ebo->destroy();
     glDeleteVertexArrays(1, &id);
 }

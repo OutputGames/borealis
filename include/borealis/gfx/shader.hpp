@@ -15,7 +15,7 @@ namespace brl
     struct GfxDrawCall;
     struct GfxAttribBuffer;
     struct GfxMaterial;
-    using GfxUniformList = std::map<GfxShaderUniform*, GfxShaderValue>;
+    using GfxUniformList = std::unordered_map<GfxShaderUniform*, GfxShaderValue>;
     
     struct GfxShader {
         GfxShader(GLenum format,const void* binary, size_t binarySize) = delete;

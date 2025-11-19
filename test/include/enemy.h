@@ -25,7 +25,7 @@ private:
 
     HealthBarBehavior* healthBar;
 
-    brl::GfxTexture2dArray *idleSprites, *walkSprites, *attackSprites, *guardSprites;
+    static brl::GfxTexture2dArray *idleSprites, *walkSprites, *attackSprites, *guardSprites;
 
     glm::vec2 velocity = glm::vec2{0};
     float attackDelay = 3.0f;

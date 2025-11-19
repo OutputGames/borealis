@@ -26,6 +26,7 @@ HealthBarBehavior::HealthBarBehavior()
 {
 
     auto texture = brl::GfxTexture2d::loadTexture("textures/healthbar.png");
+    texture->clearCachedPixels();
 
     auto shaderBins = new brl::GfxShader*[2];
 

@@ -8,7 +8,7 @@
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
 
-std::map<std::string, brl::GfxModel*> cachedModels;
+std::map<std::string, brl::GfxModel*> brl::GfxModel::cachedModels;
 
 brl::GfxMesh* brl::GfxMesh::GetPrimitive(GfxPrimitiveType type)
 {
@@ -89,6 +89,7 @@ brl::GfxModel::GfxModel(std::string path)
 
     bool ret = loader.LoadBinaryFromMemory(&model, &err, &warn, file.data, file.dataSize, "");
 
+    file.free(true);
 
     if (!ret)
     {

@@ -36,6 +36,7 @@
 *.vcxproj.filters
 *.vcxproj.user
 *.make
+./Makefile
 *.sln
 /.vs
 /build
@@ -46,3 +47,4 @@
 /out
 /tools/out
 /builds
+/enc_temp_folder
