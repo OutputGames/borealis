@@ -1,8 +1,8 @@
-# Remove ONLY the glfw entry from the index
-git rm --cached ext/glfw
+# Remove only the glfw submodule
+rm -rf ext/glfw .git/modules/ext/glfw
 
-# If that fails with "is a directory" error, try:
-git rm --cached -r ext/glfw
+# Remove only glfw from .gitmodules
+git config --file .gitmodules --remove-section submodule.ext/glfw 2>/dev/null || true
 
-# Now add it as a submodule
-git submodule add https://github.com/glfw/glfw.git ext/glfw
+# Remove only glfw from .git/config
+git config --remove-section submodule.ext/glfw 2>/dev/null || true
