@@ -6,4 +6,4 @@
 	url = https://github.com/syoyo/tinygltf
 [submodule "ext/glfw"]
 	path = ext/glfw
-	url = https://github.com/glfw/glfw
+	url = https://github.com/glfw/glfw.git

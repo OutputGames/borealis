@@ -1,24 +1,8 @@
-#!/bin/bash
+# Remove ONLY the glfw entry from the index
+git rm --cached ext/glfw
 
-# Quickly totally remove a git submodule. Since this takes a few
-# steps, create a custom script to do this.
+# If that fails with "is a directory" error, try:
+git rm --cached -r ext/glfw
 
-# See:
-#  https://stackoverflow.com/questions/1260748/how-do-i-remove-a-submodule/36593218#36593218
-#  https://gist.github.com/myusuf3/7f645819ded92bda6677
-
-submodule_path=$1
-
-[ -d "$submodule_path" ] || (echo 'Specify valid submodule path as first parameter' && exit 1)
-
-# Remove the submodule entry from .git/config
-echo "Deinitializing submodule $submodule_path"
-git submodule deinit -f $submodule_path
-
-# Remove the submodule directory from the superproject's .git/modules directory
-echo "Removing .git/modules for $submodule_path"
-rm -rf .git/modules/$submodule_path
-
-# Remove the entry in .gitmodules and remove the submodule directory located at path/to/submodule
-echo "Removing files for $submodule_path"
-git rm -rf $submodule_path
+# Now add it as a submodule
+git submodule add https://github.com/glfw/glfw.git ext/glfw
