@@ -1,9 +1,7 @@
 name: C/C++ CI
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
+  release:
     branches: [ "main" ]
 
 jobs:
