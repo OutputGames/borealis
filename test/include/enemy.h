@@ -7,6 +7,14 @@
 #include "borealis/gfx/texture.hpp"
 #include "actor.h"
 
+enum EnemyTeam
+{
+    Red,
+    Blue,
+    Yellow,
+    Black
+};
+
 struct EnemyController : ActorBehaviour
 {
 
@@ -18,6 +26,7 @@ struct EnemyController : ActorBehaviour
     static std::vector<EnemyController*> cachedEnemies;
 
     bool isGuarding;
+    EnemyTeam Team = Red;
 
 private:
     brl::GfxMaterial* material = nullptr;

@@ -16,7 +16,7 @@ project "glad"
         "include/"
     }
 
-    filter "configurations:Debug"
+    filter "configurations:Debug*"
         symbols "On"
         defines { "DEBUG" }
         buildoptions { "-Wall", "-fcompare-debug-second" }

@@ -18,10 +18,30 @@ EnemyController::EnemyController()
 
     if (!idleSprites)
     {
-        auto texture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Idle.png");
-        auto walkTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Run.png");
-        auto attackTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Attack1.png");
-        auto guardTexture = brl::GfxTexture2d::loadTexture("textures/Units/Black Units/Warrior/Warrior_Guard.png");
+        std::string unitFolder = "";
+
+        switch (Team)
+        {
+
+            case Red:
+                unitFolder = "textures/Units/Red Units/";
+                break;
+            case Blue:
+                unitFolder = "textures/Units/Blue Units/";
+                break;
+            case Yellow:
+                unitFolder = "textures/Units/Yellow Units/";
+                break;
+            case Black:
+                unitFolder = "textures/Units/Black Units/";
+                break;
+            default: ;
+        }
+
+        auto texture = brl::GfxTexture2d::loadTexture(unitFolder + "Warrior/Warrior_Idle.png");
+        auto walkTexture = brl::GfxTexture2d::loadTexture(unitFolder + "Warrior/Warrior_Run.png");
+        auto attackTexture = brl::GfxTexture2d::loadTexture(unitFolder + "Warrior/Warrior_Attack1.png");
+        auto guardTexture = brl::GfxTexture2d::loadTexture(unitFolder + "Warrior/Warrior_Guard.png");
         idleSprites = brl::GfxSprite::extractSpritesToArray(texture, 192, 192, true);
         walkSprites = brl::GfxSprite::extractSpritesToArray(walkTexture, 192, 192, true);
         attackSprites = brl::GfxSprite::extractSpritesToArray(attackTexture, 192, 192, true);
@@ -51,6 +71,20 @@ EnemyController::EnemyController()
 
     healthBar = new HealthBarBehavior;
     healthBar->localPosition = {0, 2.5f, 0};
+    switch (Team)
+    {
+
+        case Red:
+            healthBar->color = glm::vec3(212, 28, 64);
+            break;
+        case Blue:
+            break;
+        case Yellow:
+            break;
+        case Black:
+            break;
+    }
+
     healthBar->setParent(this);
 
 

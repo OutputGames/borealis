@@ -29,7 +29,8 @@ namespace brl
     {
         static IoEngine* engine;
 
-        std::map<std::string, IoFile> file_map;
+        using FileMap = std::map<std::string, IoFile>;
+        FileMap file_map;
         IoEngine();
 
         void print(std::string s);

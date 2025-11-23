@@ -54,6 +54,7 @@ void HealthBarBehavior::update()
     EcsEntity::update();
 
     material->setFloat("health", health);
+    material->setVec3("_color", color);
 
     renderer->lookAt(brl::GfxCamera::mainCamera->position);
 }

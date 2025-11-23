@@ -27,6 +27,7 @@ struct HealthBarBehavior : brl::EcsEntity
     void update() override;
 
     float health = 1.0f;
+    glm::vec3 color = glm::vec3(1);
 
 private:
     brl::GfxMaterial* material = nullptr;

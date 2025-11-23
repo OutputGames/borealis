@@ -7,14 +7,14 @@
 
 int main(int argc, const char* argv[])
 {
-    if (argc != 3)
+    if (argc != 4)
         return 1;
 
     std::string overallPath = argv[1];
 
     // Open a file for writing in binary mode
     std::filesystem::path outputDir = argv[2];
-    std::filesystem::path outputFilePath = outputDir / "assets.res";
+    std::filesystem::path outputFilePath = outputDir / argv[3];
     std::ofstream outFile(outputFilePath, std::ios::out | std::ios::binary | std::ios::trunc);
     // Check if the file was opened successfully
     if (!outFile.is_open())

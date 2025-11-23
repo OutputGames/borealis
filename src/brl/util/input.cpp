@@ -29,6 +29,8 @@ void brl::InputMgr::update()
     mouseX = mx;
     mouseY = my;
 
+    
+
 }
 
 bool brl::InputMgr::getKey(int key)

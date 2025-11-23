@@ -1,6 +1,10 @@
 workspace "borealis"
     architecture "x64"
-    configurations { "Debug", "Release" }
+    configurations { 
+        "Debug", 
+        "Debug (RenderDoc)", 
+        "Release"
+     }
     startproject "borealis-test"
 
     filter "system:windows"
@@ -13,7 +17,7 @@ project "borealis"
     cppdialect "C++20"
     targetdir "lib"
     objdir "build"
-    dependson {"glad", "tinygltf"}
+    dependson {"glad", "tinygltf", "resource_packer"}
 
     files {
         "src/**.cpp",
@@ -26,10 +30,11 @@ project "borealis"
         "include",
         "ext/glad/include",
         "ext/glm",
-        "ext/stb/include",
+        "ext/stb/",
         "ext/glfw/include",
         "ext/assimp/include",
         "ext/tinygltf",
+        "ext"
     }
 
     libdirs {
@@ -38,9 +43,11 @@ project "borealis"
 
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
+            prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/ default_assets.res" }
+
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
-
+            prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/ default_assets.res"}
     links {
         "glad",
         "glfw3",
@@ -48,7 +55,7 @@ project "borealis"
         "gdi32",
     }
 
-    filter "configurations:Debug"
+    filter "configurations:Debug*"
         symbols "On"
         defines { "DEBUG" }
         buildoptions { "-Wall", "-fcompare-debug-second" }
@@ -77,7 +84,7 @@ project "resource_packer"
         "tools/include",
     }
 
-    filter "configurations:Debug"
+    filter "configurations:Debug*"
         symbols "On"
         defines { "DEBUG" }
         buildoptions { "-Wall", "-fcompare-debug-second" }
@@ -101,7 +108,12 @@ project "borealis-test"
         "test/include/**.hpp",
         "test/include/**.h",
         "include/**.h",
-        "include/**.hpp"
+        "include/**.hpp",
+
+        "test/resources/**.frag",
+        "test/resources/**.vert",
+        "test/resources/**.png",
+        "test/resources/**.glb",
     }
 
     includedirs {
@@ -109,7 +121,7 @@ project "borealis-test"
         "test/include",
         "ext/glad/include",
         "ext/glm",
-        "ext/stb/include",
+        "ext/stb/",
         "ext/glfw/include",
     }
 
@@ -128,19 +140,19 @@ project "borealis-test"
 
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
-            prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/" }
+            prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/ assets.res" }
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
-            prebuildcommands { 
-                "premake5 vs2026",
-                ".\\tools\\out\\resource_packer.exe test/resources/ out/"
-            }
+            prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/ assets.res"}
 
 
-    filter "configurations:Debug"
+    filter "configurations:Debug*"
         symbols "On"
         defines { "DEBUG" }
         buildoptions { "-Wall", "-fcompare-debug-second" }
+    filter "configurations:Debug (RenderDoc)"
+        debugcommand "C:\\Program Files\\RenderDoc\\renderdoccmd.exe"
+        debugargs { "capture", "%{prj.name}.exe" }
 
     filter "configurations:Release"
         optimize "On"

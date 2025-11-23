@@ -61,23 +61,14 @@ void brl::IoEngine::print(std::string s)
     std::cout << s << std::endl;
 }
 
-brl::IoFile brl::IoEngine::readFileBinary(std::string path)
+brl::IoFile iterateThroughPack(std::ifstream& file, std::string path, brl::IoEngine::FileMap& file_map)
 {
-    if (file_map.contains(path))
-        return file_map[path];
-
-    std::replace(path.begin(), path.end(), '\\', '/');
-
-    std::ifstream file("assets.res", std::ios::binary);
-    if (!file)
-        throw std::runtime_error("Failed to open resource path");
-
     while (true)
     {
         uint32_t strLen = 0;
         file.read(reinterpret_cast<char*>(&strLen), sizeof(strLen));
 
-        IoFile block{};
+        brl::IoFile block{};
 
         // --- Read string ---
         if (strLen > 0)
@@ -104,8 +95,6 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
 
             file_map.insert({block.filePath, block});
             return block;
-
-
         }
         file.seekg(block.dataSize, std::ios::cur);
 
@@ -113,7 +102,40 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
             break;
     }
 
-    return {"", nullptr};
+    return static_cast<brl::IoFile>(NULL);
+}
+
+brl::IoFile brl::IoEngine::readFileBinary(std::string path)
+{
+    if (path.empty())
+        return static_cast<IoFile>(NULL);
+
+    if (file_map.contains(path))
+        return file_map[path];
+
+    std::replace(path.begin(), path.end(), '\\', '/');
+
+    std::filesystem::path p(path);
+
+    std::string assetsPack = "";
+
+    if (p.has_root_name())
+    {
+        std::cout << p.root_name().string() << std::endl;
+        if (p.root_name().string() == "D:")
+            assetsPack = "default_assets";
+    }
+    else
+    {
+        std::cout << p.filename().string() << " has no path" << std::endl;
+        assetsPack = "assets";
+    }
+
+    std::ifstream file(assetsPack + ".res", std::ios::binary);
+    if (!file)
+        throw std::runtime_error("Failed to open resource path");
+
+    return iterateThroughPack(file, path, file_map);
 }
 
 std::string brl::IoEngine::readFileString(std::string path)

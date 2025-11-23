@@ -1,9 +1,21 @@
 #include <thread>
 
+#include <renderdoc/renderdoc_app.h>
+using RENDERDOC_GetAPIFunc = void(RENDERDOC_CC*)(RENDERDOC_API_1_1_0* api);
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
+
 #include "borealis/gfx/gfx.hpp"
 #include "borealis/util/input.hpp"
 
 brl::GfxEngine* brl::GfxEngine::instance;
+
+RENDERDOC_API_1_1_2* rdoc_api = NULL;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -183,25 +195,66 @@ void brl::GfxEngine::initialize()
 
     InputMgr::init(static_cast<GLFWwindow*>(mainWindow->window));
 
+
+#ifdef _WIN32
+    if (HMODULE mod = LoadLibrary(reinterpret_cast<LPCWSTR>("renderdoc.dll")))
+    {
+        auto RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+        int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+        assert(ret == 1);
+    }
+    else
+    {
+        DWORD error = GetLastError();
+        std::cout << "Failed to load DLL. Error code: " << error << std::endl;
+    }
+#else // For Linux/macOS
+    void* renderdoc_module = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD);
+    if (renderdoc_module)
+    {
+        RENDERDOC_GetAPIFunc get_api_func = (RENDERDOC_GetAPIFunc)dlsym(renderdoc_module, "RENDERDOC_GetAPI");
+        if (get_api_func)
+        {
+            get_api_func(&rd_api);
+        }
+        dlclose(renderdoc_module); // Close the handle as we only need the function pointer
+    }
+#endif
+
+    // To start a frame capture, call StartFrameCapture.
+    // You can specify NULL, NULL for the device to capture on if you have only one device and
+    // either no windows at all or only one window, and it will capture from that device.
+    // See the documentation below for a longer explanation
+
+    // Your rendering should happen here
+
+    // stop the capture
+
 }
 
 auto start_time = std::chrono::high_resolution_clock::now();
 
 void brl::GfxEngine::update()
 {
+    bool cap = false;
+    if (InputMgr::getKeyDown(GLFW_KEY_P))
+        cap = true;
 
-    /*
+    if (rdoc_api && cap)
+        rdoc_api->StartFrameCapture(NULL, NULL);
+
+
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> frame_time = end_time - start_time;
 
-    double target_frame_time_ms = 1000.0 / 60.f; // e.g., 60.0 for 60 FPS
+    double target_frame_time_ms = 1000.0 / (90.);
 
     if (frame_time.count() < target_frame_time_ms)
     {
         std::this_thread::sleep_for(
             std::chrono::duration<double, std::milli>(target_frame_time_ms - frame_time.count()));
     }
-    */
+
 
     GfxCamera::mainCamera->draw(calls);
 
@@ -235,6 +288,9 @@ void brl::GfxEngine::update()
     }
 
     start_time = std::chrono::high_resolution_clock::now();
+
+    if (rdoc_api && cap)
+        rdoc_api->EndFrameCapture(NULL, NULL);
 
 }
 

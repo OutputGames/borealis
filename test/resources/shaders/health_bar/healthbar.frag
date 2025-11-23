@@ -6,6 +6,7 @@ in vec3 pos;
 
 uniform sampler2D tex;
 uniform float health;
+uniform vec3 _color;
 
 uniform float _internalTime;
 void main()
@@ -25,7 +26,7 @@ void main()
 		if (texCoords.x > health) {
 			color.rgb = vec3(0.25f);
 		} else {
-			color.rgb = vec3(0,1,1);
+			color.rgb = _color;
 			color.rgb *= clamp(texCoords.y+0.25f,0,1);
 		}
 	}
