@@ -317,6 +317,6 @@ void brl::GfxMeshRenderer::lateUpdate()
     for (int i = 0; i < mesh->subMeshCount; ++i)
     {
         GfxSubMesh* subMesh = mesh->subMeshes[i];
-        GfxEngine::instance->insertCall(GfxDrawCall{materials[i], subMesh->buffer, calculateTransform()});
+        GfxEngine::instance->insertCall(materials[i], subMesh->buffer, calculateTransform());
     }
 }

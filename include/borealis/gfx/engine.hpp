@@ -7,6 +7,7 @@
 
 namespace brl
 {
+    struct GfxInstancedDrawCall;
     struct GfxMesh;
 }
 
@@ -15,6 +16,10 @@ namespace brl
     struct GfxDrawCall;
     struct GfxAttribBuffer;
     struct GfxMaterial;
+
+    typedef size_t GfxInstancedCallKey;
+    using GfxInstancedDrawCallList = std::map<GfxInstancedCallKey, GfxInstancedDrawCall>;
+
 
     struct GfxWindow {
         bool isOpen() { return !glfwWindowShouldClose((GLFWwindow*)window); }
@@ -47,7 +52,7 @@ namespace brl
         void shutdown();
         void update();
         bool isRunning() {return mainWindow->isOpen();}
-        void insertCall(const GfxDrawCall& call);
+        void insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform);
         int getFrameCount();
 
         float getAspectRatio();
@@ -69,6 +74,7 @@ namespace brl
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;
         std::vector<GfxDrawCall> calls;
+        GfxInstancedDrawCallList instancedCalls;
         GfxMaterial* blitMaterial;
 
         int frameCount = 0;
@@ -82,6 +88,13 @@ namespace brl
         GfxMaterial* material;
         GfxAttribBuffer* gfxBuffer;
         const glm::mat4 transform;
+    };
+
+    struct GfxInstancedDrawCall
+    {
+        GfxMaterial* material;
+        std::vector<glm::mat4> transforms;
+        GfxAttribBuffer* gfxBuffer;
     };
 } // namespace brl
 

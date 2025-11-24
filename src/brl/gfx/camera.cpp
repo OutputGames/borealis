@@ -8,7 +8,7 @@ brl::GfxCamera::GfxCamera()
     mainCamera = this;
 }
 
-void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls)
+void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls, const GfxInstancedDrawCallList instancedCalls)
 {
     if (targetFramebuffer != cachedFramebuffer && targetFramebuffer != nullptr)
     {
@@ -43,6 +43,18 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls)
         overrides.insert({call.material->getShader()->getUniform("_internalTime"), timeValue});
 
         call.material->draw(call.gfxBuffer, overrides);
+
+        overrides.clear();
+    }
+
+    for (const auto& [key, call] : instancedCalls)
+    {
+        GfxUniformList overrides;
+        overrides.insert({call.material->getShader()->getUniform("_internalView"), viewValue});
+        overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
+        overrides.insert({call.material->getShader()->getUniform("_internalTime"), timeValue});
+
+        call.material->drawInstanced(call.transforms, call.gfxBuffer, overrides);
 
         overrides.clear();
     }

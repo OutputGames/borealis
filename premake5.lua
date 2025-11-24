@@ -1,3 +1,16 @@
+local resource_packer = ""
+
+
+if _ACTION:startswith("gmake") then
+    resource_packer = "./tools/out/resource_packer.exe"
+end
+
+if _ACTION:startswith("vs") then
+    resource_packer = ".\\tools\\out\\resource_packer.exe"
+end
+
+
+
 workspace "borealis"
     architecture "x64"
     configurations { 
@@ -11,10 +24,11 @@ workspace "borealis"
         systemversion "latest"
         defines { "_CRT_SECURE_NO_WARNINGS" }
 
+
 project "borealis"
     kind "StaticLib"
     language "C++"
-    cppdialect "C++20"
+    cppdialect "C++23"
     targetdir "lib"
     objdir "build"
     dependson {"glad", "tinygltf", "resource_packer"}
@@ -23,7 +37,13 @@ project "borealis"
         "src/**.cpp",
         "src/**.c",
         "include/**.h",
-        "include/**.hpp"
+        "include/**.hpp",
+
+        "default_assets/**.frag",
+        "default_assets/**.vert",
+        "default_assets/**.shdinc",
+        "default_assets/**.png",
+        "default_assets/**.glb",
     }
 
     includedirs {
@@ -41,13 +61,13 @@ project "borealis"
         "ext/glad/lib",
     }
 
+    prebuildcommands { resource_packer.." default_assets/ out/ default_assets.res" }
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
-            prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/ default_assets.res" }
+
 
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
-            prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/ default_assets.res"}
     links {
         "glad",
         "glfw3",
@@ -97,7 +117,7 @@ project "resource_packer"
 project "borealis-test"
     kind "ConsoleApp"
     language "C++"
-    cppdialect "C++20"
+    cppdialect "C++23"
     targetdir "out"
     objdir "build"
     debugdir "out"
@@ -112,6 +132,7 @@ project "borealis-test"
 
         "test/resources/**.frag",
         "test/resources/**.vert",
+        "test/resources/**.shdinc",
         "test/resources/**.png",
         "test/resources/**.glb",
     }
@@ -138,12 +159,14 @@ project "borealis-test"
         "gdi32",
     }
 
+
+    prebuildcommands { resource_packer.." default_assets/ out/ default_assets.res" }
+    prebuildcommands { resource_packer.." test/resources/ out/ assets.res" }
+
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
-            prebuildcommands { "./tools/out/resource_packer.exe test/resources/ out/ assets.res" }
     filter { "_ACTION:vs*" }
             libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
-            prebuildcommands { ".\\tools\\out\\resource_packer.exe test/resources/ out/ assets.res"}
 
 
     filter "configurations:Debug*"
@@ -161,3 +184,5 @@ project "borealis-test"
 
 include("ext/glad/premake5.lua")
 include("ext/glfw/premake5.lua")
+include("ext/stb/premake5.lua")
+include("ext/glm/premake5.lua")

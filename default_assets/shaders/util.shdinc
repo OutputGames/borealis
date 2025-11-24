@@ -1,0 +1,47 @@
+
+vec3 color_vec3(float r, float g, float b) {
+
+    if (r > 1 || g > 1 || b > 1) {
+        r /= 255.f;
+        g /= 255.f;
+        b /= 255.f;
+    }
+
+    return vec3(r,g,b);
+
+}
+
+vec3 color_vec3(vec3 v) {
+
+    float r = v.r;
+    float g = v.g;
+    float b = v.b;
+
+    if (r > 1 || g > 1 || b > 1) {
+        r /= 255.f;
+        g /= 255.f;
+        b /= 255.f;
+    }
+
+
+    return vec3(r,g,b);
+
+}
+
+int getShadeIndex(vec3 v) {
+
+    if (v.r > 0 && v.g < 0.01 && v.b < 0.01) {
+        return 0;
+    }
+
+    if (v.r < 0.01 && v.g > 0 && v.b < 0.01) {
+        return 1;
+    }
+
+    if (v.r < 0.01 && v.g < 0.01 && v.b > 0) {
+        return 2;
+    }
+
+
+    return -1;
+}

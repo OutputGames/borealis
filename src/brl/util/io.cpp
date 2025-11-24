@@ -2,6 +2,8 @@
 
 brl::IoEngine* brl::IoEngine::engine = nullptr;
 
+brl::IoFile brl::IoFile::NullFile = {"null", nullptr, 0};
+
 void brl::IoFile::free(bool remove)
 {
     if (remove)
@@ -102,13 +104,13 @@ brl::IoFile iterateThroughPack(std::ifstream& file, std::string path, brl::IoEng
             break;
     }
 
-    return static_cast<brl::IoFile>(NULL);
+    return brl::IoFile::NullFile;
 }
 
 brl::IoFile brl::IoEngine::readFileBinary(std::string path)
 {
     if (path.empty())
-        return static_cast<IoFile>(NULL);
+        return IoFile::NullFile;
 
     if (file_map.contains(path))
         return file_map[path];
@@ -123,7 +125,12 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
     {
         std::cout << p.root_name().string() << std::endl;
         if (p.root_name().string() == "D:")
+        {
             assetsPack = "default_assets";
+        }
+
+        path = path.replace(0, p.root_name().string().size() + 1, "");
+
     }
     else
     {

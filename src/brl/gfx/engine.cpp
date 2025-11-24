@@ -256,9 +256,10 @@ void brl::GfxEngine::update()
     }
 
 
-    GfxCamera::mainCamera->draw(calls);
+    GfxCamera::mainCamera->draw(calls, instancedCalls);
 
     calls.clear();
+    instancedCalls.clear();
 
     mainWindow->clear();
     GfxCamera::mainCamera->cachedFramebuffer->getAttachment(0)->draw(blitMaterial);
@@ -294,9 +295,30 @@ void brl::GfxEngine::update()
 
 }
 
-void brl::GfxEngine::insertCall(const GfxDrawCall& call)
+void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform)
 {
-    calls.push_back(call);
+    if (material->getShader()->instancingEnabled)
+    {
+        size_t hash = 14695981039346656037ULL;
+
+        hash ^= buffer->getHash();
+        hash *= 1099511628211ULL;
+
+        hash ^= material->getHash();
+        hash *= 1099511628211ULL;
+
+        if (!instancedCalls.contains(hash))
+        {
+            instancedCalls[hash] = {material, {}, buffer,
+            };
+        }
+
+        instancedCalls[hash].transforms.push_back(transform);
+    }
+    else
+    {
+        calls.push_back({material, buffer, transform});
+    }
 }
 
 int brl::GfxEngine::getFrameCount()

@@ -18,25 +18,7 @@ EnemyController::EnemyController()
 
     if (!idleSprites)
     {
-        std::string unitFolder = "";
-
-        switch (Team)
-        {
-
-            case Red:
-                unitFolder = "textures/Units/Red Units/";
-                break;
-            case Blue:
-                unitFolder = "textures/Units/Blue Units/";
-                break;
-            case Yellow:
-                unitFolder = "textures/Units/Yellow Units/";
-                break;
-            case Black:
-                unitFolder = "textures/Units/Black Units/";
-                break;
-            default: ;
-        }
+        std::string unitFolder = "textures/Units/NonColor Units/";
 
         auto texture = brl::GfxTexture2d::loadTexture(unitFolder + "Warrior/Warrior_Idle.png");
         auto walkTexture = brl::GfxTexture2d::loadTexture(unitFolder + "Warrior/Warrior_Run.png");
@@ -50,13 +32,34 @@ EnemyController::EnemyController()
 
     auto shaderBins = new brl::GfxShader*[2];
 
-    shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/test/vtx.glsl"));
-    shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/test/frg.glsl"));
+    shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/enemy/enemy.vert"));
+    shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/enemy/enemy.frag"));
     auto shader = new brl::GfxShaderProgram(shaderBins, 2, true);
 
 
     material = new brl::GfxMaterial(shader);
-    // material->setVec3("color", brl::vector3{1,0,0});
+    {
+        glm::vec3 v;
+        switch (Team)
+        {
+
+            case Red:
+                v = glm::vec3(212, 28, 64);
+                break;
+            case Blue:
+                v = glm::vec3(66, 93, 245);
+                break;
+            case Yellow:
+                v = glm::vec3(245, 188, 66);
+                break;
+            case Black:
+                v = glm::vec3(28, 36, 48);
+                break;
+        }
+        material->setVec3("_color", v);
+        material->setVec3("_armorColor", glm::vec3(239, 225, 171));
+        material->setVec3("_weaponColor", glm::vec3(212, 237, 194));
+    }
     material->setTexture("idleSprite", idleSprites);
     material->setTexture("walkSprite", walkSprites);
     material->setTexture("attackSprite", attackSprites);
@@ -78,10 +81,13 @@ EnemyController::EnemyController()
             healthBar->color = glm::vec3(212, 28, 64);
             break;
         case Blue:
+            healthBar->color = glm::vec3(66, 93, 245);
             break;
         case Yellow:
+            healthBar->color = glm::vec3(245, 188, 66);
             break;
         case Black:
+            healthBar->color = glm::vec3(28, 36, 48);
             break;
     }
 

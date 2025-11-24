@@ -17,6 +17,10 @@
   </Project>
   <Project Path="ext\glfw\glfw3.vcxproj" Id="68D6830F-D4EA-ABC0-9D6C-4F200940A8F1">
   </Project>
+  <Project Path="ext\glm\glm.vcxproj" Id="6577880B-D180-887C-5AFC-9E7CC604947C">
+  </Project>
   <Project Path="resource_packer.vcxproj" Id="8271DF2F-EEFC-4CF4-F70D-D0E86318A9F4">
+  </Project>
+  <Project Path="ext\stb\stb.vcxproj" Id="6EAB880B-DAB4-887C-6330-9F7CCF38947C">
   </Project>
 </Solution>

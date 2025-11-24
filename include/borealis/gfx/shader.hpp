@@ -18,7 +18,6 @@ namespace brl
     using GfxUniformList = std::unordered_map<GfxShaderUniform*, GfxShaderValue>;
     
     struct GfxShader {
-        GfxShader(GLenum format,const void* binary, size_t binarySize) = delete;
         GfxShader(GLenum type,std::string data);
 
         void destroy();
@@ -28,13 +27,30 @@ namespace brl
     private:
         friend struct GfxShaderProgram;
         unsigned int id;
+        
+        bool isInstanced = false;
+
         GLenum type;
+    };
+
+    enum GfxUniformType
+    {
+        INT = GL_INT,
+        FLOAT = GL_FLOAT,
+        VEC2 = GL_FLOAT_VEC2,
+        VEC3 = GL_FLOAT_VEC3,
+        VEC4 = GL_FLOAT_VEC4,
+        MAT4 = GL_FLOAT_MAT4,
+        TEXTURE2D = GL_SAMPLER_2D,
+        TEXTURE2DARRAY = GL_SAMPLER_2D_ARRAY,
+        BOOL = GL_BOOL,
     };
 
     struct GfxShaderUniform {
         std::string name;
-        GLenum type;
+        GfxUniformType type;
         int location;
+        GfxShaderUniform() = default;
     };
 
     struct GfxShaderValue {
@@ -60,7 +76,10 @@ namespace brl
         friend struct GfxMaterial;
         friend struct GfxCamera;
         friend struct GfxFramebufferAttachment;
+        friend GfxEngine;
         unsigned int id;
+
+        bool instancingEnabled = false;
 
         GfxShaderUniform* uniforms;
         int uniformCount;
@@ -99,6 +118,8 @@ namespace brl
         }
 
         GfxShaderProgram* getShader() {return shader;}
+
+            size_t getHash();
         
         void setInt(std::string name, int value) {
 
@@ -186,6 +207,8 @@ namespace brl
         }
 
         void draw(GfxAttribBuffer* buffer, GfxUniformList runtimeOverrides = {});
+        void drawInstanced(std::vector<glm::mat4> transforms, GfxAttribBuffer * gfxBuffer,
+                           GfxUniformList runtimeOverrides = {});
 
 
     private:

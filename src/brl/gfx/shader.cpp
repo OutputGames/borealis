@@ -1,10 +1,59 @@
 #include "borealis/gfx/gfx.hpp"
 
+#define STB_INCLUDE_IMPLEMENTATION
+#include "stb_include.h"
+
+static char* stb_include_load_file(char* filename, size_t* plen)
+{
+    if (plen)
+        *plen = brl::readFileBinary(filename).dataSize;
+
+    auto f = brl::readFileString(filename);
+
+    return f.data();
+}
+
+void replaceInString(std::string& s, std::string from, std::string to)
+{
+    size_t start_pos = 0;
+    while ((start_pos = s.find(from, start_pos)) != std::string::npos)
+    {
+        s.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // Advance past the replaced text
+    }
+}
+
 
 brl::GfxShader::GfxShader(GLenum type, std::string data)
 {
     this->type = type;
     id = glCreateShader(type);
+
+    {
+        std::string from = "#definclude \"";
+        std::string to = "#include \"D:/";
+        replaceInString(data, from, to);
+    }
+
+
+    include_info* inc_list;
+    int incCount = stb_include_find_includes(data.data(), &inc_list);
+    while (incCount > 0)
+    {
+        include_info info = inc_list[0];
+
+        std::string inc = readFileString(info.filename);
+
+        data.replace(info.offset, info.end - info.offset, inc);
+        incCount = stb_include_find_includes(data.data(), &inc_list);
+    }
+
+    if (data.contains("#property INSTANCING"))
+    {
+        isInstanced = true;
+        replaceInString(data, "#property INSTANCING", "");
+    }
+
     const char* src = data.c_str();
     glShaderSource(id, 1, &src, NULL);
     glCompileShader(id);
@@ -99,6 +148,9 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
     for (int i = 0; i < shaderCount; i++)
     {
         GfxShader* shader = shaders[i];
+        if (shader->isInstanced)
+            instancingEnabled = true;
+
         glAttachShader(id, shader->id);
     }
     glLinkProgram(id);
@@ -144,7 +196,10 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
 
         glGetActiveUniform(id, i, sizeof(name) - 1, &nameLength, &num, &type, name);
 
-        uniforms[i] = GfxShaderUniform{name, type, i};
+        uniforms[i] = GfxShaderUniform{};
+        uniforms[i].name = name;
+        uniforms[i].type = static_cast<GfxUniformType>(type);
+        uniforms[i].location = i;
 
         std::string typeName = "";
 
@@ -210,6 +265,93 @@ void brl::GfxShaderProgram::use()
 
 }
 
+size_t brl::GfxMaterial::getHash()
+{
+    size_t hash = 14695981039346656037ULL;
+
+    // shader id hashing
+    uint32_t shaderBits = *reinterpret_cast<const uint32_t*>(&shader->id);
+    hash ^= shaderBits;
+    hash *= 1099511628211ULL;
+
+    for (const auto& [uniform, value] : overrides)
+    {
+        uint32_t bits;
+
+        // for lists
+        bool itr = false;
+        int itr_count = -1;
+        switch (uniform->type)
+        {
+            case BOOL:
+            case INT:
+                bits = *reinterpret_cast<const uint32_t*>(&value.intValue);
+                break;
+            case FLOAT:
+                bits = *reinterpret_cast<const uint32_t*>(&value.floatValue);
+                break;
+            case VEC2:
+                itr = true;
+                itr_count = 2;
+                break;
+            case VEC3:
+                itr = true;
+                itr_count = 3;
+                break;
+            case VEC4:
+                itr = true;
+                itr_count = 4;
+                break;
+            case MAT4:
+                itr = true;
+                itr_count = 4 * 4;
+                break;
+            case TEXTURE2D:
+            case TEXTURE2DARRAY:
+                if (value.txValue)
+                    bits = *reinterpret_cast<const uint32_t*>(&value.txValue->id);
+                else
+                    continue;
+                break;
+        }
+
+        if (itr)
+        {
+            for (int i = 0; i < itr_count; ++i)
+            {
+
+                switch (uniform->type)
+                {
+                    case VEC2:
+                        bits = *reinterpret_cast<const uint32_t*>(&value.v2value[i]);
+                        break;
+                    case VEC3:
+                        bits = *reinterpret_cast<const uint32_t*>(&value.v3value[i]);
+                        break;
+                    case VEC4:
+                        bits = *reinterpret_cast<const uint32_t*>(&value.v4value[i]);
+                        break;
+                    case MAT4:
+                        int row = i / 4;
+                        int col = i % 4;
+                        bits = *reinterpret_cast<const uint32_t*>(&value.m4value[row][col]);
+                        break;
+                }
+
+                hash ^= bits;
+                hash *= 1099511628211ULL;
+            }
+        }
+        else
+        {
+            hash ^= bits;
+            hash *= 1099511628211ULL;
+        }
+    }
+
+    return hash;
+}
+
 void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
                             GfxUniformList runtimeOverrides)
 {
@@ -239,8 +381,6 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
                 glUniformMatrix4fv(_override.first->location, 1,GL_FALSE, value_ptr(_override.second.m4value));
                 break;
             case GL_INT:
-                glUniform1i(_override.first->location, _override.second.intValue);
-                break;
             case GL_BOOL:
                 glUniform1i(_override.first->location, _override.second.intValue);
                 break;
@@ -324,6 +464,12 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
     {
         glDrawArrays(GL_TRIANGLES, 0, buffer->getSize());
     }
+}
+
+void brl::GfxMaterial::drawInstanced(std::vector<glm::mat4> transforms, GfxAttribBuffer* gfxBuffer,
+                                     GfxUniformList runtimeOverrides)
+{
+
 }
 
 void brl::GfxMaterial::setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair)

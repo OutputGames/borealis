@@ -70,6 +70,8 @@ namespace brl
 
         int getSize();
 
+        size_t getHash();
+
     private:
         friend GfxMaterial;
         GfxBuffer* vbo = nullptr, *ebo = nullptr;

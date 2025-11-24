@@ -24,6 +24,26 @@ int brl::GfxAttribBuffer::getSize()
     return vbo->size / vertexSize;
 }
 
+size_t brl::GfxAttribBuffer::getHash()
+{
+    size_t hash = 14695981039346656037ULL;
+
+    uint32_t vboBits = *reinterpret_cast<const uint32_t*>(&vbo->id);
+    hash ^= vboBits;
+    hash *= 1099511628211ULL;
+
+    if (ebo)
+    {
+        uint32_t eboBits = *reinterpret_cast<const uint32_t*>(&ebo->id);
+        hash ^= eboBits;
+        hash *= 1099511628211ULL;
+    }
+
+
+    return hash;
+
+}
+
 brl::GfxBuffer::GfxBuffer(GLenum format)
 {
     this->format = format;

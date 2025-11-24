@@ -4,6 +4,8 @@ in vec2 texCoords;
 in vec3 normal;
 in vec3 pos;
 
+#definclude "shaders/util.shdinc"
+
 uniform sampler2D tex;
 uniform float health;
 uniform vec3 _color;
@@ -26,7 +28,7 @@ void main()
 		if (texCoords.x > health) {
 			color.rgb = vec3(0.25f);
 		} else {
-			color.rgb = _color;
+			color.rgb = color_vec3(_color);
 			color.rgb *= clamp(texCoords.y+0.25f,0,1);
 		}
 	}

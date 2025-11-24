@@ -23,6 +23,8 @@ namespace brl
         uint32_t dataSize;
 
         void free(bool remove);
+
+        static IoFile NullFile;
     };
 
     struct IoEngine
