@@ -13,13 +13,12 @@ int main(int argc, const char* argv[])
     std::string overallPath = argv[1];
 
     // Open a file for writing in binary mode
-    std::filesystem::path outputDir = argv[2];
-    std::filesystem::path outputFilePath = outputDir / argv[3];
+    std::filesystem::path outputFilePath = argv[2];
     std::ofstream outFile(outputFilePath, std::ios::out | std::ios::binary | std::ios::trunc);
     // Check if the file was opened successfully
     if (!outFile.is_open())
     {
-        std::cerr << "Error opening file!" << std::endl;
+        std::cerr << "Error opening output file at " << outputFilePath.string() << "!" << std::endl;
         return -1;
     }
 

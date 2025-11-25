@@ -1,14 +1,5 @@
 local resource_packer = ""
 
-
-if _ACTION:startswith("gmake") then
-    resource_packer = "./tools/out/resource_packer.exe"
-end
-
-if _ACTION:startswith("vs") then
-    resource_packer = ".\\tools\\out\\resource_packer.exe"
-end
-
 resource_packer = _MAIN_SCRIPT_DIR .. "/tools/out/resource_packer.exe"
 
 
@@ -62,7 +53,7 @@ project "borealis"
         "ext/glad/lib",
     }
 
-    prebuildcommands { "ls", resource_packer.." default_assets/ out/ default_assets.res" }
+    prebuildcommands { "ls", resource_packer.." ".._MAIN_SCRIPT_DIR.."/default_assets/ ".._MAIN_SCRIPT_DIR.."/out/default_assets.res" }
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
 
@@ -161,8 +152,8 @@ project "borealis-test"
     }
 
 
-    prebuildcommands { resource_packer.." default_assets/ out/ default_assets.res" }
-    prebuildcommands { resource_packer.." test/resources/ out/ assets.res" }
+    prebuildcommands { resource_packer.." ".._MAIN_SCRIPT_DIR.."/default_assets/ ".._MAIN_SCRIPT_DIR.."/out/default_assets.res" }
+    prebuildcommands { resource_packer.." ".._MAIN_SCRIPT_DIR.."/test/resources/ ".._MAIN_SCRIPT_DIR.."/out/assets.res" }
 
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
