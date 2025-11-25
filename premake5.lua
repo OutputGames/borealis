@@ -96,7 +96,7 @@ project "resource_packer"
         "tools/include",
     }
 
-    debugargs {MAIN_SCRIPT_DIR.."/default_assets/",_MAIN_SCRIPT_DIR.."/out/default_assets.res"}
+    debugargs {_MAIN_SCRIPT_DIR.."/default_assets/",_MAIN_SCRIPT_DIR.."/out/default_assets.res"}
 
     filter "configurations:Debug*"
         symbols "On"
