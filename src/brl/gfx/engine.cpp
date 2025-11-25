@@ -198,31 +198,6 @@ void brl::GfxEngine::initialize()
     InputMgr::init(static_cast<GLFWwindow*>(mainWindow->window));
 
 
-#ifdef _WIN32
-    if (HMODULE mod = LoadLibrary(reinterpret_cast<LPCWSTR>("renderdoc.dll")))
-    {
-        auto RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
-        int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
-        assert(ret == 1);
-    }
-    else
-    {
-        DWORD error = GetLastError();
-        std::cout << "Failed to load DLL. Error code: " << error << std::endl;
-    }
-#else // For Linux/macOS
-    void* renderdoc_module = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD);
-    if (renderdoc_module)
-    {
-        RENDERDOC_GetAPIFunc get_api_func = (RENDERDOC_GetAPIFunc)dlsym(renderdoc_module, "RENDERDOC_GetAPI");
-        if (get_api_func)
-        {
-            get_api_func(&rd_api);
-        }
-        dlclose(renderdoc_module); // Close the handle as we only need the function pointer
-    }
-#endif
-
     // To start a frame capture, call StartFrameCapture.
     // You can specify NULL, NULL for the device to capture on if you have only one device and
     // either no windows at all or only one window, and it will capture from that device.

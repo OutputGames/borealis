@@ -8,12 +8,14 @@
 
 int main(int argc, const char* argv[])
 {
+#if _MSC_VER >= 1930
     system("..\\tools\\out\\resource_packer.exe ../test/resources/ ../out/ assets.res");
     system("..\\tools\\out\\resource_packer.exe ../default_assets/ ../out/ default_assets.res");
+#endif
 
 
-    brl::IoEngine ioMgr;
-    brl::EcsEngine entityMgr;
+    brl::IoEngine ioMgr = {};
+    brl::EcsEngine entityMgr = {};
 
 
     brl::GfxEngine engine;
@@ -50,10 +52,9 @@ int main(int argc, const char* argv[])
 
         {
             auto material = new brl::GfxMaterial(anim_shader);
-            material->setTexture(
-                "tex", brl::GfxSprite::extractSpritesToArray(brl::GfxTexture2d::loadTexture("textures/Trees/Tree1.png"),
-                                                             192,
-                                                             256, true));
+            material->setTexture("tex",
+                                 brl::GfxSprite::extractSpritesToArray(
+                                     brl::GfxTexture2d::loadTexture("textures/Trees/Tree1.png"), 192, 256, true));
 
             auto renderer = new brl::GfxMeshRenderer();
             renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
@@ -71,10 +72,9 @@ int main(int argc, const char* argv[])
 
         {
             auto material = new brl::GfxMaterial(anim_shader);
-            material->setTexture(
-                "tex", brl::GfxSprite::extractSpritesToArray(brl::GfxTexture2d::loadTexture("textures/Trees/Tree2.png"),
-                                                             192,
-                                                             256, true));
+            material->setTexture("tex",
+                                 brl::GfxSprite::extractSpritesToArray(
+                                     brl::GfxTexture2d::loadTexture("textures/Trees/Tree2.png"), 192, 256, true));
 
             auto renderer = new brl::GfxMeshRenderer();
             renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
@@ -92,25 +92,32 @@ int main(int argc, const char* argv[])
 
         {
             auto tower = brl::GfxModel::loadModel("models/tower/tower.glb");
+            std::cout << "Loading tower..";
             auto towerEntity = tower->createEntity();
+            std::cout << "Created tower..";
             towerEntity->localPosition = {5, 0, -10};
             towerEntity->setEulerAngles({0, 0, 0});
             towerEntity->localScale = glm::vec3(1.25f);
         }
-
-
     }
+
+
+    std::cout << "Loading map..";
 
     auto map = new MapController();
     map->loadMap();
 
 
+    std::cout << "Loading player..";
+
     auto player = new PlayerController();
 
+    std::cout << "Loading enemy..";
 
     auto enemy = new EnemyController();
     enemy->localPosition = {0, 0, -10};
 
+    std::cout << "Starting loop..";
 
     while (engine.isRunning())
     {
@@ -126,6 +133,8 @@ int main(int argc, const char* argv[])
         entityMgr.update();
         engine.update();
     }
+
+    std::cout << "Shutting down..";
 
     entityMgr.shutdown();
     ioMgr.shutdown();

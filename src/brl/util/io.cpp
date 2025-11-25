@@ -119,6 +119,8 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
 
     std::filesystem::path p(path);
 
+    std::cout << "Trying to load file at " << p.filename().string() << std::endl;
+
     std::string assetsPack = "";
 
     if (p.has_root_name())
@@ -134,7 +136,6 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
     }
     else
     {
-        std::cout << p.filename().string() << " has no path" << std::endl;
         assetsPack = "assets";
     }
 
@@ -142,7 +143,12 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
     if (!file)
         throw std::runtime_error("Failed to open resource path");
 
-    return iterateThroughPack(file, path, file_map);
+
+    auto f = iterateThroughPack(file, path, file_map);
+
+    std::cout << "Loaded file at " << p.filename().string() << std::endl;
+
+    return f;
 }
 
 std::string brl::IoEngine::readFileString(std::string path)

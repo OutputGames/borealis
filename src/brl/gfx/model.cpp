@@ -36,29 +36,34 @@ brl::EcsEntity* brl::GfxModelNode::createEntity()
     entity->localRotation = rotation;
     entity->localScale = scale;
 
+
+    if (mesh > -1)
+    {
+        std::cout << this->mesh << std::endl;
+        GfxMesh* _mesh = model->meshes[this->mesh];
+
+        auto renderer = new GfxMeshRenderer();
+        renderer->name = _mesh->name;
+        renderer->mesh = _mesh;
+
+
+        renderer->materials.clear();
+        for (int i = 0; i < _mesh->subMeshCount; ++i)
+        {
+            auto subMesh = _mesh->subMeshes[i];
+            renderer->materials.push_back(model->materials[subMesh->materialIndex]);
+        }
+
+
+        renderer->setParent(entity);
+
+    }
+
+
     for (int i = 0; i < childCount; ++i)
     {
         EcsEntity* e = children[i]->createEntity();
         e->setParent(entity);
-    }
-
-    if (mesh > -1)
-    {
-        GfxMesh* mesh = model->meshes[this->mesh];
-
-        auto renderer = new GfxMeshRenderer();
-        renderer->name = mesh->name;
-        renderer->mesh = mesh;
-
-        renderer->materials.clear();
-        for (int i = 0; i < mesh->subMeshCount; ++i)
-        {
-            auto subMesh = mesh->subMeshes[i];
-            renderer->materials.push_back(
-                model->materials[subMesh->materialIndex]);
-        }
-
-        renderer->setParent(entity);
     }
 
     return entity;
@@ -83,6 +88,8 @@ brl::GfxModel::GfxModel(std::string path)
 
     IoFile file = readFileBinary(path);
 
+    std::cout << file.dataSize << std::endl;
+
     tinygltf::Model model;
     tinygltf::TinyGLTF loader;
     std::string err, warn;
@@ -93,7 +100,7 @@ brl::GfxModel::GfxModel(std::string path)
 
     if (!ret)
     {
-        std::cerr << err << std::endl;
+        std::cout << "Model loading error: " << err << std::endl;
         exit(-1);
     }
 
@@ -251,6 +258,7 @@ brl::GfxModel::GfxModel(std::string path)
 
     rootNode->childCount = model.scenes[0].nodes.size();
     rootNode->children = new GfxModelNode*[rootNode->childCount];
+    rootNode->model = this;
     for (int i = 0; i < model.scenes[0].nodes.size(); ++i)
     {
         rootNode->children[i] = processNode(model.nodes[model.scenes[0].nodes[i]], model);

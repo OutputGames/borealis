@@ -51,6 +51,13 @@ ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c11 -Wall -fcompare-debug-s
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -Wall -fcompare-debug-second
 ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64
 
+else ifeq ($(config),debug_(renderdoc))
+OBJDIR = build/Debug (RenderDoc)
+DEFINES += -D_CRT_SECURE_NO_WARNINGS -DDEBUG
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c11 -Wall -fcompare-debug-second
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -Wall -fcompare-debug-second
+ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64
+
 else ifeq ($(config),release)
 OBJDIR = build/Release
 DEFINES += -D_CRT_SECURE_NO_WARNINGS -DNDEBUG
@@ -109,7 +116,7 @@ ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -rf $(OBJDIR)
 else
 	$(SILENT) if exist $(subst /,\\,$(TARGET)) del $(subst /,\\,$(TARGET))
-	$(SILENT) if exist $(subst /,\\,$(GENERATED)) del /s /q $(subst /,\\,$(GENERATED))
+	$(SILENT) $(foreach f,$(subst /,\\,$(GENERATED)),if exist $(f) del /s /q $(f) >nul &)
 	$(SILENT) if exist $(subst /,\\,$(OBJDIR)) rmdir /s /q $(subst /,\\,$(OBJDIR))
 endif
 

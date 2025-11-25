@@ -63,7 +63,7 @@ namespace brl
     {
         if (parent)
         {
-            if (typeid(*parent) == typeid(T))
+            if (typeid(*parent).hash_code() == typeid(T).hash_code())
             {
                 return dynamic_cast<T*>(parent);
             }

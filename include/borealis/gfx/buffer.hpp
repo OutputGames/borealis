@@ -40,7 +40,7 @@ namespace brl
     private:
         friend struct GfxAttribBuffer;
         GLenum format;
-        size_t size;
+        size_t size = 0;
     };
 
     struct GfxAttribute {

@@ -14,6 +14,17 @@ ifeq ($(config),debug)
   borealis_test_config = debug
   glad_config = debug
   glfw3_config = debug
+  stb_config = debug
+  glm_config = debug
+
+else ifeq ($(config),debug_(renderdoc))
+  borealis_config = debug_(renderdoc)
+  resource_packer_config = debug_(renderdoc)
+  borealis_test_config = debug_(renderdoc)
+  glad_config = debug_(renderdoc)
+  glfw3_config = debug_(renderdoc)
+  stb_config = debug_(renderdoc)
+  glm_config = debug_(renderdoc)
 
 else ifeq ($(config),release)
   borealis_config = release
@@ -21,18 +32,20 @@ else ifeq ($(config),release)
   borealis_test_config = release
   glad_config = release
   glfw3_config = release
+  stb_config = release
+  glm_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := borealis resource_packer borealis-test glad glfw3
+PROJECTS := borealis resource_packer borealis-test glad glfw3 stb glm
 
 .PHONY: all clean help $(PROJECTS) 
 
 all: $(PROJECTS)
 
-borealis: glad
+borealis: glad resource_packer
 ifneq (,$(borealis_config))
 	@echo "==== Building borealis ($(borealis_config)) ===="
 	@${MAKE} --no-print-directory -C . -f borealis.make config=$(borealis_config)
@@ -62,18 +75,33 @@ ifneq (,$(glfw3_config))
 	@${MAKE} --no-print-directory -C ext/glfw -f Makefile config=$(glfw3_config)
 endif
 
+stb:
+ifneq (,$(stb_config))
+	@echo "==== Building stb ($(stb_config)) ===="
+	@${MAKE} --no-print-directory -C ext/stb -f Makefile config=$(stb_config)
+endif
+
+glm:
+ifneq (,$(glm_config))
+	@echo "==== Building glm ($(glm_config)) ===="
+	@${MAKE} --no-print-directory -C ext/glm -f Makefile config=$(glm_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f borealis.make clean
 	@${MAKE} --no-print-directory -C . -f resource_packer.make clean
 	@${MAKE} --no-print-directory -C . -f borealis-test.make clean
 	@${MAKE} --no-print-directory -C ext/glad -f Makefile clean
 	@${MAKE} --no-print-directory -C ext/glfw -f Makefile clean
+	@${MAKE} --no-print-directory -C ext/stb -f Makefile clean
+	@${MAKE} --no-print-directory -C ext/glm -f Makefile clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
 	@echo ""
 	@echo "CONFIGURATIONS:"
 	@echo "  debug"
+	@echo "  debug_\(renderdoc\)"
 	@echo "  release"
 	@echo ""
 	@echo "TARGETS:"
@@ -84,5 +112,7 @@ help:
 	@echo "   borealis-test"
 	@echo "   glad"
 	@echo "   glfw3"
+	@echo "   stb"
+	@echo "   glm"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

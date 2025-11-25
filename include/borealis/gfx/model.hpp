@@ -57,10 +57,10 @@ namespace brl
         glm::quat rotation = glm::quat(); 
         glm::vec3 scale = glm::vec3(1);
 
-        int mesh;
+        int mesh = -1;
         GfxModelNode** children;
 
-        int childCount;
+        int childCount = 0;
 
         EcsEntity* createEntity();
 
