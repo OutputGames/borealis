@@ -7,8 +7,13 @@
 
 int main(int argc, const char* argv[])
 {
-    if (argc != 4)
+    if (argc != 3)
         return 1;
+
+    for (int i = 0; i < argc; ++i)
+    {
+        std::cout << argv[i] << std::endl;
+    }
 
     std::string overallPath = argv[1];
 

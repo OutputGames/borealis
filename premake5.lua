@@ -53,7 +53,7 @@ project "borealis"
         "ext/glad/lib",
     }
 
-    prebuildcommands { "ls", resource_packer.." ".._MAIN_SCRIPT_DIR.."/default_assets/ ".._MAIN_SCRIPT_DIR.."/out/default_assets.res" }
+    prebuildcommands { resource_packer.." ".._MAIN_SCRIPT_DIR.."/default_assets/ ".._MAIN_SCRIPT_DIR.."/out/default_assets.res" }
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
 
@@ -95,6 +95,8 @@ project "resource_packer"
     includedirs {
         "tools/include",
     }
+
+    debugargs {MAIN_SCRIPT_DIR.."/default_assets/",_MAIN_SCRIPT_DIR.."/out/default_assets.res"}
 
     filter "configurations:Debug*"
         symbols "On"

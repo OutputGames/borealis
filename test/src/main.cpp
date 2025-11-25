@@ -9,8 +9,8 @@
 int main(int argc, const char* argv[])
 {
 #if _MSC_VER >= 1930
-    system("..\\tools\\out\\resource_packer.exe ../test/resources/ ../out/ assets.res");
-    system("..\\tools\\out\\resource_packer.exe ../default_assets/ ../out/ default_assets.res");
+    system("..\\tools\\out\\resource_packer.exe ../test/resources/ ../out/assets.res");
+    system("..\\tools\\out\\resource_packer.exe ../default_assets/ ../out/default_assets.res");
 #endif
 
 
