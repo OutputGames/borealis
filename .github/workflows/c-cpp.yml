@@ -16,7 +16,7 @@ jobs:
     - name: Setup premake
       uses: abel0b/setup-premake@v2.4
       with:
-        version: "5.0.0-beta2"
+        version: "5.0.0-beta7"
     - name: premake
       run: |
         premake5 gmake
