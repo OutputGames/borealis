@@ -9,6 +9,7 @@ if _ACTION:startswith("vs") then
     resource_packer = ".\\tools\\out\\resource_packer.exe"
 end
 
+resource_packer = _MAIN_SCRIPT_DIR .. "/tools/out/resource_packer.exe"
 
 
 workspace "borealis"
@@ -61,7 +62,7 @@ project "borealis"
         "ext/glad/lib",
     }
 
-    prebuildcommands { resource_packer.." default_assets/ out/ default_assets.res" }
+    prebuildcommands { "ls", resource_packer.." default_assets/ out/ default_assets.res" }
     filter { "_ACTION:gmake" }
             libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
 
