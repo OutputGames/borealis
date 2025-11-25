@@ -50,6 +50,8 @@ namespace brl
 
         GLenum format = GL_FLOAT;
         bool normalized = false;
+
+        int divisor = -1;
     };
 
     enum GfxPrimitiveType
@@ -63,7 +65,10 @@ namespace brl
 
         void assignBuffer(GfxBuffer* buffer);
         void assignElementBuffer(GfxBuffer* buffer, GLenum format);
-        void insertAttribute(GfxAttribute attribute);
+        void insertAttribute(GfxAttribute attribute, GfxBuffer* bufferToUse = nullptr);
+
+        void ensureReadyForInstancing();
+        void updateInstanceBuffer(std::vector<glm::mat4> instances);
 
         void use();
         void destroy();
@@ -78,7 +83,11 @@ namespace brl
         GLenum eboFormat = GL_UNSIGNED_INT;
         int attributeCount = 0;
         size_t vertexSize;
-    };
+
+        bool setupAttributesForInstancing = false;
+        GfxBuffer* instanceBuffer;
+
+    }; // <-- Add a semicolon here to terminate the struct definition
 
 
 } // namespace brl

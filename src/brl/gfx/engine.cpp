@@ -1,6 +1,8 @@
 #include <thread>
 
 #include <renderdoc/renderdoc_app.h>
+
+#include "borealis/gfx/ui.hpp"
 using RENDERDOC_GetAPIFunc = void(RENDERDOC_CC*)(RENDERDOC_API_1_1_0* api);
 
 #ifdef _WIN32
@@ -119,18 +121,18 @@ void brl::GfxEngine::initialize()
                            },
                            nullptr);
     instance = this;
+    materialMgr = new GfxMaterialMgr;
 
     auto vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec2 aPos;\n"
         "layout (location = 1) in vec2 aUV;\n"
-
 
         "out vec2 texCoords;\n"
 
 
         "void main()\n"
         "{\n"
-        "   texCoords = aUV;"
+        "   texCoords = aUV;\n"
         "   gl_Position = vec4(aPos,0, 1.0);\n"
 
 
@@ -247,7 +249,7 @@ void brl::GfxEngine::update()
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> frame_time = end_time - start_time;
 
-    double target_frame_time_ms = 1000.0 / (90.);
+    double target_frame_time_ms = 1000.0 / (60.);
 
     if (frame_time.count() < target_frame_time_ms)
     {
@@ -263,6 +265,8 @@ void brl::GfxEngine::update()
 
     mainWindow->clear();
     GfxCamera::mainCamera->cachedFramebuffer->getAttachment(0)->draw(blitMaterial);
+
+    GfxCanvas::mainCanvas->draw();
 
 
     InputMgr::update();
@@ -297,7 +301,8 @@ void brl::GfxEngine::update()
 
 void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform)
 {
-    if (material->getShader()->instancingEnabled)
+    auto shader = material->getShader();
+    if (shader->instancingEnabled)
     {
         size_t hash = 14695981039346656037ULL;
 

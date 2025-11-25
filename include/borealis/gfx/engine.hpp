@@ -7,6 +7,7 @@
 
 namespace brl
 {
+    struct GfxMaterialMgr;
     struct GfxInstancedDrawCall;
     struct GfxMesh;
 }
@@ -70,6 +71,9 @@ namespace brl
         friend GfxAttribBuffer;
         friend GfxMesh;
         friend UtilCoroutine;
+        friend GfxMaterialMgr;
+
+        GfxMaterialMgr* materialMgr;
 
         bool initialized = false;
         GfxWindow* mainWindow = nullptr;

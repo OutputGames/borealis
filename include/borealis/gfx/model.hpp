@@ -38,13 +38,15 @@ namespace brl
         std::string name;
         static GfxMesh* GetPrimitive(GfxPrimitiveType type);
 
+        GfxSubMesh* GetSubMesh(int index) { return subMeshes[index]; }
+
         GfxMesh() = default;
         GfxMesh(GfxAttribBuffer* buffer);
 
     private:
         friend GfxModel;
         friend GfxModelNode;
-friend GfxMeshRenderer;
+        friend GfxMeshRenderer;
         GfxSubMesh** subMeshes;
         int subMeshCount;
     };
@@ -84,7 +86,8 @@ friend GfxMeshRenderer;
     struct GfxModel {
         std::vector<GfxMesh*> meshes;
         std::vector<GfxTexture2d*> textures;
-        std::vector<GfxMaterialDescription*> materials;
+        std::vector<GfxMaterialDescription*> materialDescriptions;
+        std::vector<GfxMaterial*> materials;
 
         static GfxModel* loadModel(std::string path);
 

@@ -26,6 +26,12 @@ namespace brl
 
         void setParent(EcsEntity* e);
 
+        template <typename T>
+        T* getEntityInParent();
+
+        template <typename T>
+        T* getEntityInChildren();
+
         EcsEntity();
 
     protected:
@@ -48,7 +54,33 @@ namespace brl
         std::vector<EcsEntity*> children;
         EcsEntity* parent = nullptr;
         bool active = true;
+
+        bool started = false;
     };
+
+    template <typename T>
+    T* EcsEntity::getEntityInParent()
+    {
+        if (parent)
+        {
+            if (typeid(*parent) == typeid(T))
+            {
+                return dynamic_cast<T*>(parent);
+            }
+
+            auto p = parent->getEntityInParent<T>();
+            if (p)
+                return p;
+        }
+
+        return nullptr;
+    }
+
+    template <typename T>
+    T* EcsEntity::getEntityInChildren()
+    {
+        return nullptr;
+    }
 
     struct EcsEngine {
 

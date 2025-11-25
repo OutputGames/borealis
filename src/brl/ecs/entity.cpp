@@ -104,6 +104,7 @@ void brl::EcsEntity::setParent(EcsEntity* e)
 brl::EcsEntity::EcsEntity()
 {
     EcsEngine::instance->entities.push_back(this);
+    awake();
 }
 
 void brl::EcsEntity::awake()
@@ -120,6 +121,11 @@ void brl::EcsEntity::earlyUpdate()
 
 void brl::EcsEntity::update()
 {
+    if (!started)
+    {
+        start();
+        started = true;
+    }
 }
 
 void brl::EcsEntity::lateUpdate()

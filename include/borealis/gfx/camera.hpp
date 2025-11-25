@@ -9,6 +9,8 @@
 
 namespace brl
 {
+    struct GfxCanvas;
+
     enum GfxCameraType
     {
         PERSPECTIVE,
@@ -38,8 +40,11 @@ namespace brl
 
     private:
         friend GfxEngine;
+        friend GfxCanvas;
         glm::mat4 GetViewMatrix();
         glm::mat4 GetProjMatrix();
+        glm::mat4 GetOrthoProjMatrix();
+        glm::mat4 GetPerspectiveProjMatrix();
         float getAspectRatio();
 
         GfxFramebuffer* cachedFramebuffer = nullptr;
@@ -59,6 +64,7 @@ namespace brl
         GfxFramebuffer* targetFramebuffer;
 
     private:
+        friend GfxCanvas;
         GfxCamera* gfxCamera = new GfxCamera;
 
         void earlyUpdate() override;

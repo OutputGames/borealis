@@ -80,23 +80,34 @@ glm::mat4 brl::GfxCamera::GetProjMatrix()
 
     if (type == PERSPECTIVE)
     {
-        proj = glm::perspective(glm::radians(fieldOfView), cachedFramebuffer->getAspectRatio(), minLimit, maxLimit);
+        proj = GetPerspectiveProjMatrix();
     }
     else
     {
-        float halfHeight = orthographicSize;
-        float halfWidth = halfHeight * cachedFramebuffer->getAspectRatio();
-
-        float left = -halfWidth;
-        float right = halfWidth;
-        float bottom = -halfHeight;
-        float top = halfHeight;
-
-
-        proj = glm::ortho(left, right, bottom, top, minLimit, maxLimit);
+        proj = GetOrthoProjMatrix();
     }
 
     return proj;
+}
+
+glm::mat4 brl::GfxCamera::GetOrthoProjMatrix()
+{
+    float halfHeight = orthographicSize;
+    float halfWidth = halfHeight * cachedFramebuffer->getAspectRatio();
+
+    float left = -halfWidth;
+    float right = halfWidth;
+    float bottom = -halfHeight;
+    float top = halfHeight;
+
+
+    return glm::ortho(left, right, bottom, top, minLimit, maxLimit);
+}
+
+glm::mat4 brl::GfxCamera::GetPerspectiveProjMatrix()
+{
+    return glm::perspective(glm::radians(fieldOfView), cachedFramebuffer->getAspectRatio(), minLimit, maxLimit);
+
 }
 
 float brl::GfxCamera::getAspectRatio() { return cachedFramebuffer->getAspectRatio(); }

@@ -28,13 +28,13 @@ size_t brl::GfxAttribBuffer::getHash()
 {
     size_t hash = 14695981039346656037ULL;
 
-    uint32_t vboBits = *reinterpret_cast<const uint32_t*>(&vbo->id);
+    uint32_t vboBits = vbo->id;
     hash ^= vboBits;
     hash *= 1099511628211ULL;
 
     if (ebo)
     {
-        uint32_t eboBits = *reinterpret_cast<const uint32_t*>(&ebo->id);
+        uint32_t eboBits = ebo->id;
         hash ^= eboBits;
         hash *= 1099511628211ULL;
     }
@@ -57,6 +57,7 @@ void brl::GfxBuffer::use()
 
 void brl::GfxBuffer::updateData(GLenum usage, const void* data, size_t size)
 {
+    use();
     glBufferData(format, size, data, usage);
     this->size = size;
 }
@@ -92,18 +93,48 @@ void brl::GfxAttribBuffer::assignElementBuffer(GfxBuffer* buffer, GLenum format)
     ebo = buffer;
 }
 
-void brl::GfxAttribBuffer::insertAttribute(GfxAttribute attribute)
+void brl::GfxAttribBuffer::insertAttribute(GfxAttribute attribute, GfxBuffer* bufferToUse)
 {
     use();
-    vbo->use();
+    if (bufferToUse)
+        bufferToUse->use();
+    else
+        vbo->use();
 
     glVertexAttribPointer(attributeCount, attribute.size, attribute.format, attribute.normalized, attribute.stride,
                           attribute.pointer);
     glEnableVertexAttribArray(attributeCount);
 
+    if (attribute.divisor > -1)
+        glVertexAttribDivisor(attributeCount, attribute.divisor);
+
     vertexSize = attribute.stride;
 
     attributeCount++;
+}
+
+void brl::GfxAttribBuffer::ensureReadyForInstancing()
+{
+    if (!setupAttributesForInstancing)
+    {
+        auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
+        buffer->use();
+
+        instanceBuffer = buffer;
+
+        // basic transformation matrices
+        insertAttribute({4, sizeof(glm::mat4), static_cast<void*>(0), GL_FLOAT, false, 1}, instanceBuffer);
+        insertAttribute({4, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)), GL_FLOAT, false, 1}, instanceBuffer);
+        insertAttribute({4, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)), GL_FLOAT, false, 1}, instanceBuffer);
+        insertAttribute({4, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)), GL_FLOAT, false, 1}, instanceBuffer);
+
+        setupAttributesForInstancing = true;
+    }
+}
+
+void brl::GfxAttribBuffer::updateInstanceBuffer(std::vector<glm::mat4> instances)
+{
+    instanceBuffer->updateData(GL_DYNAMIC_DRAW, instances.data(), instances.size() * sizeof(glm::mat4));
 }
 
 void brl::GfxAttribBuffer::use()

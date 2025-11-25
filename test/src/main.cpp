@@ -4,6 +4,7 @@
 #include "enemy.h"
 #include "player.h"
 #include "map.h"
+#include "borealis/gfx/ui.hpp"
 
 int main(int argc, const char* argv[])
 {
@@ -26,6 +27,14 @@ int main(int argc, const char* argv[])
     camera->targetFramebuffer =
         new brl::GfxFramebuffer(brl::GfxEngine::instance->getMainWidth() * framebufferScale,
                                 brl::GfxEngine::instance->getMainHeight() * framebufferScale);
+
+    auto canvas = new brl::GfxCanvas();
+    canvas->scaledSize = {4, 3};
+
+    auto testImage = new brl::GfxImage();
+    testImage->setParent(canvas);
+    testImage->localScale = glm::vec3(300.0f);
+    testImage->localPosition = {0, 1, 0};
 
 
     {

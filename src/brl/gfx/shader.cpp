@@ -51,7 +51,7 @@ brl::GfxShader::GfxShader(GLenum type, std::string data)
     if (data.contains("#property INSTANCING"))
     {
         isInstanced = true;
-        replaceInString(data, "#property INSTANCING", "");
+        replaceInString(data, "#property INSTANCING", "#define __KEYWORD__INSTANCING");
     }
 
     const char* src = data.c_str();
@@ -83,7 +83,8 @@ brl::GfxShaderProgram* brl::GfxShaderProgram::GetDefaultShader()
 
         auto shaderBins = new GfxShader*[2];
 
-        auto vertexShaderSource = "#version 330 core\n"
+        auto vertexShaderSource =
+            "#version 330 core\n"
             "layout (location = 0) in vec3 aPos;\n"
             "layout (location = 1) in vec3 aNorm;\n"
             "layout (location = 2) in vec2 aUV;\n"
@@ -100,7 +101,8 @@ brl::GfxShaderProgram* brl::GfxShaderProgram::GetDefaultShader()
             "   pos = vec3(_internalModel * vec4(aPos, 1.0));"
             "   gl_Position = _internalProj * _internalView * _internalModel * vec4(aPos, 1.0);\n"
             "}\0";
-        auto fragmentShaderSource = "#version 330 core\n"
+        auto fragmentShaderSource =
+            "#version 330 core\n"
             "out vec4 FragColor;\n"
             "in vec2 texCoords;\n"
             "in vec3 normal;\n"
@@ -176,6 +178,107 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
 
     print("Sucessfully linked shader.");
 
+    process();
+
+}
+
+brl::GfxShaderProgram::GfxShaderProgram(std::string compositeSource)
+{
+
+    // start shader splitting
+    std::istringstream iss(compositeSource); // Create an input string stream
+    std::string line;
+
+    std::vector<GfxShader*> shaders;
+
+    int sectionStart = -1;
+    bool isInShader = false;
+    GLenum shaderType;
+
+    int i = 0;
+    // Loop through the lines using std::getline
+    while (std::getline(iss, line))
+    {
+        if (line.starts_with("#define __STARTSHADER"))
+        {
+            isInShader = true;
+        }
+        else
+        {
+            if (isInShader)
+            {
+                if (line.starts_with("#define __SHADERTYPE"))
+                {
+                    sectionStart = i + line.size() + 1;
+
+                    std::string type = line.substr(std::string("#define __SHADERTYPE ").size());
+
+                    if (type.contains("VTX"))
+                    {
+                        shaderType = GL_VERTEX_SHADER;
+                    }
+                    else if (type.contains("FRAG"))
+                        shaderType = GL_FRAGMENT_SHADER;
+                }
+
+                if (line.starts_with("#define __ENDSHADER"))
+                {
+                    std::string section = compositeSource.substr(sectionStart, i - sectionStart);
+                    shaders.push_back(new GfxShader(shaderType, section));
+                    isInShader = false;
+                }
+            }
+        }
+        i += line.size() + 1;
+    }
+
+
+    id = glCreateProgram();
+
+    for (int i = 0; i < shaders.size(); i++)
+    {
+        GfxShader* shader = shaders[i];
+        if (shader->isInstanced)
+            instancingEnabled = true;
+
+        glAttachShader(id, shader->id);
+    }
+    glLinkProgram(id);
+
+    int success;
+    char infoLog[512];
+    glGetProgramiv(id, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(id, 512, NULL, infoLog);
+        std::cerr << "Shader linking failed.\n" << infoLog << std::endl;
+        exit(-1);
+    }
+
+    for (int i = 0; i < shaders.size(); i++)
+    {
+        GfxShader* shader = shaders[i];
+        shader->destroy();
+    }
+
+
+    process();
+}
+
+brl::GfxShaderProgram::~GfxShaderProgram()
+{
+    glDeleteProgram(id);
+}
+
+void brl::GfxShaderProgram::use()
+{
+    glUseProgram(id);
+
+
+}
+
+void brl::GfxShaderProgram::process()
+{
     GLint totalUniforms = 0;
     glGetProgramiv(id, GL_ACTIVE_UNIFORMS, &totalUniforms);
     uniforms = new GfxShaderUniform[totalUniforms];
@@ -250,19 +353,33 @@ brl::GfxShaderProgram::GfxShaderProgram(GfxShader** shaders, int shaderCount, bo
         textures[i] = _textures[i];
         glUniform1i(getUniform(textures[i])->location, i);
     }
-
 }
 
-brl::GfxShaderProgram::~GfxShaderProgram()
+brl::GfxMaterial::GfxMaterial(GfxShaderProgram* shader)
 {
-    glDeleteProgram(id);
+    this->shader = shader;
+    GfxMaterialMgr::GetInstance()->InsertToRegistry(this);
 }
 
-void brl::GfxShaderProgram::use()
+brl::GfxMaterial::~GfxMaterial()
 {
-    glUseProgram(id);
+    GfxMaterialMgr::GetInstance()->RemoveFromRegistry(this);
+}
 
+void brl::GfxMaterial::reloadShader(GfxShaderProgram* shader)
+{
+    this->shader = shader;
+    GfxUniformList prevOverrides = overrides;
 
+    overrides.clear();
+
+    for (auto override : prevOverrides)
+    {
+        if (shader->getUniform(override.first->name))
+        {
+            overrides.insert({shader->getUniform(override.first->name), override.second});
+        }
+    }
 }
 
 size_t brl::GfxMaterial::getHash()
@@ -270,84 +387,14 @@ size_t brl::GfxMaterial::getHash()
     size_t hash = 14695981039346656037ULL;
 
     // shader id hashing
-    uint32_t shaderBits = *reinterpret_cast<const uint32_t*>(&shader->id);
+    uint32_t shaderBits = shader->id;
     hash ^= shaderBits;
     hash *= 1099511628211ULL;
 
-    for (const auto& [uniform, value] : overrides)
-    {
-        uint32_t bits;
-
-        // for lists
-        bool itr = false;
-        int itr_count = -1;
-        switch (uniform->type)
-        {
-            case BOOL:
-            case INT:
-                bits = *reinterpret_cast<const uint32_t*>(&value.intValue);
-                break;
-            case FLOAT:
-                bits = *reinterpret_cast<const uint32_t*>(&value.floatValue);
-                break;
-            case VEC2:
-                itr = true;
-                itr_count = 2;
-                break;
-            case VEC3:
-                itr = true;
-                itr_count = 3;
-                break;
-            case VEC4:
-                itr = true;
-                itr_count = 4;
-                break;
-            case MAT4:
-                itr = true;
-                itr_count = 4 * 4;
-                break;
-            case TEXTURE2D:
-            case TEXTURE2DARRAY:
-                if (value.txValue)
-                    bits = *reinterpret_cast<const uint32_t*>(&value.txValue->id);
-                else
-                    continue;
-                break;
-        }
-
-        if (itr)
-        {
-            for (int i = 0; i < itr_count; ++i)
-            {
-
-                switch (uniform->type)
-                {
-                    case VEC2:
-                        bits = *reinterpret_cast<const uint32_t*>(&value.v2value[i]);
-                        break;
-                    case VEC3:
-                        bits = *reinterpret_cast<const uint32_t*>(&value.v3value[i]);
-                        break;
-                    case VEC4:
-                        bits = *reinterpret_cast<const uint32_t*>(&value.v4value[i]);
-                        break;
-                    case MAT4:
-                        int row = i / 4;
-                        int col = i % 4;
-                        bits = *reinterpret_cast<const uint32_t*>(&value.m4value[row][col]);
-                        break;
-                }
-
-                hash ^= bits;
-                hash *= 1099511628211ULL;
-            }
-        }
-        else
-        {
-            hash ^= bits;
-            hash *= 1099511628211ULL;
-        }
-    }
+    // material id hashing
+    uint32_t materialBits = registryIndex;
+    hash ^= materialBits;
+    hash *= 1099511628211ULL;
 
     return hash;
 }
@@ -466,10 +513,121 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
     }
 }
 
-void brl::GfxMaterial::drawInstanced(std::vector<glm::mat4> transforms, GfxAttribBuffer* gfxBuffer,
+void brl::GfxMaterial::drawInstanced(std::vector<glm::mat4> transforms, GfxAttribBuffer* buffer,
                                      GfxUniformList runtimeOverrides)
 {
+    buffer->ensureReadyForInstancing();
+    buffer->updateInstanceBuffer(transforms);
 
+    buffer->use();
+    shader->use();
+
+
+    for (const auto& _override : overrides)
+    {
+        // std::cout << "overriding uniform at " << _override.first->location << "(" << _override.first->name << ")"<<
+        // std::endl;
+        switch (_override.first->type)
+        {
+            case GL_FLOAT:
+                glUniform1f(_override.first->location, _override.second.floatValue);
+                break;
+            case GL_FLOAT_VEC2:
+                glUniform2f(_override.first->location, _override.second.v2value.x, _override.second.v2value.y);
+                break;
+            case GL_FLOAT_VEC3:
+                glUniform3f(_override.first->location, _override.second.v3value.x, _override.second.v3value.y,
+                            _override.second.v3value.z);
+                break;
+            case GL_FLOAT_VEC4:
+                glUniform4fv(_override.first->location, 1, value_ptr(_override.second.v4value));
+                break;
+            case GL_FLOAT_MAT4:
+                glUniformMatrix4fv(_override.first->location, 1, GL_FALSE, value_ptr(_override.second.m4value));
+                break;
+            case GL_INT:
+            case GL_BOOL:
+                glUniform1i(_override.first->location, _override.second.intValue);
+                break;
+            case GL_SAMPLER_2D:
+                glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex(_override.first->name));
+                if (_override.second.txValue)
+                {
+                    glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
+                }
+                else
+                {
+                    glBindTexture(GL_TEXTURE_2D, GfxTexture2d::getWhiteTexture()->id);
+                }
+                break;
+            case GL_SAMPLER_2D_ARRAY:
+            {
+                int i = shader->getTextureIndex(_override.first->name);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.second.txValue->id);
+            }
+            break;
+            default:
+                break;
+        }
+    }
+
+    for (const auto& _override : runtimeOverrides)
+    {
+        if (!_override.first)
+            continue;
+
+        switch (_override.first->type)
+        {
+            case GL_FLOAT:
+                glUniform1f(_override.first->location, _override.second.floatValue);
+                break;
+            case GL_FLOAT_VEC2:
+                glUniform2f(_override.first->location, _override.second.v2value.x, _override.second.v2value.y);
+                break;
+            case GL_FLOAT_VEC3:
+                glUniform3f(_override.first->location, _override.second.v3value.x, _override.second.v3value.y,
+                            _override.second.v3value.z);
+                break;
+            case GL_FLOAT_VEC4:
+                glUniform4fv(_override.first->location, 1, value_ptr(_override.second.v4value));
+                break;
+            case GL_FLOAT_MAT4:
+                glUniformMatrix4fv(_override.first->location, 1, GL_FALSE, value_ptr(_override.second.m4value));
+                break;
+            case GL_INT:
+                glUniform1i(_override.first->location, _override.second.intValue);
+                break;
+            case GL_SAMPLER_2D:
+            {
+                int i = shader->getTextureIndex(_override.first->name);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, _override.second.txValue->id);
+            }
+            break;
+            case GL_SAMPLER_2D_ARRAY:
+            {
+                int i = shader->getTextureIndex(_override.first->name);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.second.txValue->id);
+            }
+            break;
+            default:
+                break;
+        }
+    }
+
+    if (buffer->ebo)
+    {
+        buffer->ebo->use();
+
+
+        glDrawElementsInstanced(GL_TRIANGLES, buffer->getSize(), buffer->eboFormat, 0, transforms.size());
+    }
+    else
+    {
+        glDrawArraysInstanced(GL_TRIANGLES, 0, buffer->getSize(), transforms.size());
+    }
 }
 
 void brl::GfxMaterial::setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair)
@@ -482,4 +640,19 @@ void brl::GfxMaterial::setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> 
     {
         overrides.insert(pair);
     }
+}
+
+brl::GfxMaterialMgr* brl::GfxMaterialMgr::GetInstance()
+{
+    return GfxEngine::instance->materialMgr;
+}
+
+void brl::GfxMaterialMgr::InsertToRegistry(GfxMaterial* material)
+{
+    material->registryIndex = material_registry.size();
+    material_registry.push_back(material);
+}
+
+void brl::GfxMaterialMgr::RemoveFromRegistry(GfxMaterial* material)
+{
 }

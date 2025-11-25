@@ -55,7 +55,7 @@ brl::EcsEntity* brl::GfxModelNode::createEntity()
         {
             auto subMesh = mesh->subMeshes[i];
             renderer->materials.push_back(
-                model->materials[subMesh->materialIndex]->createMaterial(GfxShaderProgram::GetDefaultShader()));
+                model->materials[subMesh->materialIndex]);
         }
 
         renderer->setParent(entity);
@@ -241,9 +241,11 @@ brl::GfxModel::GfxModel(std::string path)
             desc->baseColorValue = {val[0], val[1], val[2], val[3]};
         }
 
-        materials.push_back(desc);
+        materialDescriptions.push_back(desc);
     }
 
+    for (auto materialDescription : materialDescriptions)
+        materials.push_back(materialDescription->createMaterial(GfxShaderProgram::GetDefaultShader()));
 
     rootNode = new GfxModelNode;
 

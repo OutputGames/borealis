@@ -15,7 +15,7 @@ void MapObject::update()
 
 void MapController::loadMap()
 {
-    int *mapData;
+    int* mapData;
     mapData = new int[]{
         1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -33,6 +33,13 @@ void MapController::loadMap()
     int mapHeight = 10;
     float spacing = 2.6f;
 
+    auto shaderBins = new brl::GfxShader*[2];
+
+
+    shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map/map.vert"));
+    shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map/map.frag"));
+    auto defaultShader = new brl::GfxShaderProgram(shaderBins, 2, true);
+
     for (int x = -mapWidth / 2; x < mapWidth / 2; ++x)
     {
         for (int y = -mapHeight / 2; y < mapHeight / 2; ++y)
@@ -42,16 +49,12 @@ void MapController::loadMap()
 
             for (int i = 0; i <= value; ++i)
             {
-                brl::GfxModel* block = nullptr;
+                brl::GfxModel* block = brl::GfxModel::loadModel("models/block.glb");
+                for (auto material : block->materials)
+                {
+                    material->reloadShader(defaultShader);
+                }
 
-                if (i != value)
-                {
-                    block = brl::GfxModel::loadModel("models/block.glb");
-                }
-                else
-                {
-                    block = brl::GfxModel::loadModel("models/block.glb");
-                }
 
                 float blockX = x * 2.2f;
                 float blockY = y * spacing;

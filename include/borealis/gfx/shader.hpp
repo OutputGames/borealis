@@ -1,9 +1,9 @@
 #if !defined(SHADER_HPP)
 #define SHADER_HPP
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <borealis/util/util.h>
+#include <glad/glad.h>
 
 namespace brl
 {
@@ -16,18 +16,17 @@ namespace brl
     struct GfxAttribBuffer;
     struct GfxMaterial;
     using GfxUniformList = std::unordered_map<GfxShaderUniform*, GfxShaderValue>;
-    
-    struct GfxShader {
-        GfxShader(GLenum type,std::string data);
+
+    struct GfxShader
+    {
+        GfxShader(GLenum type, std::string data);
 
         void destroy();
-
-
 
     private:
         friend struct GfxShaderProgram;
         unsigned int id;
-        
+
         bool isInstanced = false;
 
         GLenum type;
@@ -35,25 +34,27 @@ namespace brl
 
     enum GfxUniformType
     {
-        INT = GL_INT,
-        FLOAT = GL_FLOAT,
-        VEC2 = GL_FLOAT_VEC2,
-        VEC3 = GL_FLOAT_VEC3,
-        VEC4 = GL_FLOAT_VEC4,
-        MAT4 = GL_FLOAT_MAT4,
-        TEXTURE2D = GL_SAMPLER_2D,
+        INT            = GL_INT,
+        FLOAT          = GL_FLOAT,
+        VEC2           = GL_FLOAT_VEC2,
+        VEC3           = GL_FLOAT_VEC3,
+        VEC4           = GL_FLOAT_VEC4,
+        MAT4           = GL_FLOAT_MAT4,
+        TEXTURE2D      = GL_SAMPLER_2D,
         TEXTURE2DARRAY = GL_SAMPLER_2D_ARRAY,
-        BOOL = GL_BOOL,
+        BOOL           = GL_BOOL,
     };
 
-    struct GfxShaderUniform {
+    struct GfxShaderUniform
+    {
         std::string name;
         GfxUniformType type;
         int location;
         GfxShaderUniform() = default;
     };
 
-    struct GfxShaderValue {
+    struct GfxShaderValue
+    {
         int intValue;
         float floatValue;
         glm::vec2 v2value;
@@ -63,32 +64,20 @@ namespace brl
         GfxTexture* txValue;
     };
 
-    struct GfxShaderProgram 
+    struct GfxShaderProgram
     {
         GfxShaderProgram(GfxShader** shaders, int shaderCount, bool deleteOnLoad);
+        GfxShaderProgram(std::string compositeSource);
         ~GfxShaderProgram();
 
         void use();
 
         static GfxShaderProgram* GetDefaultShader();
 
-    private:
-        friend struct GfxMaterial;
-        friend struct GfxCamera;
-        friend struct GfxFramebufferAttachment;
-        friend GfxEngine;
-        unsigned int id;
-
-        bool instancingEnabled = false;
-
-        GfxShaderUniform* uniforms;
-        int uniformCount;
-
-        std::string* textures;
-        int textureSlots;
-
-        GfxShaderUniform* getUniform(std::string name) {
-            for(int i=0; i<uniformCount; i++){
+        GfxShaderUniform* getUniform(std::string name)
+        {
+            for (int i = 0; i < uniformCount; i++)
+            {
                 if (uniforms[i].name == name)
                 {
                     uniforms[i].location = glGetUniformLocation(id, name.c_str());
@@ -109,19 +98,41 @@ namespace brl
             }
             return -1;
         }
+
+    private:
+        friend struct GfxMaterial;
+        friend struct GfxCamera;
+        friend struct GfxFramebufferAttachment;
+        friend GfxEngine;
+        friend struct GfxImage;
+        unsigned int id;
+
+        bool instancingEnabled = false;
+
+        GfxShaderUniform* uniforms;
+        int uniformCount;
+
+        std::string* textures;
+        int textureSlots;
+
+        void process();
+
     };
 
-        struct GfxMaterial {
+    struct GfxMaterial
+    {
 
-        GfxMaterial(GfxShaderProgram* shader) {
-            this->shader = shader;
-        }
+        GfxMaterial(GfxShaderProgram* shader);
 
-        GfxShaderProgram* getShader() {return shader;}
+        ~GfxMaterial();
 
-            size_t getHash();
-        
-        void setInt(std::string name, int value) {
+        GfxShaderProgram* getShader() { return shader; }
+        void reloadShader(GfxShaderProgram* shader);
+
+        size_t getHash();
+
+        void setInt(std::string name, int value)
+        {
 
             if (!shader->getUniform(name))
                 return;
@@ -131,7 +142,8 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void setFloat(std::string name, float value) {
+        void setFloat(std::string name, float value)
+        {
 
 
             if (!shader->getUniform(name))
@@ -142,7 +154,8 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void setVec2(std::string name, glm::vec2 value) {
+        void setVec2(std::string name, glm::vec2 value)
+        {
 
 
             if (!shader->getUniform(name))
@@ -153,7 +166,8 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void setVec3(std::string name, glm::vec3 value) {
+        void setVec3(std::string name, glm::vec3 value)
+        {
 
             if (shader->getUniform(name) == nullptr)
                 return;
@@ -163,7 +177,8 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void setVec4(std::string name, glm::vec4 value) {
+        void setVec4(std::string name, glm::vec4 value)
+        {
 
 
             if (!shader->getUniform(name))
@@ -174,7 +189,8 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        void setMat4(std::string name, glm::mat4 value) {
+        void setMat4(std::string name, glm::mat4 value)
+        {
 
 
             if (!shader->getUniform(name))
@@ -195,7 +211,8 @@ namespace brl
             setOverride({shader->getUniform(name), val});
         }
 
-        GfxShaderValue getUniform(std::string name) {
+        GfxShaderValue getUniform(std::string name)
+        {
             for (const auto& uniform : overrides)
             {
                 if (uniform.first->name == name)
@@ -203,20 +220,36 @@ namespace brl
             }
 
             return {};
-            
+
         }
 
         void draw(GfxAttribBuffer* buffer, GfxUniformList runtimeOverrides = {});
-        void drawInstanced(std::vector<glm::mat4> transforms, GfxAttribBuffer * gfxBuffer,
+        void drawInstanced(std::vector<glm::mat4> transforms, GfxAttribBuffer* gfxBuffer,
                            GfxUniformList runtimeOverrides = {});
 
-
     private:
+        friend struct GfxMaterialMgr;
         GfxShaderProgram* shader;
         GfxUniformList overrides;
+        unsigned int registryIndex = UINT_MAX;
 
         void setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair);
     };
+
+    struct GfxMaterialMgr
+    {
+    private:
+        friend GfxMaterial;
+
+        static GfxMaterialMgr* GetInstance();
+
+        std::vector<GfxMaterial*> material_registry;
+
+        void InsertToRegistry(GfxMaterial* material);
+        void RemoveFromRegistry(GfxMaterial* material);
+
+    };
+
 } // namespace brl
 
 
