@@ -19,6 +19,10 @@ int main(int argc, const char* argv[])
 
     // Open a file for writing in binary mode
     std::filesystem::path outputFilePath = argv[2];
+
+    std::filesystem::create_directories(outputFilePath.parent_path());
+
+
     std::ofstream outFile(outputFilePath, std::ios::out | std::ios::binary | std::ios::trunc);
     // Check if the file was opened successfully
     if (!outFile.is_open())

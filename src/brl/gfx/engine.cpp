@@ -1,23 +1,11 @@
 #include <thread>
 
-#include <renderdoc/renderdoc_app.h>
-
 #include "borealis/gfx/ui.hpp"
-using RENDERDOC_GetAPIFunc = void(RENDERDOC_CC*)(RENDERDOC_API_1_1_0* api);
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#endif
 
 #include "borealis/gfx/gfx.hpp"
 #include "borealis/util/input.hpp"
 
 brl::GfxEngine* brl::GfxEngine::instance;
-
-RENDERDOC_API_1_1_2* rdoc_api = NULL;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -217,10 +205,6 @@ void brl::GfxEngine::update()
     if (InputMgr::getKeyDown(GLFW_KEY_P))
         cap = true;
 
-    if (rdoc_api && cap)
-        rdoc_api->StartFrameCapture(NULL, NULL);
-
-
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> frame_time = end_time - start_time;
 
@@ -268,9 +252,6 @@ void brl::GfxEngine::update()
     }
 
     start_time = std::chrono::high_resolution_clock::now();
-
-    if (rdoc_api && cap)
-        rdoc_api->EndFrameCapture(NULL, NULL);
 
 }
 

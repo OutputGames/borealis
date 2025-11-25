@@ -23,7 +23,7 @@ project "borealis"
     cppdialect "C++23"
     targetdir "lib"
     objdir "build"
-    dependson {"glad", "tinygltf", "resource_packer"}
+    dependson {"glad", "tinygltf", "resource_packer", "glfw"}
 
     files {
         "src/**.cpp",
@@ -54,12 +54,7 @@ project "borealis"
     }
 
     prebuildcommands { resource_packer.." ".._MAIN_SCRIPT_DIR.."/default_assets/ ".._MAIN_SCRIPT_DIR.."/out/default_assets.res" }
-    filter { "_ACTION:gmake" }
-            libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
 
-
-    filter { "_ACTION:vs*" }
-            libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
     links {
         "glad",
         "glfw3",
@@ -156,12 +151,6 @@ project "borealis-test"
 
     prebuildcommands { resource_packer.." ".._MAIN_SCRIPT_DIR.."/default_assets/ ".._MAIN_SCRIPT_DIR.."/out/default_assets.res" }
     prebuildcommands { resource_packer.." ".._MAIN_SCRIPT_DIR.."/test/resources/ ".._MAIN_SCRIPT_DIR.."/out/assets.res" }
-
-    filter { "_ACTION:gmake" }
-            libdirs { "ext/glfw/lib-mingw-w64","ext/assimp/lib/mingw/" }
-    filter { "_ACTION:vs*" }
-            libdirs { "ext/glfw/lib-vc2022", "ext/assimp/lib/vc2022/" }
-
 
     filter "configurations:Debug*"
         symbols "On"
