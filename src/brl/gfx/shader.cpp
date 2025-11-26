@@ -363,6 +363,7 @@ brl::GfxMaterial::GfxMaterial(GfxShaderProgram* shader)
 
 brl::GfxMaterial::~GfxMaterial()
 {
+    overrides.clear();
     GfxMaterialMgr::GetInstance()->RemoveFromRegistry(this);
 }
 
@@ -655,4 +656,12 @@ void brl::GfxMaterialMgr::InsertToRegistry(GfxMaterial* material)
 
 void brl::GfxMaterialMgr::RemoveFromRegistry(GfxMaterial* material)
 {
+}
+
+brl::GfxMaterialMgr::~GfxMaterialMgr()
+{
+    for (auto& materialRegistry : material_registry)
+    {
+        delete materialRegistry;
+    }
 }

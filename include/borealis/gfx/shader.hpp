@@ -247,6 +247,7 @@ namespace brl
 
         void InsertToRegistry(GfxMaterial* material);
         void RemoveFromRegistry(GfxMaterial* material);
+        ~GfxMaterialMgr();
 
     };
 

@@ -92,9 +92,8 @@ int main(int argc, const char* argv[])
 
         {
             auto tower = brl::GfxModel::loadModel("models/tower/tower.glb");
-            std::cout << "Loading tower..";
             auto towerEntity = tower->createEntity();
-            std::cout << "Created tower..";
+
             towerEntity->localPosition = {5, 0, -10};
             towerEntity->setEulerAngles({0, 0, 0});
             towerEntity->localScale = glm::vec3(1.25f);
@@ -102,22 +101,13 @@ int main(int argc, const char* argv[])
     }
 
 
-    std::cout << "Loading map..";
-
     auto map = new MapController();
     map->loadMap();
 
-
-    std::cout << "Loading player..";
-
     auto player = new PlayerController();
-
-    std::cout << "Loading enemy..";
 
     auto enemy = new EnemyController();
     enemy->localPosition = {0, 0, -10};
-
-    std::cout << "Starting loop..";
 
     while (engine.isRunning())
     {
@@ -133,8 +123,6 @@ int main(int argc, const char* argv[])
         entityMgr.update();
         engine.update();
     }
-
-    std::cout << "Shutting down..";
 
     entityMgr.shutdown();
     ioMgr.shutdown();

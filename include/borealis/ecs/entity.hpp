@@ -79,6 +79,20 @@ namespace brl
     template <typename T>
     T* EcsEntity::getEntityInChildren()
     {
+        for (auto child : children)
+        {
+            if (typeid(*child).hash_code() == typeid(T).hash_code())
+            {
+                return dynamic_cast<T*>(child);
+            }
+            
+            auto p = child->getEntityInChildren<T>();
+            if (p)
+                return p;
+
+
+        }
+
         return nullptr;
     }
 

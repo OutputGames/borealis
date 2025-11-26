@@ -10,6 +10,11 @@
 
 std::map<std::string, brl::GfxModel*> brl::GfxModel::cachedModels;
 
+brl::GfxSubMesh::~GfxSubMesh()
+{
+    delete buffer;
+}
+
 brl::GfxMesh* brl::GfxMesh::GetPrimitive(GfxPrimitiveType type)
 {
     switch (type)
@@ -27,6 +32,8 @@ brl::GfxMesh::GfxMesh(GfxAttribBuffer* buffer)
     subMeshCount = 1;
 }
 
+brl::GfxMesh::~GfxMesh() { delete[] subMeshes; }
+
 brl::EcsEntity* brl::GfxModelNode::createEntity()
 {
     auto entity = new EcsEntity;
@@ -39,7 +46,6 @@ brl::EcsEntity* brl::GfxModelNode::createEntity()
 
     if (mesh > -1)
     {
-        std::cout << this->mesh << std::endl;
         GfxMesh* _mesh = model->meshes[this->mesh];
 
         auto renderer = new GfxMeshRenderer();
@@ -327,6 +333,6 @@ void brl::GfxMeshRenderer::lateUpdate()
     for (int i = 0; i < mesh->subMeshCount; ++i)
     {
         GfxSubMesh* subMesh = mesh->subMeshes[i];
-        GfxEngine::instance->insertCall(materials[i], subMesh->buffer, calculateTransform());
+        GfxEngine::instance->insertCall(materials[i], subMesh->buffer, calculateTransform(), instancingID);
     }
 }

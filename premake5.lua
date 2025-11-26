@@ -133,6 +133,7 @@ project "borealis-test"
         "ext/glm",
         "ext/stb/",
         "ext/glfw/include",
+        "ext/FastNoiseLite/Cpp"
     }
 
     libdirs {

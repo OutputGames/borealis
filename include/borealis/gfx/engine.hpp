@@ -53,7 +53,7 @@ namespace brl
         void shutdown();
         void update();
         bool isRunning() {return mainWindow->isOpen();}
-        void insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform);
+        void insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform, int instancingIdx = 0);
         int getFrameCount();
 
         float getAspectRatio();

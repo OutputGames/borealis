@@ -62,8 +62,6 @@ brl::GfxEngine::GfxEngine()
 brl::GfxEngine::~GfxEngine()
 {
     calls.clear();
-    delete blitMaterial;
-    delete quadMesh;
 }
 
 
@@ -205,6 +203,7 @@ void brl::GfxEngine::update()
     if (InputMgr::getKeyDown(GLFW_KEY_P))
         cap = true;
 
+    /*
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> frame_time = end_time - start_time;
 
@@ -215,7 +214,7 @@ void brl::GfxEngine::update()
         std::this_thread::sleep_for(
             std::chrono::duration<double, std::milli>(target_frame_time_ms - frame_time.count()));
     }
-
+    */
 
     GfxCamera::mainCamera->draw(calls, instancedCalls);
 
@@ -255,7 +254,8 @@ void brl::GfxEngine::update()
 
 }
 
-void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform)
+void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform,
+                                int instancingIdx)
 {
     auto shader = material->getShader();
     if (shader->instancingEnabled)
@@ -266,6 +266,9 @@ void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, 
         hash *= 1099511628211ULL;
 
         hash ^= material->getHash();
+        hash *= 1099511628211ULL;
+
+        hash ^= instancingIdx;
         hash *= 1099511628211ULL;
 
         if (!instancedCalls.contains(hash))
@@ -303,5 +306,7 @@ void brl::GfxWindow::clear()
 
 void brl::GfxEngine::shutdown()
 {
+    delete quadMesh;
+
     glfwTerminate();
 }

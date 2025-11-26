@@ -32,6 +32,8 @@ namespace brl
     {
         GfxAttribBuffer* buffer;
         int materialIndex;
+
+        ~GfxSubMesh();
     };
 
     struct GfxMesh {
@@ -42,6 +44,8 @@ namespace brl
 
         GfxMesh() = default;
         GfxMesh(GfxAttribBuffer* buffer);
+
+        ~GfxMesh();
 
     private:
         friend GfxModel;
@@ -111,6 +115,7 @@ namespace brl
         GfxMeshRenderer();
 
         std::vector<GfxMaterial*> materials;
+        uint32_t instancingID = 0;
 
         GfxMaterial* material() { return materials[0]; }
         void setMaterial(GfxMaterial* material)
