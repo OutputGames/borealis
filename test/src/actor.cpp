@@ -1,5 +1,6 @@
 #include "actor.h"
 
+#include "map.h"
 #include "borealis/gfx/camera.hpp"
 
 ActorBehaviour::ActorBehaviour()
@@ -11,6 +12,17 @@ void ActorBehaviour::update()
 {
     if (health <= 0 && isAlive)
         onDeath();
+
+    auto blockX = ((roundf(localPosition.x) / MAP_BLOCK_SPACING)) + ((MapController::Instance->chunkCountX / 2) *
+        MAP_CHUNK_SIZE);
+    auto blockZ = ((roundf(localPosition.z) / MAP_BLOCK_SPACING)) + ((MapController::Instance->chunkCountY / 2) *
+        MAP_CHUNK_SIZE);
+
+
+    int blockHeight = MapController::Instance->GetHeight(blockX, blockZ);
+    float blockY = -(MAP_BLOCK_SPACING / 2) + ((MAP_BLOCK_SPACING / 2) * blockHeight);
+
+    localPosition.y = glm::mix(localPosition.y, blockY + 0.5f, brl::GfxEngine::instance->getDeltaTime() * 5.f);
 }
 
 void ActorBehaviour::handleAttack(glm::vec3 dir, float power)

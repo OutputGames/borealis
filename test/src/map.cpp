@@ -1,5 +1,6 @@
 #include "map.h"
 #include "FastNoiseLite.h"
+#include "borealis/util/random.hpp"
 
 MapObject::MapObject(brl::GfxMeshRenderer* renderer)
 {
@@ -80,67 +81,264 @@ void MiniMapController::update()
     EcsEntity::update();
 }
 
+MapChunk::MapChunk()
+{
+
+}
+
+void MapChunk::lateUpdate()
+{
+    EcsEntity::lateUpdate();
+
+    localPosition.x = ((mapIndexX - _mapController->chunkCountX / 2) * MAP_CHUNK_SIZE) * MAP_BLOCK_SPACING;
+    localPosition.z = ((mapIndexY - _mapController->chunkCountY / 2) * MAP_CHUNK_SIZE) * MAP_BLOCK_SPACING;
+
+    glm::mat4 transform = calculateTransform();
+    int chunkIndex = (mapIndexX * _mapController->chunkCountY) + mapIndexY;
+
+    for (int x = 0; x < MAP_CHUNK_SIZE; ++x)
+    {
+        for (int z = 0; z < MAP_CHUNK_SIZE; ++z)
+        {
+
+            for (int y = 0; y < MAP_MAX_HEIGHT; ++y)
+            {
+                auto block = GetBlock(x, y, z);
+
+
+                if (block->type != 0 && block->relativeBlocks != 1)
+                {
+                    float spacing = MAP_BLOCK_SPACING;
+                    float blockX = x * spacing;
+                    float blockZ = z * spacing;
+                    float blockY = -(spacing / 2) + ((spacing / 2) * y);
+
+
+                    auto& dataBlock = _mapController->dataBlocks[block->type - 1];
+
+                    glm::mat4 blockTransform = transform;
+                    blockTransform *= glm::translate(glm::vec3{blockX, blockY, blockZ});
+                    blockTransform *= glm::scale(glm::vec3(spacing / 2));
+                    blockTransform *= dataBlock.offset;
+
+
+                    for (auto mesh : _mapController->blockModels[dataBlock.meshType]->meshes)
+                    {
+                        for (int i = 0; i < mesh->GetSubMeshCount(); ++i)
+                        {
+                            auto subMesh = mesh->GetSubMesh(i);
+                            brl::GfxEngine::instance->insertCall(dataBlock.materials[i],
+                                                                 subMesh->buffer, blockTransform,
+                                                                 chunkIndex);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+}
+
+void MapChunk::initialize(FastNoiseLite noiseGen)
+{
+    for (int x = 0; x < MAP_CHUNK_SIZE; ++x)
+    {
+        for (int z = 0; z < MAP_CHUNK_SIZE; ++z)
+        {
+            int height = (noiseGen.GetNoise(static_cast<float>(x + (mapIndexX * MAP_CHUNK_SIZE)),
+                                            static_cast<float>(z + (mapIndexY * MAP_CHUNK_SIZE))) * 0.5 + 0.5) * 8.f;
+
+            height = glm::clamp(height, 0, MAP_MAX_HEIGHT);
+
+            //height = ((static_cast<float>(x) - 8.0f) / static_cast<float>(MAP_CHUNK_SIZE)) * 16.f;
+
+            heights[(x * MAP_CHUNK_SIZE) + z] = height;
+
+            for (int y = 0; y < MAP_MAX_HEIGHT; ++y)
+            {
+                int idx = x + (y * MAP_CHUNK_SIZE) + (z * (MAP_CHUNK_SIZE * MAP_CHUNK_SIZE));
+
+                auto block = MapBlock{};
+
+                if (y <= height)
+                {
+                    block.type = 1;
+
+                    if (y < height)
+                    {
+                        block.relativeBlocks = 1;
+                    }
+                }
+                else if (y == height + 1)
+                {
+                    if (brl::random(0, 10) > 9)
+                    {
+                        block.type = 2;
+                    }
+                }
+
+                blocks[idx] = block;
+            }
+        }
+    }
+
+}
+
+void MapChunk::postInitializeCheck()
+{
+
+}
+
+BlockData* BlockData::clone()
+{
+    auto newBlock = new BlockData(*this);
+
+    for (int i = 0; i < newBlock->materials.size(); ++i)
+    {
+        newBlock->materials[i] = new brl::GfxMaterial(*newBlock->materials[i]);
+    }
+
+    return newBlock;
+}
+
 void MapController::loadMap()
 {
-    int mapWidth = 72;
-    int mapHeight = 72;
+    Instance = this;
+
+    int mapWidth = 256;
+    int mapHeight = 256;
     float spacing = 1.0f;
 
     auto shaderBins = new brl::GfxShader*[2];
 
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetSeed(std::rand());
     //noise.SetFrequency(0.0005f);
 
-    shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map/map.vert"));
-    shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map/map.frag"));
-    auto defaultShader = new brl::GfxShaderProgram(shaderBins, 2, true);
 
-    brl::GfxModel* block = brl::GfxModel::loadModel("models/block_rect.glb");
-    for (auto material : block->materials)
     {
-        material->reloadShader(defaultShader);
-    }
+        shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map/map.vert"));
+        shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map/map.frag"));
+        auto defaultShader = new brl::GfxShaderProgram(shaderBins, 2, true);
 
-    int chunkCountX = mapWidth / MAP_CHUNK_SIZE;
-    int chunkCountY = mapHeight / MAP_CHUNK_SIZE;
-
-    for (int x = -mapWidth / 2; x < mapWidth / 2; ++x)
-    {
-        for (int y = -mapHeight / 2; y < mapHeight / 2; ++y)
         {
-            int absoluteX = x + (mapWidth / 2);
-            int absoluteY = y + (mapHeight / 2);
-
-            int index = ((y + mapHeight / 2) * mapWidth) + (x + mapWidth / 2);
-
-            int chunkX = absoluteX / 16;
-            int chunkY = absoluteY / 16;
-
-            int chunkIndex = (chunkX * chunkCountY) + chunkY;
-
-            int value = (noise.GetNoise(static_cast<float>(x), static_cast<float>(y)) * 0.5 + 0.5) * 5.f;
-
-            for (int i = 0; i <= value; ++i)
+            auto blockModel = brl::GfxModel::loadModel("models/block_rect.glb");
+            for (auto material : blockModel->materials)
             {
-
-
-                float blockX = x * spacing;
-                float blockY = y * spacing;
-
-                auto blockEntity = block->createEntity();
-                blockEntity->localPosition = {blockX, -spacing + (spacing * i), blockY};
-                blockEntity->setEulerAngles({0, 180, 0});
-                blockEntity->localScale = glm::vec3(spacing / 2);
-                blockEntity->setParent(this);
-
-                blockEntity->getEntityInChildren<brl::GfxMeshRenderer>()->instancingID = chunkIndex;
+                material->reloadShader(defaultShader);
             }
+
+            blockModels.push_back(blockModel);
+            dataBlocks.push_back({blockModel->materials, 0});
         }
     }
+
+    {
+        shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map_crosshatch/map.vert"));
+        shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map_crosshatch/map.frag"));
+        auto defaultShader = new brl::GfxShaderProgram(shaderBins, 2, true);
+
+        {
+            auto blockModel = brl::GfxModel::loadModel("models/block_crosshatch.glb");
+            for (auto material : blockModel->materials)
+            {
+                material->reloadShader(defaultShader);
+            }
+
+            blockModels.push_back(blockModel);
+            auto block = BlockData{blockModel->materials, 1};
+            block.offset *= glm::toMat4(glm::quat(glm::radians(glm::vec3{90, 0, 90})));
+            dataBlocks.push_back(block);
+        }
+    }
+
+
+    chunkCountX = mapWidth / MAP_CHUNK_SIZE;
+    chunkCountY = mapHeight / MAP_CHUNK_SIZE;
+
+    chunks = new MapChunk*[chunkCountX * chunkCountY];
+
+    for (int x = 0; x < chunkCountX; ++x)
+    {
+        for (int y = 0; y < chunkCountY; ++y)
+        {
+            int chunkIndex = (x * chunkCountY) + y;
+
+
+            auto chunk = new MapChunk();
+            chunk->setParent(this);
+            chunk->_mapController = this;
+
+            chunks[chunkIndex] = chunk;
+
+
+            chunk->mapIndexX = x;
+            chunk->mapIndexY = y;
+
+            chunk->initialize(noise);
+
+        }
+    }
+
+    for (int x = 0; x < chunkCountX; ++x)
+    {
+        for (int y = 0; y < chunkCountY; ++y)
+        {
+            GetChunk(x, y)->postInitializeCheck();
+        }
+    }
+
 }
 
 void MapController::update()
 {
     EcsEntity::update();
+
+    auto camera = brl::GfxCamera::mainCamera;
+
+    auto chunkX = ((camera->position.x / MAP_BLOCK_SPACING) / (MAP_CHUNK_SIZE)) + (chunkCountX / 2);
+    auto chunkY = ((camera->position.z / MAP_BLOCK_SPACING) / (MAP_CHUNK_SIZE)) + (chunkCountY / 2);
+
+    int radius = 2;
+
+    for (int i = 0; i < chunkCountX * chunkCountY; ++i)
+    {
+        chunks[i]->active = false;
+    }
+
+    for (int x = -radius; x <= radius; ++x)
+    {
+        for (int y = -radius; y <= radius; ++y)
+        {
+            auto cx = chunkX + x;
+            auto cy = chunkY + y;
+
+            auto chunk = GetChunk(cx, cy);
+
+            if (chunk)
+                chunk->active = true;
+        }
+    }
+
+}
+
+int MapController::GetHeight(int x, int z)
+{
+    int chunkX = x / 16;
+    int chunkZ = z / 16;
+
+    int relativeChunkX = x % 16;
+    int relativeChunkZ = z % 16;
+
+    return GetChunk(chunkX, chunkZ)->heights[(relativeChunkX * MAP_CHUNK_SIZE) + relativeChunkZ];
+}
+
+MapController* MapController::Instance;
+
+MapChunk* MapController::GetChunk(int x, int y)
+{
+    int chunkIndex = (x * chunkCountY) + y;
+    return chunks[chunkIndex];
 }

@@ -3,14 +3,15 @@
 #include <borealis/ecs/entity.hpp>
 #include <borealis/gfx/gfx.hpp>
 
+#include "actor.h"
 #include "borealis/gfx/sprite.hpp"
 #include "borealis/util/input.hpp"
 
-struct PlayerEntity : brl::EcsEntity
+struct PlayerEntity : ActorBehaviour
 {
     PlayerEntity();
 
-    virtual void handleAttack(glm::vec3 dir, float power);
+    void handleAttack(glm::vec3 dir, float power) override;
 
     bool isGuarding = false;
 

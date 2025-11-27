@@ -41,6 +41,7 @@ namespace brl
         static GfxMesh* GetPrimitive(GfxPrimitiveType type);
 
         GfxSubMesh* GetSubMesh(int index) { return subMeshes[index]; }
+        int GetSubMeshCount() { return subMeshCount; }
 
         GfxMesh() = default;
         GfxMesh(GfxAttribBuffer* buffer);

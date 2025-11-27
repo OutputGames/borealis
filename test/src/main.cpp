@@ -13,6 +13,7 @@ int main(int argc, const char* argv[])
     system("..\\tools\\out\\resource_packer.exe ../default_assets/ ../out/default_assets.res");
 #endif
 
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
     brl::IoEngine ioMgr = {};
     brl::EcsEngine entityMgr = {};
@@ -24,7 +25,7 @@ int main(int argc, const char* argv[])
     float framebufferScale = 0.75f;
 
     auto camera = new brl::EcsCamera();
-    camera->localPosition = {0, 5.0f, 5.f};
+    camera->localPosition = {0, 1.0f, 5.f};
     camera->fieldOfView = 90.f;
     camera->targetFramebuffer =
         new brl::GfxFramebuffer(brl::GfxEngine::instance->getMainWidth() * framebufferScale,
@@ -102,6 +103,7 @@ int main(int argc, const char* argv[])
 
 
     auto map = new MapController();
+
     map->loadMap();
 
     auto player = new PlayerController();

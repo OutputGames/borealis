@@ -16,7 +16,7 @@ void main()
       discard;
    }
 
-
+   color.rgb *= (color_vec3(155,185,78))*0.9;
 
    FragColor = vec4(color.rgb,color.a);
 }

@@ -49,6 +49,8 @@ PlayerController::PlayerController()
 
 void PlayerController::update()
 {
+    PlayerEntity::update();
+
     float horizontal = brl::InputMgr::getAxisRaw("Horizontal");
     float vertical = -brl::InputMgr::getAxisRaw("Vertical");
 
