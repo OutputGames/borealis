@@ -12,9 +12,9 @@ namespace brl
         glm::quat localRotation = glm::identity<glm::quat>();
         glm::vec3 localScale = glm::vec3(1.0);
 
-        glm::vec3 position();
+        virtual glm::vec3 position();
         glm::quat rotation();
-        glm::vec3 scale();
+        virtual glm::vec3 scale();
         void lookAt(glm::vec3 point, glm::vec3 up = glm::vec3{0,1,0});
         void setEulerAngles(glm::vec3 euler);
 
@@ -31,6 +31,10 @@ namespace brl
 
         template <typename T>
         T* getEntityInChildren();
+
+        
+        template <typename T>
+        T* getEntity();
 
         EcsEntity();
 
@@ -49,7 +53,7 @@ namespace brl
 
         void internalDestroy();
 
-        glm::mat4 calculateTransform();
+        virtual glm::mat4 calculateTransform();
 
         std::vector<EcsEntity*> children;
         EcsEntity* parent = nullptr;
@@ -94,6 +98,12 @@ namespace brl
         }
 
         return nullptr;
+    }
+
+    template <typename T>
+    T* EcsEntity::getEntity()
+    {
+        return dynamic_cast<T*>(this);
     }
 
     struct EcsEngine {

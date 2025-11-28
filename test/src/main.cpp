@@ -32,75 +32,13 @@ int main(int argc, const char* argv[])
                                 brl::GfxEngine::instance->getMainHeight() * framebufferScale);
 
     auto canvas = new brl::GfxCanvas();
-    canvas->scaledSize = {4, 3};
+    canvas->referenceResolution = {1920, 1080};
 
-    auto testImage = new brl::GfxImage();
-    testImage->setParent(canvas);
-    testImage->localScale = glm::vec3(300.0f);
-    testImage->localPosition = {0, 1, 0};
+    auto heartIcon = new brl::GfxImage(canvas);
+    heartIcon->setParent(canvas);
 
-
-    {
-        auto shaderBins = new brl::GfxShader*[2];
-
-        shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map_object/vtx.glsl"));
-        shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map_object/frg.glsl"));
-        auto shader = new brl::GfxShaderProgram(shaderBins, 2, true);
-
-        shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map_object/vtx.glsl"));
-        shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map_object/anim_frg.glsl"));
-        auto anim_shader = new brl::GfxShaderProgram(shaderBins, 2, true);
-
-        {
-            auto material = new brl::GfxMaterial(anim_shader);
-            material->setTexture("tex",
-                                 brl::GfxSprite::extractSpritesToArray(
-                                     brl::GfxTexture2d::loadTexture("textures/Trees/Tree1.png"), 192, 256, true));
-
-            auto renderer = new brl::GfxMeshRenderer();
-            renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
-            renderer->setMaterial(material);
-            renderer->setEulerAngles({-90, 0, 0});
-            renderer->localScale = glm::vec3(2.5f);
-
-            auto uni = material->getUniform("tex");
-
-            renderer->localScale.y *= uni.txValue->getHeight() / uni.txValue->getWidth();
-
-            auto mapObject = new MapObject(renderer);
-            mapObject->localPosition = {-5, (renderer->localScale.y / 2) + 1, 5};
-        }
-
-        {
-            auto material = new brl::GfxMaterial(anim_shader);
-            material->setTexture("tex",
-                                 brl::GfxSprite::extractSpritesToArray(
-                                     brl::GfxTexture2d::loadTexture("textures/Trees/Tree2.png"), 192, 256, true));
-
-            auto renderer = new brl::GfxMeshRenderer();
-            renderer->mesh = brl::GfxMesh::GetPrimitive(brl::QUAD);
-            renderer->setMaterial(material);
-            renderer->setEulerAngles({-90, 0, 0});
-            renderer->localScale = glm::vec3(2.5f);
-
-            auto uni = material->getUniform("tex");
-
-            renderer->localScale.y *= uni.txValue->getHeight() / uni.txValue->getWidth();
-
-            auto mapObject = new MapObject(renderer);
-            mapObject->localPosition = {5, (renderer->localScale.y / 2) + 1, 5};
-        }
-
-        {
-            auto tower = brl::GfxModel::loadModel("models/tower/tower.glb");
-            auto towerEntity = tower->createEntity();
-
-            towerEntity->localPosition = {5, 0, -10};
-            towerEntity->setEulerAngles({0, 0, 0});
-            towerEntity->localScale = glm::vec3(1.25f);
-        }
-    }
-
+    heartIcon->SetPosition({0, 0});
+    heartIcon->SetSize({300, 300});
 
     auto map = new MapController();
 

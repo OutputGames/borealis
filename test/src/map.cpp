@@ -96,6 +96,14 @@ void MapChunk::lateUpdate()
     glm::mat4 transform = calculateTransform();
     int chunkIndex = (mapIndexX * _mapController->chunkCountY) + mapIndexY;
 
+    auto baseTransform = new glm::mat4[_mapController->dataBlocks.size()];
+
+    for (int i = 0; i < _mapController->dataBlocks.size(); ++i)
+    {
+        baseTransform[i] = transform * _mapController->dataBlocks[i].getCompositeOffset();
+    }
+
+
     for (int x = 0; x < MAP_CHUNK_SIZE; ++x)
     {
         for (int z = 0; z < MAP_CHUNK_SIZE; ++z)
@@ -114,15 +122,14 @@ void MapChunk::lateUpdate()
                     float blockY = -(spacing / 2) + ((spacing / 2) * y);
 
 
-                    auto& dataBlock = _mapController->dataBlocks[block->type - 1];
+                    const auto& dataBlock = _mapController->dataBlocks[block->type - 1];
 
-                    glm::mat4 blockTransform = transform;
-                    blockTransform *= glm::translate(glm::vec3{blockX, blockY, blockZ});
-                    blockTransform *= glm::scale(glm::vec3(spacing / 2));
-                    blockTransform *= dataBlock.offset;
+                    glm::mat4 blockTransform = baseTransform[block->type - 1];
+                    blockTransform[3][0] += blockX;
+                    blockTransform[3][1] += blockY;
+                    blockTransform[3][2] += blockZ;
 
-
-                    for (auto mesh : _mapController->blockModels[dataBlock.meshType]->meshes)
+                    for (auto mesh : _mapController->blockModels[dataBlock.meshType])
                     {
                         for (int i = 0; i < mesh->GetSubMeshCount(); ++i)
                         {
@@ -136,6 +143,8 @@ void MapChunk::lateUpdate()
             }
         }
     }
+
+    delete[] baseTransform;
 
 
 }
@@ -151,14 +160,11 @@ void MapChunk::initialize(FastNoiseLite noiseGen)
 
             height = glm::clamp(height, 0, MAP_MAX_HEIGHT);
 
-            //height = ((static_cast<float>(x) - 8.0f) / static_cast<float>(MAP_CHUNK_SIZE)) * 16.f;
 
             heights[(x * MAP_CHUNK_SIZE) + z] = height;
 
             for (int y = 0; y < MAP_MAX_HEIGHT; ++y)
             {
-                int idx = x + (y * MAP_CHUNK_SIZE) + (z * (MAP_CHUNK_SIZE * MAP_CHUNK_SIZE));
-
                 auto block = MapBlock{};
 
                 if (y <= height)
@@ -176,9 +182,13 @@ void MapChunk::initialize(FastNoiseLite noiseGen)
                     {
                         block.type = 2;
                     }
+                    else if (brl::random(0, 100) > 95)
+                    {
+                        block.type = 3;
+                    }
                 }
 
-                blocks[idx] = block;
+                blocks[_3DTO1D(x, y, z)] = block;
             }
         }
     }
@@ -188,6 +198,16 @@ void MapChunk::initialize(FastNoiseLite noiseGen)
 void MapChunk::postInitializeCheck()
 {
 
+}
+
+void BlockData::initialize()
+{
+    compositeOffset = glm::scale(glm::vec3(MAP_BLOCK_SPACING / 2)) * offset;
+}
+
+glm::mat4 BlockData::getCompositeOffset()
+{
+    return compositeOffset;
 }
 
 BlockData* BlockData::clone()
@@ -206,8 +226,6 @@ void MapController::loadMap()
 {
     Instance = this;
 
-    int mapWidth = 256;
-    int mapHeight = 256;
     float spacing = 1.0f;
 
     auto shaderBins = new brl::GfxShader*[2];
@@ -230,8 +248,13 @@ void MapController::loadMap()
                 material->reloadShader(defaultShader);
             }
 
-            blockModels.push_back(blockModel);
-            dataBlocks.push_back({blockModel->materials, 0});
+            blockModels.push_back(blockModel->meshes);
+
+            auto block = BlockData{};
+            block.materials = blockModel->materials;
+            block.meshType = 0;
+            block.initialize();
+            dataBlocks.push_back(block);
         }
     }
 
@@ -247,16 +270,53 @@ void MapController::loadMap()
                 material->reloadShader(defaultShader);
             }
 
-            blockModels.push_back(blockModel);
-            auto block = BlockData{blockModel->materials, 1};
-            block.offset *= glm::toMat4(glm::quat(glm::radians(glm::vec3{90, 0, 90})));
+            blockModels.push_back(blockModel->meshes);
+            auto block = BlockData{};
+
+            block.materials = blockModel->materials;
+            block.meshType = 1;
+
+            block.offset *= glm::toMat4(glm::quat(glm::radians(glm::vec3{0, 0, 0})));
+            block.initialize();
             dataBlocks.push_back(block);
         }
     }
 
+    blockModels.push_back({brl::GfxMesh::GetPrimitive(brl::QUAD)});
 
-    chunkCountX = mapWidth / MAP_CHUNK_SIZE;
-    chunkCountY = mapHeight / MAP_CHUNK_SIZE;
+    {
+
+        shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map_object/vtx.glsl"));
+        shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map_object/anim_frg.glsl"));
+        auto anim_shader = new brl::GfxShaderProgram(shaderBins, 2, true);
+
+        auto material = new brl::GfxMaterial(anim_shader);
+        material->setTexture("tex",
+                             brl::GfxSprite::extractSpritesToArray(
+                                 brl::GfxTexture2d::loadTexture("textures/Trees/Tree1.png"), 192, 256, true));
+
+
+        auto block = BlockData{};
+
+        block.materials = {material};
+        block.meshType = 1;
+
+
+        auto uni = material->getUniform("tex");
+
+        float scale = 3.f;
+        float scaleY = (scale * (uni.txValue->getHeight() / uni.txValue->getWidth())) * 2.0f;
+
+        block.offset *= glm::translate(glm::vec3{0, (scaleY * 0.875f), 0});
+        block.offset *= glm::toMat4(glm::quat(glm::radians(glm::vec3{0, 0, 0})));
+        block.offset *= glm::scale(glm::vec3{scale, scaleY, scale});
+        block.initialize();
+        dataBlocks.push_back(block);
+    }
+
+
+    chunkCountX = 16;
+    chunkCountY = 16;
 
     chunks = new MapChunk*[chunkCountX * chunkCountY];
 
@@ -301,7 +361,7 @@ void MapController::update()
     auto chunkX = ((camera->position.x / MAP_BLOCK_SPACING) / (MAP_CHUNK_SIZE)) + (chunkCountX / 2);
     auto chunkY = ((camera->position.z / MAP_BLOCK_SPACING) / (MAP_CHUNK_SIZE)) + (chunkCountY / 2);
 
-    int radius = 2;
+    int radius = 1;
 
     for (int i = 0; i < chunkCountX * chunkCountY; ++i)
     {
@@ -326,11 +386,11 @@ void MapController::update()
 
 int MapController::GetHeight(int x, int z)
 {
-    int chunkX = x / 16;
-    int chunkZ = z / 16;
+    int chunkX = x / MAP_CHUNK_SIZE;
+    int chunkZ = z / MAP_CHUNK_SIZE;
 
-    int relativeChunkX = x % 16;
-    int relativeChunkZ = z % 16;
+    int relativeChunkX = x % MAP_CHUNK_SIZE;
+    int relativeChunkZ = z % MAP_CHUNK_SIZE;
 
     return GetChunk(chunkX, chunkZ)->heights[(relativeChunkX * MAP_CHUNK_SIZE) + relativeChunkZ];
 }

@@ -1,5 +1,6 @@
 #include <thread>
 
+#include "stb_image.h"
 #include "borealis/gfx/ui.hpp"
 
 #include "borealis/gfx/gfx.hpp"
@@ -108,6 +109,9 @@ void brl::GfxEngine::initialize()
                            nullptr);
     instance = this;
     materialMgr = new GfxMaterialMgr;
+
+    stbi_set_flip_vertically_on_load(true);
+
 
     auto vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec2 aPos;\n"
@@ -254,7 +258,7 @@ void brl::GfxEngine::update()
 
 }
 
-void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4 transform,
+void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4& transform,
                                 int instancingIdx)
 {
     auto shader = material->getShader();

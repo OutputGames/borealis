@@ -31,7 +31,6 @@ brl::GfxTexture2d::GfxTexture2d(std::string path)
 
     IoFile file = readFileBinary(path);
 
-    stbi_set_flip_vertically_on_load(true);
 
     unsigned char* data = stbi_load_from_memory(file.data, file.dataSize, &width, &height, &nrChannels, 4);
 

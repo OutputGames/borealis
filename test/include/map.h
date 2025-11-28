@@ -36,10 +36,12 @@ struct MiniMapController : brl::EcsEntity
 
 };
 
-#define MAP_CHUNK_SIZE 16
+#define MAP_CHUNK_SIZE 32
 #define MAP_MAX_HEIGHT 16
-#define MAP_BLOCK_SPACING 1.0f
+#define MAP_BLOCK_SPACING 1.5f
 #define MAP_CHUNK_BLOCK_COUNT MAP_CHUNK_SIZE*MAP_CHUNK_SIZE * MAP_MAX_HEIGHT
+
+#define _3DTO1D(x, y, z) x + MAP_CHUNK_SIZE *(y + MAP_MAX_HEIGHT * z)
 
 struct MapBlock
 {
@@ -49,6 +51,7 @@ private:
     friend MapChunk;
     int relativeBlocks = 0;
 };
+
 
 struct MapChunk : brl::EcsEntity
 {
@@ -70,7 +73,7 @@ private:
 
     MapBlock* GetBlock(int x, int y, int z)
     {
-        return &blocks[x + (y * MAP_CHUNK_SIZE) + (z * (MAP_CHUNK_SIZE * MAP_CHUNK_SIZE))];
+        return &blocks[_3DTO1D(x, y, z)];
     }
 
     void initialize(FastNoiseLite noiseGen);
@@ -84,8 +87,15 @@ struct BlockData
     int meshType;
     glm::mat4 offset = glm::mat4(1.0);
 
+    void initialize();
+    glm::mat4 getCompositeOffset();
     BlockData* clone();
+
+private:
+    glm::mat4 compositeOffset = glm::mat4(1.0);
 };
+
+using MapBlockModel = std::vector<brl::GfxMesh*>;
 
 struct MapController : brl::EcsEntity
 {
@@ -109,7 +119,7 @@ private:
     int chunkCountX, chunkCountY;
 
     std::vector<BlockData> dataBlocks;
-    std::vector<brl::GfxModel*> blockModels;
+    std::vector<MapBlockModel> blockModels;
 
     static MapController* Instance;
 
@@ -118,11 +128,11 @@ private:
 
     MapBlock* GetBlock(int x, int y, int z)
     {
-        int chunkX = x / 16;
-        int chunkZ = z / 16;
+        int chunkX = x / MAP_CHUNK_SIZE;
+        int chunkZ = z / MAP_CHUNK_SIZE;
 
-        int relativeChunkX = x % 16;
-        int relativeChunkZ = z % 16;
+        int relativeChunkX = x % MAP_CHUNK_SIZE;
+        int relativeChunkZ = z % MAP_CHUNK_SIZE;
 
         return GetChunk(chunkX, chunkZ)->GetBlock(relativeChunkX, y, relativeChunkZ);
 

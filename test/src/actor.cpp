@@ -22,7 +22,8 @@ void ActorBehaviour::update()
     int blockHeight = MapController::Instance->GetHeight(blockX, blockZ);
     float blockY = -(MAP_BLOCK_SPACING / 2) + ((MAP_BLOCK_SPACING / 2) * blockHeight);
 
-    localPosition.y = glm::mix(localPosition.y, blockY + 0.5f, brl::GfxEngine::instance->getDeltaTime() * 5.f);
+    localPosition.y = glm::mix(localPosition.y, blockY + (MAP_BLOCK_SPACING / 2),
+                               brl::GfxEngine::instance->getDeltaTime() * 10.f);
 }
 
 void ActorBehaviour::handleAttack(glm::vec3 dir, float power)
