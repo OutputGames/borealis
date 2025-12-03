@@ -282,6 +282,10 @@ brl::UtilCoroutine EnemyController::DeathCoroutine()
 EnemySpawner::EnemySpawner()
 {
     auto tower = brl::GfxModel::loadModel("models/tower/tower.glb");
+
+    for (auto material : tower->materials)
+        material->reloadShader(new brl::GfxShaderProgram());
+
     auto towerEntity = tower->createEntity();
 
     towerEntity->setEulerAngles({0, 0, 0});

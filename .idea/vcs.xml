@@ -2,8 +2,10 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ext/FastNoiseLite" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ext/glfw" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ext/glm" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ext/stb" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ext/tinygltf" vcs="Git" />
   </component>
 </project>

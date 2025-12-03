@@ -234,10 +234,16 @@ brl::GfxModel::GfxModel(std::string path)
         auto image = model.images[texture.source];
         auto sampler = model.samplers[texture.sampler];
 
-        auto pixels = new Color32[image.width * image.height];
+        auto pixels = new Color32[image.image.size()/2];
         for (int i = 0; i < image.image.size(); i += 4)
         {
-            pixels[i / 4] = {image.image[i], image.image[i + 1], image.image[i + 2], image.image[i + 3]};
+
+            auto r = image.image[i];
+            auto g = image.image[i + 1];
+            auto b = image.image[i + 2];
+            auto a = image.image[i + 3];
+
+            pixels[i / 4] = {r,g,b,a};
         }
 
         textures.push_back(new GfxTexture2d(pixels, image.width, image.height));

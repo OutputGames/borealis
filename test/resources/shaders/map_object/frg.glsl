@@ -21,5 +21,11 @@ void main()
 
    vec3 final = color.rgb;
 
+   final = texture(tex,vec2(0,1)).rgb;
+
+   if (texture(tex,vec2(0,0)).r == 1) {
+      final = vec3(0,1,0);
+   }
+
    FragColor = vec4(final, color.a);
 }

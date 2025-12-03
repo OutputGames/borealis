@@ -45,7 +45,7 @@ PROJECTS := borealis resource_packer borealis-test glad glfw3 stb glm
 
 all: $(PROJECTS)
 
-borealis: glad resource_packer
+borealis: glad glfw3 resource_packer
 ifneq (,$(borealis_config))
 	@echo "==== Building borealis ($(borealis_config)) ===="
 	@${MAKE} --no-print-directory -C . -f borealis.make config=$(borealis_config)
