@@ -10,6 +10,7 @@ ActorBehaviour::ActorBehaviour()
 
 void ActorBehaviour::update()
 {
+    EcsEntity::update();
     if (health <= 0 && isAlive)
         onDeath();
 

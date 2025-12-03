@@ -22,6 +22,12 @@ brl::GfxMesh* brl::GfxMesh::GetPrimitive(GfxPrimitiveType type)
         case QUAD:
             return GfxEngine::instance->quadMesh;
             break;
+        case CIRCLE:
+            return GfxEngine::instance->circleMesh;
+            break;
+        case LINE:
+            return GfxEngine::instance->lineMesh;
+            break;
     }
     return nullptr;
 }

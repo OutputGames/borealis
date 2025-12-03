@@ -8,5 +8,6 @@
 #include <borealis/gfx/shader.hpp>
 #include <borealis/gfx/texture.hpp>
 #include "borealis/gfx/model.hpp"
+#include <borealis/gfx/ui.hpp>
 
 #endif // GFX_HPP

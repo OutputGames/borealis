@@ -49,7 +49,7 @@ namespace brl
         GfxEngine();
         ~GfxEngine();
 
-        void initialize();
+        void initialize(int width, int height, std::string windowName);
         void shutdown();
         void update();
         bool isRunning() {return mainWindow->isOpen();}
@@ -66,6 +66,7 @@ namespace brl
 
         
         std::vector<UtilCoroutine> active_coroutines;
+
 
     private:
         friend GfxAttribBuffer;
@@ -85,7 +86,8 @@ namespace brl
         double lastFrameTime = 0, deltaTime = 0;
 
         GfxMesh* quadMesh;
-
+        GfxMesh* circleMesh;
+        GfxMesh* lineMesh;
     };
 
     struct GfxDrawCall {

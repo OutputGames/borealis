@@ -1,5 +1,6 @@
 #include "map.h"
 #include "FastNoiseLite.h"
+#include "enemy.h"
 #include "borealis/util/random.hpp"
 
 MapObject::MapObject(brl::GfxMeshRenderer* renderer)
@@ -350,6 +351,36 @@ void MapController::loadMap()
         }
     }
 
+    // place spawners
+
+    int spawnersMax = 5;
+    int spawnerCount = 0;
+    for (int x = 0; x < chunkCountX*MAP_CHUNK_SIZE; ++x)
+    {
+        for (int y = 0; y < chunkCountY * MAP_CHUNK_SIZE; ++y)
+        {
+            if (brl::random(0, 1000) >= 999)
+            {
+                auto enemySpawner = new EnemySpawner();
+            
+                auto blockX = (x * MAP_BLOCK_SPACING) - ((chunkCountX*MAP_CHUNK_SIZE) / 2);
+                ;
+                auto blockZ = (y * MAP_BLOCK_SPACING) - ((chunkCountY * MAP_CHUNK_SIZE) / 2);
+
+                enemySpawner->localPosition = {blockX,GetHeight(x,y),blockZ};
+
+                spawnerCount++;
+            }
+            if (spawnerCount >= spawnersMax)
+            {
+                break;
+            }
+        }
+        if (spawnerCount >= spawnersMax)
+        {
+            break;
+        }
+    }
 }
 
 void MapController::update()

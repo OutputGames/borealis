@@ -111,9 +111,7 @@ void brl::EcsEntity::awake()
 {
 }
 
-void brl::EcsEntity::start()
-{
-}
+void brl::EcsEntity::start() { started = true; }
 
 void brl::EcsEntity::earlyUpdate()
 {
@@ -124,7 +122,6 @@ void brl::EcsEntity::update()
     if (!started)
     {
         start();
-        started = true;
     }
 }
 
@@ -180,24 +177,34 @@ brl::EcsEngine::EcsEngine()
 void brl::EcsEngine::update()
 {
     // early update
-    for (auto entity : entities)
+    for (const auto& entity : entities)
     {
-        if (entity->isGlobalActive())
-            entity->earlyUpdate();
+        if (entity != nullptr)
+        {
+            if (entity->isGlobalActive())
+                entity->earlyUpdate();
+        }
     }
 
     // main update
-    for (auto entity : entities)
+    for (int i = 0; i < entities.size(); ++i)
     {
-        if (entity->isGlobalActive())
-            entity->update();
+        const auto& entity = entities[i];
+        if (entity != nullptr)
+        {
+            if (entity->isGlobalActive())
+                entity->update();
+        }
     }
 
     // late update
-    for (auto entity : entities)
+    for (const auto& entity : entities)
     {
-        if (entity->isGlobalActive())
-            entity->lateUpdate();
+        if (entity != nullptr)
+        {
+            if (entity->isGlobalActive())
+                entity->lateUpdate();
+        }
     }
 }
 

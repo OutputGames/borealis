@@ -46,7 +46,12 @@ namespace brl
 
         ~GfxTexture2d();
 
-        void clearCachedPixels() { delete[] pixels;
+        void clearCachedPixels() {
+            if (pixels)
+            {
+                delete[] pixels;
+                pixels = nullptr;
+            }
         }
 
     private:

@@ -1,6 +1,8 @@
 #include "enemy.h"
 
+#include "map.h"
 #include "player.h"
+#include "borealis/debug/debug.hpp"
 #include "borealis/gfx/camera.hpp"
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/sprite.hpp"
@@ -275,4 +277,49 @@ brl::UtilCoroutine EnemyController::DeathCoroutine()
 
     destroy();
 
+}
+
+EnemySpawner::EnemySpawner()
+{
+    auto tower = brl::GfxModel::loadModel("models/tower/tower.glb");
+    auto towerEntity = tower->createEntity();
+
+    towerEntity->setEulerAngles({0, 0, 0});
+    towerEntity->localScale = glm::vec3(1.0f);
+
+    towerEntity->setParent(this);
+
+}
+
+void EnemySpawner::start()
+{
+    ActorBehaviour::start();
+
+
+    auto pos = position();
+    for (int i = 0; i < count; ++i)
+    {
+        float angle = (360.f / count) * i;
+        angle = glm::radians(angle);
+
+        glm::vec3 startPosition = {};
+        startPosition.x = glm::sin(angle) * radius;
+        startPosition.z = glm::cos(angle) * radius;
+        startPosition += pos;
+
+        auto enemy = new EnemyController;
+        enemy->localPosition = startPosition;
+    }
+}
+
+
+void EnemySpawner::update()
+{
+    ActorBehaviour::update();
+    health = 1;
+    
+    brl_debug::drawMesh(brl::GfxMesh::GetPrimitive(brl::CIRCLE)->GetSubMesh(0)->buffer,
+            glm::translate(position())*glm::scale(scale()*radius));
+
+    brl_debug::drawLine(position(), glm::vec3(0,5,0));
 }

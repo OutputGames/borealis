@@ -28,9 +28,12 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls, const GfxInstan
     GfxShaderValue viewValue{};
     GfxShaderValue projValue{};
     GfxShaderValue timeValue{};
+    GfxShaderValue cameraPosValue{};
+
     viewValue.m4value = GetViewMatrix();
     projValue.m4value = GetProjMatrix();
     timeValue.floatValue = glfwGetTime();
+    cameraPosValue.v3value = position;
 
     for (const GfxDrawCall& call : calls)
     {
@@ -41,6 +44,7 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls, const GfxInstan
         overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
         overrides.insert({call.material->getShader()->getUniform("_internalModel"), modelValue});
         overrides.insert({call.material->getShader()->getUniform("_internalTime"), timeValue});
+        overrides.insert({call.material->getShader()->getUniform("_cameraPosition"), cameraPosValue});
 
         call.material->draw(call.gfxBuffer, overrides);
 
@@ -53,6 +57,8 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls, const GfxInstan
         overrides.insert({call.material->getShader()->getUniform("_internalView"), viewValue});
         overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
         overrides.insert({call.material->getShader()->getUniform("_internalTime"), timeValue});
+        overrides.insert({call.material->getShader()->getUniform("_cameraPosition"), cameraPosValue});
+
 
         call.material->drawInstanced(call.transforms, call.gfxBuffer, overrides);
 

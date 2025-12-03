@@ -10,6 +10,8 @@
    inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
    xml:space="preserve"
    sodipodi:docname="gameui.svg"
+   inkscape:export-batch-path="D:\Code\borealis\test\dev\ui"
+   inkscape:export-batch-name="gameui"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -25,8 +27,8 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="px"
      inkscape:zoom="0.5572609"
-     inkscape:cx="1056.0583"
-     inkscape:cy="377.74048"
+     inkscape:cx="1056.9555"
+     inkscape:cy="-52.937502"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="-8"
@@ -87,7 +89,7 @@
        x2="64.719048"
        y2="24.394217"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.5460478,0,0,1.5290497,11.081366,24.902198)" /><linearGradient
+       gradientTransform="matrix(1.5460478,0,0,1.5290497,11.081509,24.902198)" /><linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient8329"
        id="linearGradient8330"
@@ -96,7 +98,7 @@
        x2="51.70256"
        y2="21.627478"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.5460478,0,0,1.5290497,11.081366,24.902198)" /><linearGradient
+       gradientTransform="matrix(1.5460478,0,0,1.5290497,11.081509,24.902198)" /><linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient1"
        id="linearGradient2"
@@ -119,11 +121,11 @@
      inkscape:groupmode="layer"
      id="layer1"><path
        style="fill:url(#linearGradient8328);fill-opacity:1;stroke:url(#linearGradient8330);stroke-width:7.5;stroke-dasharray:none;stroke-opacity:1"
-       d="m 111.00713,116.77559 16.58524,-13.78816 1.78191,-3.867857 1.7819,-3.86786 v -5.48151 -5.48151 l -3.32781,-5.325321 -3.32782,-5.325323 -5.12579,-2.118144 -5.12578,-2.118143 h -5.24508 -5.24508 l -5.626919,3.776543 -5.626914,3.776544 -5.626914,-3.776544 -5.626914,-3.776543 h -5.24508 -5.245069 l -5.125791,2.118143 -5.125792,2.118144 -3.327812,5.325323 -3.327823,5.325321 0.05477,5.935719 0.05477,5.93572 2.043185,3.645512 2.043184,3.645506 16.068095,13.50494 16.068095,13.50494 2.117981,0.0514 2.117981,0.0514 z"
+       d="m 111.00727,116.77559 16.58524,-13.78816 1.78191,-3.867857 1.7819,-3.86786 v -5.48151 -5.48151 l -3.32781,-5.325321 -3.32782,-5.325323 -5.12579,-2.118144 -5.12578,-2.118143 h -5.24508 -5.24508 l -5.626916,3.776543 -5.626914,3.776544 -5.626914,-3.776544 -5.626914,-3.776543 h -5.24508 -5.245069 l -5.125791,2.118143 -5.125792,2.118144 -3.327812,5.325323 -3.327823,5.325321 0.05477,5.935719 0.05477,5.93572 2.043185,3.645512 2.043184,3.645506 16.068095,13.50494 16.068095,13.50494 2.117981,0.0514 2.117981,0.0514 z"
        id="path8320"
        sodipodi:nodetypes="ccccccccccccccccccccccccccccccc"
        inkscape:label="HeartIcon" /><rect
-       style="fill:#ff0000;fill-opacity:1;fill-rule:evenodd;stroke:#00ff00;stroke-width:24.5842;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       style="fill:#00ff00;fill-opacity:1;fill-rule:evenodd;stroke:#ff0000;stroke-width:24.5842;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect2-1"
        width="475.41571"
        height="75.415771"
@@ -143,5 +145,7 @@
        transform="matrix(1.3918682,0,0,1.3918682,-692.53069,-69.332709)"
        inkscape:label="SwordCount"><tspan
          x="1723.6094"
-         y="141.98438"
-         id="tspan1">999</tspan></text></g></svg>
+         y="238.88254"
+         id="tspan3"><tspan
+           dx="0 61.03125 61.03125"
+           id="tspan2">999</tspan></tspan></text></g></svg>

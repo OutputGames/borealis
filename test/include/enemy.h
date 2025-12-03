@@ -50,4 +50,14 @@ private:
 
 };
 
+struct EnemySpawner : ActorBehaviour
+{
+    EnemySpawner();
+    void start() override;
+    void update() override;
+
+    float radius = 3.0f;
+    int count = 5;
+};
+
 #endif // ENEMY_H

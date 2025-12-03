@@ -56,7 +56,9 @@ namespace brl
 
     enum GfxPrimitiveType
     {
-        QUAD
+        QUAD,
+        CIRCLE,
+        LINE
     };
  
     struct GfxAttribBuffer : public IGfxBuffer {
@@ -76,6 +78,8 @@ namespace brl
         int getSize();
 
         size_t getHash();
+
+        GLenum mode = GL_TRIANGLES;
 
     private:
         friend GfxMaterial;

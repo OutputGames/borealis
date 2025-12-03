@@ -25,6 +25,8 @@ struct PlayerController : PlayerEntity
     void update() override;
     void handleAttack(glm::vec3 dir, float power) override;
 
+    brl::GfxImage* healthBarImage;
+
 private:
     brl::GfxMaterial* material = nullptr;
     brl::GfxMeshRenderer* renderer;

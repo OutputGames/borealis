@@ -50,3 +50,4 @@
 /builds
 /enc_temp_folder
 Makefile
+*.user

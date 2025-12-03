@@ -1,6 +1,7 @@
 #include "player.h"
 
 #include "enemy.h"
+#include "borealis/gfx/ui.hpp"
 
 std::vector<PlayerEntity*> PlayerEntity::cachedEntities;
 
@@ -109,6 +110,8 @@ void PlayerController::update()
     }
 
     renderer->lookAt(brl::GfxCamera::mainCamera->position);
+
+    healthBarImage->material->setFloat("health", glm::mix(healthBarImage->material->getUniform("health").floatValue,health,brl::GfxEngine::instance->getDeltaTime()*15.0f));
 }
 
 void PlayerController::handleAttack(glm::vec3 dir, float power)
@@ -138,4 +141,7 @@ brl::UtilCoroutine PlayerController::AttackCoroutine(glm::vec3 dir, float power)
 
         diff = glfwGetTime() - start;
     }
+
+    
+    health -= power / 250.0f;
 }

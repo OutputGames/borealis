@@ -506,11 +506,11 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
         buffer->ebo->use();
 
 
-        glDrawElements(GL_TRIANGLES, buffer->getSize(), buffer->eboFormat, 0);
+        glDrawElements(buffer->mode, buffer->getSize(), buffer->eboFormat, 0);
     }
     else
     {
-        glDrawArrays(GL_TRIANGLES, 0, buffer->getSize());
+        glDrawArrays(buffer->mode, 0, buffer->getSize());
     }
 }
 

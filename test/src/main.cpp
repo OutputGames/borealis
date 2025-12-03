@@ -5,6 +5,7 @@
 #include "player.h"
 #include "map.h"
 #include "borealis/gfx/ui.hpp"
+#include "borealis/debug/debug.hpp"
 
 int main(int argc, const char* argv[])
 {
@@ -20,7 +21,7 @@ int main(int argc, const char* argv[])
 
 
     brl::GfxEngine engine;
-    engine.initialize();
+    engine.initialize(1920/3, 1080/3, "cp1 game");
 
     float framebufferScale = 0.75f;
 
@@ -34,21 +35,42 @@ int main(int argc, const char* argv[])
     auto canvas = new brl::GfxCanvas();
     canvas->referenceResolution = {1920, 1080};
 
-    auto heartIcon = new brl::GfxImage(canvas);
-    heartIcon->setParent(canvas);
 
-    heartIcon->SetPosition({0, 0});
-    heartIcon->SetSize({300, 300});
+    auto heartIcon = new brl::GfxImage(canvas);
+    {
+        heartIcon->setParent(canvas);
+
+        heartIcon->loadTexture(brl::GfxTexture2d::loadTexture("ui/gameui_HeartIcon.png"));
+        heartIcon->localPosition = {50,75,0};
+        //heartIcon->SetSize({100, 100});
+    }
+
+    auto healthBar = new brl::GfxImage(canvas);
+    {
+        healthBar->setParent(canvas);
+        healthBar->material =
+            new brl::GfxMaterial(new brl::GfxShaderProgram(brl::readFileString("shaders/health_bar_player.glsl")));
+
+        healthBar->color = {40, 209, 25};
+
+        healthBar->loadTexture(brl::GfxTexture2d::loadTexture("ui/gameui_HealthBar.png"));
+        healthBar->localPosition = {250, 50, 0};
+        // heartIcon->SetSize({100, 100});
+    }
+
 
     auto map = new MapController();
 
     map->loadMap();
 
     auto player = new PlayerController();
+    player->healthBarImage = healthBar;
 
-    auto enemy = new EnemyController();
-    enemy->localPosition = {0, 0, -10};
+    auto enemy = new EnemySpawner();
+    enemy->localPosition = {0, 0, -20};
 
+
+    bool b = false;
     while (engine.isRunning())
     {
 
@@ -59,9 +81,13 @@ int main(int argc, const char* argv[])
         camera->localRotation = lerp(rotPrev, camera->localRotation,
                                      glm::clamp(engine.getDeltaTime() * 10.f, 0.f, 1.f));
 
+        //heartIcon->SetPosition({0, 0});
 
         entityMgr.update();
+
         engine.update();
+
+
     }
 
     entityMgr.shutdown();

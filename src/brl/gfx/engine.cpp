@@ -66,7 +66,7 @@ brl::GfxEngine::~GfxEngine()
 }
 
 
-void brl::GfxEngine::initialize()
+void brl::GfxEngine::initialize(int width, int height, std::string windowName)
 {
     if (initialized)
         return;
@@ -79,7 +79,7 @@ void brl::GfxEngine::initialize()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    mainWindow = new GfxWindow(640, 360, "untitled cp1 game");
+    mainWindow = new GfxWindow(width,height,windowName.c_str());
     glfwMakeContextCurrent(static_cast<GLFWwindow*>(mainWindow->window));
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -183,6 +183,70 @@ void brl::GfxEngine::initialize()
         attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
 
         quadMesh = new GfxMesh(attribBuffer);
+    }
+
+    {
+        std::vector<GfxVertex> vertices = {};
+
+        int vertexCount = 32;
+        float radius = 1.0f;
+        for (int i = 0; i < vertexCount; ++i)
+        {
+            float angle = (360.0f / vertexCount) * i;
+            angle = glm::radians(angle);
+
+            GfxVertex vtx = {};
+            vtx.position.x = glm::sin(angle) * radius;
+            vtx.position.y = 0;
+            vtx.position.z = glm::cos(angle) * radius;
+
+            vertices.push_back(vtx);
+        }
+
+        auto attribBuffer = new GfxAttribBuffer();
+
+
+        attribBuffer->use();
+
+        auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
+        buffer->use();
+        buffer->updateData(GL_STATIC_DRAW, vertices.data(), sizeof(GfxVertex) * vertices.size());
+
+        attribBuffer->assignBuffer(buffer);
+        attribBuffer->mode = GL_LINE_LOOP;
+
+        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), static_cast<void*>(0)});
+        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), (void*)(3 * sizeof(float))});
+        attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
+
+
+        circleMesh = new GfxMesh(attribBuffer);
+    }
+
+    {
+        std::vector<GfxVertex> vertices = {};
+
+        vertices.push_back({});
+        vertices.push_back({});
+
+        auto attribBuffer = new GfxAttribBuffer();
+
+
+        attribBuffer->use();
+
+        auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
+        buffer->use();
+        buffer->updateData(GL_STATIC_DRAW, vertices.data(), sizeof(GfxVertex) * vertices.size());
+
+        attribBuffer->assignBuffer(buffer);
+        attribBuffer->mode = GL_LINES;
+
+        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), static_cast<void*>(0)});
+        attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), (void*)(3 * sizeof(float))});
+        attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
+
+
+        lineMesh = new GfxMesh(attribBuffer);
     }
 
     InputMgr::init(static_cast<GLFWwindow*>(mainWindow->window));

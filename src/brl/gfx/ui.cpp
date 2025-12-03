@@ -52,7 +52,14 @@ void brl::GfxCanvas::draw()
     // Apply to your UI projection matrix
     glm::vec2 virtualSize = GetScaledCanvasSize(screenSize);
 
-    projValue.m4value = glm::ortho(0.0f, virtualSize.x, virtualSize.y, 0.0f, -1.0f, 1.0f);
+    float scaleFactor = GetScaleFactor(screenSize);
+
+    float left = 0;
+    float right = virtualSize.x;
+    float bottom = virtualSize.y;
+    float top = 0;
+
+    projValue.m4value = glm::ortho(left,right,bottom,top, -1.0f, 1.0f);
 
     timeValue.floatValue = glfwGetTime();
 
@@ -76,62 +83,29 @@ brl::GfxUIElement::GfxUIElement(GfxCanvas* c)
     canvas = c;
 }
 
-brl::GfxUIRect brl::GfxUIElement::GetRect() const
-{
-    auto parentSize = canvas->referenceResolution;
-
-    if (parent->getEntity<GfxUIElement>())
-        parentSize = parent->getEntity<GfxUIElement>()->GetRect().size;
-
-    // Calculate anchor positions in pixels
-    glm::vec2 anchorMinPixels = anchorMin * parentSize;
-    glm::vec2 anchorMaxPixels = anchorMax * parentSize;
-
-    // Calculate corners
-    glm::vec2 rectMin = anchorMinPixels + offsetMin;
-    glm::vec2 rectMax = anchorMaxPixels + offsetMax;
-
-    // Size and position
-    glm::vec2 size = rectMax - rectMin;
-    glm::vec2 position = rectMin;
-
-    return {position, size};
-}
-
 glm::mat4 brl::GfxUIElement::calculateTransform()
 {
+    glm::mat4 t(1.0);
     glm::vec2 screenSize = {GfxEngine::instance->getMainWidth(), GfxEngine::instance->getMainHeight()};
+    float scaleFactor = canvas->GetScaleFactor(screenSize)*2;
 
-    // Get scaled canvas size
-    glm::vec2 canvasSize = canvas->GetScaledCanvasSize(screenSize);
+    t = translate(t,(position()*scaleFactor) + (scale()*scaleFactor));
+    t *= toMat4(rotation());
+    t = glm::scale(t, scale()*scaleFactor);
 
-    // Set root parent size to canvas size
-    if (!parent)
-    {
-        // This is a root element, use canvas size as parent
-    }
-
-    // Get final position and size
-    glm::vec2 position = GetWorldPosition();
-    glm::vec2 size = GetSize();
-
-    // Apply scale factor
-    float scaleFactor = canvas->GetScaleFactor(screenSize);
-    position *= scaleFactor;
-    size *= scaleFactor;
-
-    // Build transform matrix
-    auto transform = glm::mat4(1.0f);
-    transform = glm::translate(transform, glm::vec3(position, 0));
-    transform = glm::scale(transform, glm::vec3(size, 1));
-
-    return transform;
+    return t;
 }
 
 
-brl::GfxImage::GfxImage(GfxCanvas* c) :
-    GfxUIElement(c)
+brl::GfxImage::GfxImage(GfxCanvas* c) : GfxUIElement(c)
 {
+   
+}
+
+void brl::GfxImage::loadTexture(GfxTexture2d* tex)
+{
+    localScale = {tex->getWidth(),tex->getHeight(),1};
+    texture = tex;
 }
 
 void brl::GfxImage::lateUpdate()
