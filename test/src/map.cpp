@@ -2,6 +2,7 @@
 #include "FastNoiseLite.h"
 #include "enemy.h"
 #include "borealis/util/random.hpp"
+#include "glm/gtx/integer.hpp"
 
 MapObject::MapObject(brl::GfxMeshRenderer* renderer)
 {
@@ -353,7 +354,7 @@ void MapController::loadMap()
 
     // place spawners
 
-    int spawnersMax = 5;
+    int spawnersMax = 6;
     int spawnerCount = 0;
     for (int x = 0; x < chunkCountX*MAP_CHUNK_SIZE; ++x)
     {
@@ -361,7 +362,7 @@ void MapController::loadMap()
         {
             if (brl::random(0, 1000) >= 999)
             {
-                auto enemySpawner = new EnemySpawner();
+                auto enemySpawner = new EnemySpawner((EnemyTeam)glm::mod(spawnerCount,4));
             
                 auto blockX = (x * MAP_BLOCK_SPACING) - ((chunkCountX*MAP_CHUNK_SIZE) / 2);
                 ;

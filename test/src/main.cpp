@@ -63,10 +63,10 @@ int main(int argc, const char* argv[])
 
     map->loadMap();
 
-    auto player = new PlayerController();
+    auto player = new PlayerController(Red);
     player->healthBarImage = healthBar;
 
-    auto enemy = new EnemySpawner();
+    auto enemy = new EnemySpawner(Red);
     enemy->localPosition = {0, 0, -20};
 
 

@@ -136,7 +136,21 @@ brl::GfxTexture2d* brl::GfxTexture2d::getWhiteTexture()
 brl::GfxTexture2d::~GfxTexture2d()
 {
     GfxTexture::~GfxTexture();
-    delete[] pixels;
+    if (pixels)
+    {
+
+        delete[] pixels;
+        pixels = nullptr;
+    }
+    for (const auto& cached_texture : cachedTextures)
+    {
+        if (cached_texture.second == this)
+        {
+            cachedTextures.erase(std::find(cachedTextures.begin(), cachedTextures.end(), cached_texture));
+            break;
+        }
+    }
+
 }
 
 brl::GfxTexture2dArray::GfxTexture2dArray(Color32* pixels, int width, int height, int layerCount)

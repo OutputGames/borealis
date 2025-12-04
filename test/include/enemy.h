@@ -52,7 +52,7 @@ private:
 
 struct EnemySpawner : ActorBehaviour
 {
-    EnemySpawner();
+    EnemySpawner(EnemyTeam team);
     void start() override;
     void update() override;
 

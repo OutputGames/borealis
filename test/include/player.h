@@ -7,6 +7,8 @@
 #include "borealis/gfx/sprite.hpp"
 #include "borealis/util/input.hpp"
 
+enum EnemyTeam : int;
+
 struct PlayerEntity : ActorBehaviour
 {
     PlayerEntity();
@@ -14,6 +16,8 @@ struct PlayerEntity : ActorBehaviour
     void handleAttack(glm::vec3 dir, float power) override;
 
     bool isGuarding = false;
+    EnemyTeam Team;
+
 
     static std::vector<PlayerEntity*> cachedEntities;
 };
@@ -21,11 +25,12 @@ struct PlayerEntity : ActorBehaviour
 struct PlayerController : PlayerEntity
 {
 
-    PlayerController();
+    PlayerController(EnemyTeam team);
     void update() override;
     void handleAttack(glm::vec3 dir, float power) override;
 
     brl::GfxImage* healthBarImage;
+
 
 private:
     brl::GfxMaterial* material = nullptr;
