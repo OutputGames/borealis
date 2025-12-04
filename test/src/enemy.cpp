@@ -6,6 +6,7 @@
 #include "borealis/gfx/camera.hpp"
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/sprite.hpp"
+#include "borealis/util/random.hpp"
 
 std::vector<EnemyController*> EnemyController::cachedEnemies;
 
@@ -14,8 +15,9 @@ brl::GfxTexture2dArray* EnemyController::walkSprites;
 brl::GfxTexture2dArray* EnemyController::attackSprites;
 brl::GfxTexture2dArray* EnemyController::guardSprites;
 
-EnemyController::EnemyController()
+EnemyController::EnemyController(EnemyTeam team)
 {
+    Team = team;
     cachedEnemies.push_back(this);
 
     if (!idleSprites)
@@ -283,12 +285,40 @@ EnemySpawner::EnemySpawner()
 {
     auto tower = brl::GfxModel::loadModel("models/tower/tower.glb");
 
+    auto shaderBins = new brl::GfxShader*[2];
+
+    shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, brl::readFileString("shaders/map_object/vtx.glsl"));
+    shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, brl::readFileString("shaders/map_object/frg.glsl"));
+    auto shader = new brl::GfxShaderProgram(shaderBins, 2, true);
+
+    team = (EnemyTeam)brl::random(0, 3);
+
     for (auto material : tower->materials)
-        material->reloadShader(new brl::GfxShaderProgram());
+    {
+        material->reloadShader(shader);
+        auto color = glm::vec3{0};
+        switch (team)
+        {
 
-    auto towerEntity = tower->createEntity();
+            case Red:
+                color = glm::vec3(212, 28, 64);
+                break;
+            case Blue:
+                color = glm::vec3(66, 93, 245);
+                break;
+            case Yellow:
+                color = glm::vec3(245, 188, 66);
+                break;
+            case Black:
+                color = glm::vec3(28, 36, 48);
+                break;
+        }
+        material->setVec3("_color", color);
+    }
 
-    towerEntity->setEulerAngles({0, 0, 0});
+    const auto& towerEntity = tower->createEntity();
+
+    towerEntity->setEulerAngles({0, 180, 0});
     towerEntity->localScale = glm::vec3(1.0f);
 
     towerEntity->setParent(this);
@@ -311,8 +341,9 @@ void EnemySpawner::start()
         startPosition.z = glm::cos(angle) * radius;
         startPosition += pos;
 
-        auto enemy = new EnemyController;
+        auto enemy = new EnemyController(team);
         enemy->localPosition = startPosition;
+        enemy->Team = team;
     }
 }
 

@@ -157,9 +157,14 @@ glm::mat4 brl::EcsEntity::calculateTransform()
 {
     glm::mat4 t(1.0);
 
-    t = translate(t, position());
-    t *= toMat4(rotation());
-    t = glm::scale(t, scale());
+    t = translate(t, localPosition);
+    t *= toMat4(localRotation);
+    t = glm::scale(t, localScale);
+
+    if (parent)
+    {
+        t = parent->calculateTransform() * t;
+    }
 
     return t;
 }

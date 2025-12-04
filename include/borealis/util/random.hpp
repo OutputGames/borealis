@@ -5,7 +5,7 @@
 
 namespace brl
 {
-    int random(int min, int max) {
+    inline int random(int min, int max) {
         return  min + (std::rand() % (max - min + 1));
     }
 } // namespace brl

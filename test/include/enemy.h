@@ -9,7 +9,7 @@
 
 enum EnemyTeam
 {
-    Red,
+    Red = 0,
     Blue,
     Yellow,
     Black
@@ -18,7 +18,7 @@ enum EnemyTeam
 struct EnemyController : ActorBehaviour
 {
 
-    EnemyController();
+    EnemyController(EnemyTeam t);
     void update() override;
     void handleAttack(glm::vec3 dir, float power) override;
     void onDestroy() override;
@@ -57,7 +57,8 @@ struct EnemySpawner : ActorBehaviour
     void update() override;
 
     float radius = 3.0f;
-    int count = 5;
+    int count = 3;
+    EnemyTeam team = Red;
 };
 
 #endif // ENEMY_H

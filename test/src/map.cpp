@@ -316,8 +316,8 @@ void MapController::loadMap()
     }
 
 
-    chunkCountX = 16;
-    chunkCountY = 16;
+    chunkCountX = 4;
+    chunkCountY = 4;
 
     chunks = new MapChunk*[chunkCountX * chunkCountY];
 

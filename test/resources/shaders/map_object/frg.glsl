@@ -2,17 +2,15 @@
 out vec4 FragColor;
 in vec2 texCoords;
 in vec3 normal;
-in vec3 pos;
-uniform vec3 color;
+in vec4 pos;
+uniform vec3 _color;
 uniform sampler2D tex;
 uniform float _internalTime;
+
+#definclude "shaders/util.shdinc"
+
 void main()
 {
-   vec3 norm = normalize(normal);
-   vec3 lightDir = normalize(vec3(sin(_internalTime)*3,2,cos(_internalTime)*3) - pos);
-   lightDir = -normalize(vec3(1,-1,-1));
-   float d = max(dot(norm, lightDir), 0.0) + 0.25f;
-
    vec4 color = texture(tex,texCoords);
 
    if (color.a < 0.1)
@@ -21,10 +19,25 @@ void main()
 
    vec3 final = color.rgb;
 
-   final = texture(tex,vec2(0,1)).rgb;
+    ivec2 textureDimensions = textureSize(tex, 0) - ivec2(1,1);
+    float normalizedX = 0 * float(textureDimensions.x);
+    float normalizedY = 1 * float(textureDimensions.y);
 
-   if (texture(tex,vec2(0,0)).r == 1) {
-      final = vec3(0,1,0);
+   vec4 texel = texelFetch(tex, ivec2(normalizedX,normalizedY),0);
+   float texelType = texel.r;
+
+   texelType *= (1.0 - texel.g);
+   texelType *= (1.0 - texel.b);
+
+   if (texel.g > 0.25 || texel.b > 0.25)
+      texelType = 0;
+
+   if (texelType > 0) {
+      float mul = 1;
+
+      mul = calculateLuminance(color.rgb);
+
+      final = blendHardLight(vec3(mul), color_vec3(_color),0.75f) * color.r;
    }
 
    FragColor = vec4(final, color.a);
