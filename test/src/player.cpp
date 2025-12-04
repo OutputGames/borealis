@@ -91,15 +91,18 @@ void PlayerController::update()
     {
         material->setFloat("attackTime", glfwGetTime());
 
-        for (auto cachedEntity : EnemyController::cachedEnemies)
+        for (auto cachedEntity : ActorBehaviour::cachedActors)
         {
+            if (cachedEntity == this)
+                continue;
+
             glm::vec3 pos = cachedEntity->position();
 
             float distance = glm::distance(pos, position());
 
             if (distance < 2.5f)
             {
-                cachedEntity->handleAttack(normalize(pos - position()), cachedEntity->isGuarding ? 5.0f : 12.5f);
+                cachedEntity->handleAttack(normalize(pos - position()),12.5f);
             }
         }
     }
@@ -145,6 +148,8 @@ void PlayerController::handleAttack(glm::vec3 dir, float power)
 
 brl::UtilCoroutine PlayerController::AttackCoroutine(glm::vec3 dir, float power)
 {
+    if (isGuarding)
+        power *= 0.5f;
     float start = glfwGetTime();
 
     float diff = 0;

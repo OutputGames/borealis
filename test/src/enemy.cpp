@@ -115,9 +115,9 @@ void EnemyController::update()
 
     auto entityPosition = glm::vec3(0);
     float entityDistance = 0;
-    PlayerEntity* playerEntity = nullptr;
+    ActorBehaviour* targetEntity = nullptr;
 
-    for (auto cachedEntity : PlayerEntity::cachedEntities)
+    for (auto cachedEntity : EnemyController::cachedEnemies)
     {
         glm::vec3 pos = cachedEntity->position();
 
@@ -125,23 +125,41 @@ void EnemyController::update()
 
         if (distance < 7.5f && cachedEntity->Team != Team)
         {
-            playerEntity = cachedEntity;
+            targetEntity = cachedEntity;
             entityPosition = pos;
             entityDistance = distance;
         }
 
     }
 
-    velocity = glm::vec2(0);
+    if (!targetEntity) {
+        for (auto cachedEntity : PlayerEntity::cachedEntities)
+        {
+            glm::vec3 pos = cachedEntity->position();
+
+            float distance = glm::distance(pos, position());
+
+            if (distance < 7.5f && cachedEntity->Team != Team)
+            {
+                targetEntity = cachedEntity;
+                entityPosition = pos;
+                entityDistance = distance;
+            }
+
+        }
+    }
+
+
+
     bool attack = false;
     isGuarding = false;
 
     attackTimer += deltaTime;
     attackDelay = 5.0f;
 
-    if (playerEntity && length(velocity) <= 0.1f)
+    if (targetEntity)
     {
-
+        wanderPosition = position();
         if (entityDistance > 2.5f)
         {
             glm::vec3 diff = entityPosition - position();
@@ -152,13 +170,14 @@ void EnemyController::update()
         }
         else if (entityDistance <= 2.5f)
         {
+            velocity = glm::vec2(0);
             if (attackTimer >= attackDelay)
             {
                 startAttackDistance = entityDistance;
                 glm::vec3 diff = entityPosition - position();
                 diff = normalize(diff);
-                float power = playerEntity->isGuarding ? 5.0f : 12.5f;
-                playerEntity->handleAttack(diff, power);
+                float power = 12.5f;
+                targetEntity->handleAttack(diff, power);
                 attack = true;
                 attackTimer = 0.f;
             }
@@ -166,6 +185,36 @@ void EnemyController::update()
             {
                 isGuarding = true;
             }
+        }
+    } else {
+        float spawnerDistance = glm::distance(position(), spawner->position());
+
+        if (spawnerDistance > 5.f)
+        {
+            glm::vec3 diff = spawner->position() - position();
+            diff = normalize(diff);
+
+            velocity.x = diff.x;
+            velocity.y = diff.z;
+            wanderPosition = position();
+        } else {
+            if (glm::distance(position(),wanderPosition) < 1.0f) {
+                glm::vec3 pos = spawner->position();
+                float angle = brl::random(0,360);
+                angle = glm::radians(angle);
+
+                float radius = brl::random_float(2.5f,5);
+
+                pos.x += radius * glm::cos(angle);
+                pos.z += radius * glm::sin(angle);
+
+                wanderPosition = pos;
+            }
+            glm::vec3 diff = wanderPosition - position();
+            diff = normalize(diff);
+
+            velocity.x = diff.x;
+            velocity.y = diff.z;
         }
     }
 
@@ -237,6 +286,8 @@ void EnemyController::onDeath()
 
 brl::UtilCoroutine EnemyController::AttackCoroutine(glm::vec3 dir, float power)
 {
+    if (isGuarding)
+        power *= 0.5f;
     float start = glfwGetTime();
 
     float diff = 0;
@@ -319,7 +370,7 @@ EnemySpawner::EnemySpawner(EnemyTeam t)
 
     const auto& towerEntity = tower->createEntity();
 
-    auto renderer = towerEntity->getEntityInChildren<brl::GfxMeshRenderer>();
+    renderer = towerEntity->getEntityInChildren<brl::GfxMeshRenderer>();
     for (int i = 0; i < renderer->materials.size(); ++i)
     {
         auto material = new brl::GfxMaterial(*renderer->materials[i]);
@@ -328,18 +379,40 @@ EnemySpawner::EnemySpawner(EnemyTeam t)
 
         renderer->materials[i] = material;
     }
+    materials = renderer->materials;
 
     towerEntity->setEulerAngles({0, 180, 0});
     towerEntity->localScale = glm::vec3(1.0f);
 
     towerEntity->setParent(this);
 
+    healthBar = new HealthBarBehavior;
+    healthBar->localPosition = {0, 5.f, 0};
+    switch (team)
+    {
+
+        case Red:
+            healthBar->color = glm::vec3(212, 28, 64);
+            break;
+        case Blue:
+            healthBar->color = glm::vec3(66, 93, 245);
+            break;
+        case Yellow:
+            healthBar->color = glm::vec3(245, 188, 66);
+            break;
+        case Black:
+            healthBar->color = glm::vec3(28, 36, 48);
+            break;
+    }
+
+    healthBar->setParent(this);
+
 }
 
 void EnemySpawner::start()
 {
     ActorBehaviour::start();
-
+    health = 1;
 
     auto pos = position();
     for (int i = 0; i < count; ++i)
@@ -355,6 +428,9 @@ void EnemySpawner::start()
         auto enemy = new EnemyController(team);
         enemy->localPosition = startPosition;
         enemy->Team = team;
+        enemy->spawner = this;
+
+        enemies.push_back(enemy);
     }
 }
 
@@ -362,10 +438,78 @@ void EnemySpawner::start()
 void EnemySpawner::update()
 {
     ActorBehaviour::update();
-    health = 1;
+    float deltaTime = brl::GfxEngine::instance->getDeltaTime();
+
+    healthBar->health = glm::mix(healthBar->health, health, deltaTime * 15.f);
+
+    if (!isAlive)
+        return;
+
     
     brl_debug::drawMesh(brl::GfxMesh::GetPrimitive(brl::CIRCLE)->GetSubMesh(0)->buffer,
             glm::translate(position())*glm::scale(scale()*radius));
 
     brl_debug::drawLine(position(), glm::vec3(0,5,0));
+
+    if (enemies.size() > 0) {
+
+    }
+}
+
+void EnemySpawner::onDeath() {
+    ActorBehaviour::onDeath();
+
+    brl::GfxEngine::instance->active_coroutines.push_back(DeathCoroutine());
+
+}
+
+void EnemySpawner::handleAttack(glm::vec3 dir, float power) {
+    ActorBehaviour::handleAttack(dir, power);
+    brl::GfxEngine::instance->active_coroutines.push_back(AttackCoroutine(dir, power));
+
+}
+
+brl::UtilCoroutine EnemySpawner::AttackCoroutine(glm::vec3 dir, float power)
+{
+    float start = glfwGetTime();
+
+    float diff = 0;
+
+    while (diff * 10 <= 2.0f)
+    {
+        diff = glfwGetTime() - start;
+        co_yield brl::GfxEngine::instance->getDeltaTime();
+    }
+
+    for (const auto & material : materials)
+        material->setFloat("damageTime", glfwGetTime());
+
+    while (diff * 10.0f > 2.0f && diff * 10.0f < 4.0f)
+    {
+        localPosition += (dir * power) * brl::GfxEngine::instance->getDeltaTime();
+        co_yield brl::GfxEngine::instance->getDeltaTime();
+
+        diff = glfwGetTime() - start;
+    }
+
+    health -= power /= 50.0f;
+}
+
+brl::UtilCoroutine EnemySpawner::DeathCoroutine() {
+    glm::vec3 startScale = renderer->localScale;
+    glm::vec3 startPos = renderer->localPosition;
+
+    float timeToReach = 0.5f;
+    float t = 0;
+    while (t < timeToReach)
+    {
+        renderer->localScale = mix(startScale, glm::vec3(0.1f), t / timeToReach);
+        renderer->localPosition = mix(startPos, glm::vec3(0), t / timeToReach);
+
+        t += brl::GfxEngine::instance->getDeltaTime();
+
+        co_yield brl::GfxEngine::instance->getDeltaTime();
+    }
+
+    destroy();
 }

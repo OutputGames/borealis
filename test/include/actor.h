@@ -12,6 +12,9 @@ struct ActorBehaviour : brl::EcsEntity
     void update() override;
     virtual void handleAttack(glm::vec3 dir, float power);
 
+    static std::vector<ActorBehaviour*> cachedActors;
+
+
 protected:
     float health = 1.f;
     bool isAlive = true;

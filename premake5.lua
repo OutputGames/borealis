@@ -15,6 +15,7 @@ workspace "borealis"
     filter "system:windows"
         systemversion "latest"
         defines { "_CRT_SECURE_NO_WARNINGS" }
+    disablewarnings { "warnings" }  
 
 
 project "borealis"

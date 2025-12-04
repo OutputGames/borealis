@@ -3,9 +3,12 @@
 #include "map.h"
 #include "borealis/gfx/camera.hpp"
 
+std::vector<ActorBehaviour*> ActorBehaviour::cachedActors;
+
+
 ActorBehaviour::ActorBehaviour()
 {
-
+    cachedActors.push_back(this);
 }
 
 void ActorBehaviour::update()
