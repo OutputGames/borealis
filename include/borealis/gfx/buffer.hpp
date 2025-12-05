@@ -33,12 +33,28 @@ namespace brl
     struct GfxBuffer : public IGfxBuffer {
         GfxBuffer(GLenum format);
 
+        /**
+         * @brief 
+         * This function binds the graphics buffer object for usage.
+         */
         void use();
+
+        /**
+         * @brief 
+         * This function replaces the data in the graphics buffer.
+         * @param usage 
+         * @param data 
+         * @param size 
+         */
         void updateData(GLenum usage, const void* data, size_t size);
+
+
+        /// @brief This function deinitializes and destroys the buffer.
         void destroy();
 
     private:
         friend struct GfxAttribBuffer;
+        
         GLenum format;
         size_t size = 0;
     };

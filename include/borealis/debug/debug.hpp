@@ -10,7 +10,7 @@ namespace brl_debug
      * @param buffer The mesh to be drawn.
      * @param transform The model matrix for the mesh to be drawn.
      */
-    void drawMesh(brl::GfxAttribBuffer* buffer, glm::mat4 transform);
+    void drawMesh(brl::GfxAttribBuffer* mesh, glm::mat4 transform);
 
 
     /**
