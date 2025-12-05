@@ -11,6 +11,7 @@ enum EnemyTeam : int;
 
 struct PlayerEntity : ActorBehaviour
 {
+
     PlayerEntity();
 
     void handleAttack(glm::vec3 dir, float power) override;

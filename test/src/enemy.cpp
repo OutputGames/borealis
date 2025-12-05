@@ -197,25 +197,7 @@ void EnemyController::update()
             velocity.x = diff.x;
             velocity.y = diff.z;
             wanderPosition = position();
-        } else {
-            if (glm::distance(position(),wanderPosition) < 1.0f) {
-                glm::vec3 pos = spawner->position();
-                float angle = brl::random(0,360);
-                angle = glm::radians(angle);
-
-                float radius = brl::random_float(2.5f,5);
-
-                pos.x += radius * glm::cos(angle);
-                pos.z += radius * glm::sin(angle);
-
-                wanderPosition = pos;
-            }
-            glm::vec3 diff = wanderPosition - position();
-            diff = normalize(diff);
-
-            velocity.x = diff.x;
-            velocity.y = diff.z;
-        }
+        } 
     }
 
     float horizontal = velocity.x;
