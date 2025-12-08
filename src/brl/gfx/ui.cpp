@@ -45,8 +45,8 @@ void brl::GfxCanvas::insertDrawCall(const GfxUIDrawCall call)
 void brl::GfxCanvas::draw()
 {
 
-    GfxShaderValue projValue{};
-    GfxShaderValue timeValue{};
+    GfxShaderValue* projValue = new GfxShaderValue;
+    GfxShaderValue* timeValue = new GfxShaderValue;
 
     glm::vec2 screenSize = {GfxEngine::instance->getMainWidth(), GfxEngine::instance->getMainHeight()};
     // Apply to your UI projection matrix
@@ -59,23 +59,24 @@ void brl::GfxCanvas::draw()
     float bottom = virtualSize.y;
     float top = 0;
 
-    projValue.m4value = glm::ortho(left,right,bottom,top, -1.0f, 1.0f);
+    projValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{glm::ortho(left, right, bottom, top, -1.0f, 1.0f)});
 
-    timeValue.floatValue = glfwGetTime();
+    timeValue->floatValue = glfwGetTime();
 
     for (const GfxUIDrawCall& call : draw_calls)
     {
-        GfxShaderValue modelValue{};
-        modelValue.m4value = call.transform;
+        GfxShaderValue* modelValue = new GfxShaderValue;
+        modelValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{call.transform});
         GfxUniformList overrides;
-        overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
-        overrides.insert({call.material->getShader()->getUniform("_internalModel"), modelValue});
-        overrides.insert({call.material->getShader()->getUniform("_internalTime"), timeValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalProj"), projValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalModel"), modelValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalTime"), timeValue});
 
         call.material->draw(call.gfxBuffer, overrides);
 
         overrides.clear();
     }
+
 }
 
 brl::GfxUIElement::GfxUIElement(GfxCanvas* c)

@@ -101,8 +101,12 @@ void brl::GfxAttribBuffer::insertAttribute(GfxAttribute attribute, GfxBuffer* bu
     else
         vbo->use();
 
-    glVertexAttribPointer(attributeCount, attribute.size, attribute.format, attribute.normalized, attribute.stride,
-                          attribute.pointer);
+    if (attribute.format != GL_INT)
+        glVertexAttribPointer(attributeCount, attribute.size, attribute.format, attribute.normalized, attribute.stride,attribute.pointer);
+    else
+        glVertexAttribIPointer(attributeCount, attribute.size, attribute.format, attribute.stride,
+                              attribute.pointer);
+
     glEnableVertexAttribArray(attributeCount);
 
     if (attribute.divisor > -1)

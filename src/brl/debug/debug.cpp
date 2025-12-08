@@ -3,6 +3,9 @@
 brl::GfxMaterial* debugMaterial = nullptr;
 brl::GfxMaterial* debugLineMaterial = nullptr;
 
+    // Fix: create a named lvalue for the empty map to satisfy non-const reference requirement
+static brl::GfxUniformList emptyUniforms;
+
 void brl_debug::drawMesh(brl::GfxAttribBuffer* buffer, glm::mat4 transform)
 {
     if (!debugMaterial)
@@ -10,7 +13,8 @@ void brl_debug::drawMesh(brl::GfxAttribBuffer* buffer, glm::mat4 transform)
         debugMaterial = new brl::GfxMaterial(brl::GfxShaderProgram::GetDefaultShader());
     }
 
-    brl::GfxEngine::instance->insertCall(debugMaterial, buffer, transform);
+
+    brl::GfxEngine::instance->insertCall(debugMaterial, buffer, transform, emptyUniforms);
 }
 
 void brl_debug::drawLine(glm::vec3 start, glm::vec3 end)
@@ -25,5 +29,5 @@ void brl_debug::drawLine(glm::vec3 start, glm::vec3 end)
     t[0] = glm::vec4(start, 0);
     t[1] = glm::vec4(end, 0);
 
-    brl::GfxEngine::instance->insertCall(debugLineMaterial, brl::GfxMesh::GetPrimitive(brl::LINE)->GetSubMesh(0)->buffer, t);
+    brl::GfxEngine::instance->insertCall(debugLineMaterial, brl::GfxMesh::GetPrimitive(brl::LINE)->GetSubMesh(0)->buffer, t, emptyUniforms);
 }

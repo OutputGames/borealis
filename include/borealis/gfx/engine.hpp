@@ -7,14 +7,18 @@
 
 namespace brl
 {
-    struct GfxMaterialMgr;
     struct GfxInstancedDrawCall;
+    struct GfxUniformList;
+    struct GfxShaderBinding;
+    struct GfxMaterialMgr;
     struct GfxMesh;
+    struct GfxShaderUniform;
+    struct GfxShaderValue;
+    struct GfxDrawCall;
 }
 
 namespace brl
 {
-    struct GfxDrawCall;
     struct GfxAttribBuffer;
     struct GfxMaterial;
 
@@ -53,7 +57,8 @@ namespace brl
         void shutdown();
         void update();
         bool isRunning() {return mainWindow->isOpen();}
-        void insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4& transform, int instancingIdx = 0);
+        void insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4& transform,
+                        std::vector<GfxShaderBinding>& uniqueOverrides, int instancingIdx = 0);
         int getFrameCount();
 
         float getAspectRatio();
@@ -90,18 +95,8 @@ namespace brl
         GfxMesh* lineMesh;
     };
 
-    struct GfxDrawCall {
-        GfxMaterial* material;
-        GfxAttribBuffer* gfxBuffer;
-        const glm::mat4 transform;
-    };
 
-    struct GfxInstancedDrawCall
-    {
-        GfxMaterial* material;
-        std::vector<glm::mat4> transforms;
-        GfxAttribBuffer* gfxBuffer;
-    };
+
 } // namespace brl
 
 

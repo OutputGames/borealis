@@ -8,7 +8,7 @@ brl::GfxCamera::GfxCamera()
     mainCamera = this;
 }
 
-void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls, const GfxInstancedDrawCallList instancedCalls)
+void brl::GfxCamera::draw(std::vector<GfxDrawCall>& calls, const GfxInstancedDrawCallList instancedCalls)
 {
     if (targetFramebuffer != cachedFramebuffer && targetFramebuffer != nullptr)
     {
@@ -25,45 +25,51 @@ void brl::GfxCamera::draw(const std::vector<GfxDrawCall>& calls, const GfxInstan
     cachedFramebuffer->use();
     cachedFramebuffer->clear();
 
-    GfxShaderValue viewValue{};
-    GfxShaderValue projValue{};
-    GfxShaderValue timeValue{};
-    GfxShaderValue cameraPosValue{};
+    GfxShaderValue* viewValue = new GfxShaderValue;
+    GfxShaderValue* projValue = new GfxShaderValue;
+    GfxShaderValue* timeValue = new GfxShaderValue;
+    GfxShaderValue* cameraPosValue = new GfxShaderValue;
 
-    viewValue.m4value = GetViewMatrix();
-    projValue.m4value = GetProjMatrix();
-    timeValue.floatValue = glfwGetTime();
-    cameraPosValue.v3value = position;
+    viewValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{GetViewMatrix()});
+    projValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{GetProjMatrix()});
+    timeValue->floatValue = glfwGetTime();
+    cameraPosValue->v3value = position;
 
-    for (const GfxDrawCall& call : calls)
+    for (GfxDrawCall& call : calls)
     {
-        GfxShaderValue modelValue{};
-        modelValue.m4value = call.transform;
+        GfxShaderValue* modelValue = new GfxShaderValue;
+        modelValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{call.transform});
         GfxUniformList overrides;
-        overrides.insert({call.material->getShader()->getUniform("_internalView"), viewValue});
-        overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
-        overrides.insert({call.material->getShader()->getUniform("_internalModel"), modelValue});
-        overrides.insert({call.material->getShader()->getUniform("_internalTime"), timeValue});
-        overrides.insert({call.material->getShader()->getUniform("_cameraPosition"), cameraPosValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalView"), viewValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalProj"), projValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalModel"), modelValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalTime"), timeValue});
+        overrides.push_back({call.material->getShader()->getUniform("_cameraPosition"), cameraPosValue});
+
+
+        overrides.insert(overrides.end(), call.uniqueOverrides.begin(), call.uniqueOverrides.end());
 
         call.material->draw(call.gfxBuffer, overrides);
 
+
         overrides.clear();
+        call.uniqueOverrides.clear();
     }
 
     for (const auto& [key, call] : instancedCalls)
     {
         GfxUniformList overrides;
-        overrides.insert({call.material->getShader()->getUniform("_internalView"), viewValue});
-        overrides.insert({call.material->getShader()->getUniform("_internalProj"), projValue});
-        overrides.insert({call.material->getShader()->getUniform("_internalTime"), timeValue});
-        overrides.insert({call.material->getShader()->getUniform("_cameraPosition"), cameraPosValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalView"), viewValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalProj"), projValue});
+        overrides.push_back({call.material->getShader()->getUniform("_internalTime"), timeValue});
+        overrides.push_back({call.material->getShader()->getUniform("_cameraPosition"), cameraPosValue});
 
 
         call.material->drawInstanced(call.transforms, call.gfxBuffer, overrides);
 
         overrides.clear();
     }
+
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

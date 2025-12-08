@@ -101,6 +101,20 @@ void brl::EcsEntity::setParent(EcsEntity* e)
     parent->children.push_back(this);
 }
 
+brl::EcsEntity* brl::EcsEntity::getChild(int index) { return children[index]; }
+
+brl::EcsEntity** brl::EcsEntity::getChildren(int& count)
+{
+    count = children.size();
+
+    brl::EcsEntity** c = new brl::EcsEntity*[children.size()];
+
+    // Copy the data using memcpy
+    std::memcpy(c, children.data(), children.size() * sizeof(brl::EcsEntity*));
+
+    return c;
+}
+
 brl::EcsEntity::EcsEntity()
 {
     EcsEngine::instance->entities.push_back(this);

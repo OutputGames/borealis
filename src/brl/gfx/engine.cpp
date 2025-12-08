@@ -5,6 +5,19 @@
 
 #include "borealis/gfx/gfx.hpp"
 #include "borealis/util/input.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
+#include "glm/gtx/associated_min_max.hpp"
 
 brl::GfxEngine* brl::GfxEngine::instance;
 
@@ -322,8 +335,8 @@ void brl::GfxEngine::update()
 
 }
 
-void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4& transform,
-                                int instancingIdx)
+void brl::GfxEngine::insertCall(::brl::GfxMaterial* material, ::brl::GfxAttribBuffer* buffer, const glm::mat4& transform,
+                                std::vector<GfxShaderBinding>& uniqueOverrides, int instancingIdx)
 {
     auto shader = material->getShader();
     if (shader->instancingEnabled)
@@ -349,7 +362,7 @@ void brl::GfxEngine::insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, 
     }
     else
     {
-        calls.push_back({material, buffer, transform});
+        calls.push_back({material, buffer, transform, uniqueOverrides});
     }
 }
 

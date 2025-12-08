@@ -30,9 +30,9 @@ void brl::GfxFramebufferAttachment::draw(GfxMaterial* material)
 
     GfxUniformList uniforms = {};
 
-    GfxShaderValue sourceValue = {};
-    sourceValue.txValue = this;
-    uniforms.insert({material->getShader()->getUniform("_sourceTexture"), sourceValue});
+    GfxShaderValue* sourceValue = new GfxShaderValue;
+    sourceValue->txValue = this;
+    uniforms.push_back({material->getShader()->getUniform("_sourceTexture"), sourceValue});
 
     material->draw(fullscreenQuadBuffer, uniforms);
 }

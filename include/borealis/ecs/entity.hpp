@@ -129,6 +129,19 @@ namespace brl
         template <typename T>
         T* getEntity();
 
+        /**
+         * This function returns a child at the index provided
+         * @param index The index of the child to be searched for
+         * @return The child that is either found or not
+         */
+        EcsEntity* getChild(int index);
+
+        /**
+         * This function returns all of the children of this object
+         * @return The children of the object
+         */
+        EcsEntity** getChildren(int& count);
+
         EcsEntity();
 
     protected:

@@ -36,7 +36,7 @@ namespace brl
 
         GfxFramebuffer* targetFramebuffer;
 
-        void draw(const std::vector<GfxDrawCall>& calls, const GfxInstancedDrawCallList instancedCalls);
+        void draw(std::vector<GfxDrawCall>& calls, const GfxInstancedDrawCallList instancedCalls);
 
     private:
         friend GfxEngine;

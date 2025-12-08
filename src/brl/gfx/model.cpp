@@ -8,7 +8,99 @@
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
 
-std::map<std::string, brl::GfxModel*> brl::GfxModel::cachedModels;
+static brl::GfxShaderProgram* defaultSkinningShader = nullptr;
+brl::GfxShaderProgram* GetSkinningShader()
+{
+    if (!defaultSkinningShader)
+    {
+
+        auto shaderBins = new brl::GfxShader*[2];
+
+        auto vertexShaderSource = "#version 330 core\n"
+                                  "layout (location = 0) in vec3 aPos;\n"
+                                  "layout (location = 1) in vec3 aNorm;\n"
+                                  "layout (location = 2) in vec2 aUV;\n"
+                                  "layout (location = 3) in ivec4 aBoneIds;\n"
+                                  "layout (location = 4) in vec4 aWeights;\n"
+                                  "\n"
+                                  "const int MAX_BONES = 100;\n"
+                                  "const int MAX_BONE_INFLUENCE = 4;\n"
+                                  "uniform mat4 _internalJoints[MAX_BONES];\n"
+                                  "\n"
+                                  "uniform mat4 _internalModel;\n"
+                                  "uniform mat4 _internalView;\n"
+                                  "uniform mat4 _internalProj;\n"
+                                  "\n"
+                                  "\n"
+                                  "out vec2 texCoords;\n"
+                                  "out vec3 normal;\n"
+                                  "out vec3 pos;\n"
+                                  "void main()\n"
+                                  "{\n"
+                                  "    vec4 totalPosition = vec4(0.0f);\n"
+                                  "    vec3 totalNormal = vec3(0.0f);\n"
+                                  "    for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)\n"
+                                  "    {\n"
+                                  "        if(aBoneIds[i] == -1) \n"
+                                  "            continue;\n"
+                                  "        if(aBoneIds[i] >= MAX_BONES) \n"
+                                  "        {\n"
+                                  "            totalPosition = vec4(aPos,1.0f);\n"
+                                  "            totalNormal = vec3(aNorm);\n"
+                                  "            break;\n"
+                                  "        }\n"
+                                  "        vec4 localPosition = _internalJoints[aBoneIds[i]] * vec4(aPos,1.0f);\n"
+                                  "        totalPosition += localPosition * aWeights[i];\n"
+                                  "\n"
+                                  "        vec3 localNormal = mat3(_internalJoints[aBoneIds[i]]) * aNorm;\n"
+                                  "        totalNormal += localNormal * aWeights[i];\n"
+                                  "    }\n"
+                                  "\n"
+                                  "    texCoords = aUV;\n"
+                                  "\n"
+                                  "    normal = mat3(transpose(inverse(_internalModel))) * totalNormal;\n"
+                                  "    pos = totalPosition.xyz;\n"
+                                  "\n"
+                                  "    mat4 viewModel = _internalView * _internalModel;\n"
+                                  "    gl_Position =  _internalProj * viewModel * totalPosition;\n"
+                                  "}";
+
+        auto fragmentShaderSource = "#version 330 core\n"
+                                    "out vec4 FragColor;\n"
+                                    "in vec2 texCoords;\n"
+                                    "in vec3 normal;\n"
+                                    "in vec3 pos;\n"
+                                    "uniform vec4 color;\n"
+                                    "uniform sampler2D tex;\n"
+                                    "uniform sampler2D norm;\n"
+                                    "vec3 getNormalFromMap()\n"
+                                    "{\n"
+                                    "    vec3 tangentNormal = texture(norm, texCoords).xyz * 2.0 - 1.0;\n"
+                                    "\n"
+                                    "    vec3 Q1  = dFdx(pos);\n"
+                                    "    vec3 Q2  = dFdy(pos);\n"
+                                    "    vec2 st1 = dFdx(texCoords);\n"
+                                    "    vec2 st2 = dFdy(texCoords);\n"
+                                    "\n"
+                                    "    vec3 N   = normalize(normal);\n"
+                                    "    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);\n"
+                                    "    vec3 B  = -normalize(cross(N, T));\n"
+                                    "    mat3 TBN = mat3(T, B, N);\n"
+                                    "\n"
+                                    "    return normalize(TBN * tangentNormal);\n"
+                                    "}"
+                                    "void main()\n"
+                                    "{\n"
+                                    "   FragColor = vec4(texture(tex,texCoords).rgb,1.0);\n"
+                                    "}\n\0";
+
+        shaderBins[0] = new brl::GfxShader(GL_VERTEX_SHADER, vertexShaderSource);
+        shaderBins[1] = new brl::GfxShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+        defaultSkinningShader = new brl::GfxShaderProgram(shaderBins, 2, true);
+    }
+
+    return defaultSkinningShader;
+}
 
 brl::GfxSubMesh::~GfxSubMesh()
 {
@@ -54,7 +146,18 @@ brl::EcsEntity* brl::GfxModelNode::createEntity()
     {
         GfxMesh* _mesh = model->meshes[this->mesh];
 
-        auto renderer = new GfxMeshRenderer();
+        GfxMeshRenderer* renderer = nullptr;
+
+        if (skin > -1)
+        {
+            renderer = new GfxSkinnedMeshRenderer();
+            ((GfxSkinnedMeshRenderer*)renderer)->skeletonIndex = skin;
+        }
+        else
+        {
+            renderer = new GfxMeshRenderer();
+        }
+
         renderer->name = _mesh->name;
         renderer->mesh = _mesh;
 
@@ -72,7 +175,7 @@ brl::EcsEntity* brl::GfxModelNode::createEntity()
     }
 
 
-    for (int i = 0; i < childCount; ++i)
+    for (int i = 0; i < children.size(); ++i)
     {
         EcsEntity* e = children[i]->createEntity();
         e->setParent(entity);
@@ -93,6 +196,65 @@ brl::GfxMaterial* brl::GfxMaterialDescription::createMaterial(GfxShaderProgram* 
     return material;
 }
 
+brl::GfxModel* brl::GfxModel::loadModel(std::string path)
+{
+    if (cachedModels.contains(path))
+        return cachedModels[path];
+
+    return new GfxModel(path);
+}
+
+
+brl::EcsEntity* brl::GfxModel::createEntity()
+{
+    auto rootNodeEntity = rootNode->createEntity();
+
+    
+    brl::GfxModelEntity* root = new brl::GfxModelEntity;
+    root->model = this;
+
+    if (skins.size() == 0)
+    {
+        int childCount = 0;
+        auto children = rootNodeEntity->getChildren(childCount);
+
+        for (int i = 0; i < childCount; ++i)
+        {
+            auto child = children[i];
+            child->setParent(root);
+        }
+        return root;
+    }
+
+
+    // force all meshes under root entity
+    {
+
+        int childCount = 0;
+        auto children = rootNodeEntity->getChild(0)->getChildren(childCount);
+
+        for (int i = 0; i < childCount; ++i)
+        {
+            auto child = children[i];
+            child->setParent(root);
+        }
+
+        delete[] children;
+    }
+
+    for (auto skin : skins)
+    {
+        GfxSkeleton* skeleton = new GfxSkeleton;
+        skeleton->bones = skin->bones;
+
+        skeleton->name = skin->name;
+        skeleton->setParent(root);
+
+        root->skeletons.push_back(skeleton);
+    }
+
+    return root;
+}
 
 brl::GfxModel::GfxModel(std::string path)
 {
@@ -116,7 +278,6 @@ brl::GfxModel::GfxModel(std::string path)
         exit(-1);
     }
 
-
     for (int i = 0; i < model.meshes.size(); ++i)
     {
         tinygltf::Mesh tmesh = model.meshes[i];
@@ -133,14 +294,20 @@ brl::GfxModel::GfxModel(std::string path)
             const tinygltf::Accessor& pos_accessor = model.accessors[prim.attributes["POSITION"]];
             const tinygltf::Accessor& nrm_accessor = model.accessors[prim.attributes["NORMAL"]];
             const tinygltf::Accessor& tx0_accessor = model.accessors[prim.attributes["TEXCOORD_0"]];
+            const tinygltf::Accessor& jnt_accessor = model.accessors[prim.attributes["JOINTS_0"]];
+            const tinygltf::Accessor& wgt_accessor = model.accessors[prim.attributes["WEIGHTS_0"]];
 
             const tinygltf::BufferView& pos_bufferView = model.bufferViews[pos_accessor.bufferView];
             const tinygltf::BufferView& nrm_bufferView = model.bufferViews[nrm_accessor.bufferView];
             const tinygltf::BufferView& tx0_bufferView = model.bufferViews[tx0_accessor.bufferView];
+            const tinygltf::BufferView& jnt_bufferView = model.bufferViews[jnt_accessor.bufferView];
+            const tinygltf::BufferView& wgt_bufferView = model.bufferViews[wgt_accessor.bufferView];
 
             const tinygltf::Buffer& pos_buffer = model.buffers[pos_bufferView.buffer];
             const tinygltf::Buffer& nrm_buffer = model.buffers[nrm_bufferView.buffer];
             const tinygltf::Buffer& tx0_buffer = model.buffers[tx0_bufferView.buffer];
+            const tinygltf::Buffer& jnt_buffer = model.buffers[jnt_bufferView.buffer];
+            const tinygltf::Buffer& wgt_buffer = model.buffers[wgt_bufferView.buffer];
 
             auto positions = reinterpret_cast<const float*>(&pos_buffer.data[pos_bufferView.byteOffset + pos_accessor.
                 byteOffset]);
@@ -148,18 +315,50 @@ brl::GfxModel::GfxModel(std::string path)
                 byteOffset]);
             auto tx0s = reinterpret_cast<const float*>(&tx0_buffer.data[tx0_bufferView.byteOffset + tx0_accessor.
                 byteOffset]);
+            auto wght0s =
+                reinterpret_cast<const float*>(&wgt_buffer.data[wgt_bufferView.byteOffset + wgt_accessor.byteOffset]);
 
-            std::vector<GfxVertex> vertices;
+
+
+            std::vector<GfxSkinnedVertex> vertices;
 
             for (size_t h = 0; h < pos_accessor.count; ++h)
             {
 
-                GfxVertex vtx{};
+                GfxSkinnedVertex vtx{};
 
                 vtx.position = {positions[h * 3 + 0], positions[h * 3 + 1], positions[h * 3 + 2]};
                 vtx.normal = {normals[h * 3 + 0], normals[h * 3 + 1], normals[h * 3 + 2]};
                 vtx.uv = {tx0s[h * 2 + 0], 1.0 - tx0s[h * 2 + 1]};
+                vtx.weights = {wght0s[h * 4 + 0], wght0s[h * 4 + 1], wght0s[h * 4 + 2], wght0s[h * 4 + 3]};
                 vertices.push_back(vtx);
+            }
+
+            // Joint IDs can be stored as different types
+            if (jnt_accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
+            {
+                // 8-bit unsigned integers
+                for (size_t i = 0; i < jnt_accessor.count; ++i)
+                {
+                    const uint8_t* data = reinterpret_cast<const uint8_t*>(
+                        &jnt_buffer.data[jnt_bufferView.byteOffset + i * jnt_accessor.byteOffset]);
+                    vertices[i].boneIds = glm::uvec4(data[0], data[1], data[2], data[3]);
+                }
+            }
+            else if (jnt_accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+            {
+                // 16-bit unsigned integers (most common)
+                for (size_t i = 0; i < jnt_accessor.count; ++i)
+                {
+                    const uint16_t* data = reinterpret_cast<const uint16_t*>(
+                        &jnt_buffer.data[jnt_bufferView.byteOffset + i * jnt_accessor.byteOffset]);
+                    vertices[i].boneIds = glm::uvec4(data[0], data[1], data[2], data[3]);
+                }
+            }
+            else
+            {
+                // Handle other types if needed
+                throw std::runtime_error("Unsupported joint component type");
             }
 
             std::vector<unsigned> indices;
@@ -199,7 +398,7 @@ brl::GfxModel::GfxModel(std::string path)
 
             auto buffer = new GfxBuffer(GL_ARRAY_BUFFER);
             buffer->use();
-            buffer->updateData(GL_STATIC_DRAW, vertices.data(), sizeof(GfxVertex) * vertices.size());
+            buffer->updateData(GL_STATIC_DRAW, vertices.data(), sizeof(GfxSkinnedVertex) * vertices.size());
 
             auto elementBuffer = new GfxBuffer(GL_ELEMENT_ARRAY_BUFFER);
             elementBuffer->use();
@@ -210,9 +409,11 @@ brl::GfxModel::GfxModel(std::string path)
             attribBuffer->assignElementBuffer(elementBuffer, GL_UNSIGNED_INT);
 
 
-            attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), static_cast<void*>(nullptr)});
-            attribBuffer->insertAttribute(GfxAttribute{3, 8 * sizeof(float), (void*)(3 * sizeof(float))});
-            attribBuffer->insertAttribute(GfxAttribute{2, 8 * sizeof(float), (void*)(6 * sizeof(float))});
+            attribBuffer->insertAttribute(GfxAttribute{3, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex,position) });
+            attribBuffer->insertAttribute(GfxAttribute{3, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, normal)});
+            attribBuffer->insertAttribute(GfxAttribute{2, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, uv)});
+            attribBuffer->insertAttribute(GfxAttribute{4, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, boneIds), GL_INT});
+            attribBuffer->insertAttribute(GfxAttribute{4, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, weights)});
 
             auto subMesh = new GfxSubMesh;
             subMesh->buffer = attribBuffer;
@@ -269,50 +470,144 @@ brl::GfxModel::GfxModel(std::string path)
         materialDescriptions.push_back(desc);
     }
 
-    for (auto materialDescription : materialDescriptions)
-        materials.push_back(materialDescription->createMaterial(GfxShaderProgram::GetDefaultShader()));
+    if (model.skins.size() > 0)
+    {
 
+        for (auto materialDescription : materialDescriptions)
+            materials.push_back(materialDescription->createMaterial(GetSkinningShader()));
+    }
+    else
+    {
+        for (auto materialDescription : materialDescriptions)
+            materials.push_back(materialDescription->createMaterial(GfxShaderProgram::GetDefaultShader()));
+    }
     rootNode = new GfxModelNode;
-
-    rootNode->childCount = model.scenes[0].nodes.size();
-    rootNode->children = new GfxModelNode*[rootNode->childCount];
     rootNode->model = this;
     for (int i = 0; i < model.scenes[0].nodes.size(); ++i)
     {
-        rootNode->children[i] = processNode(model.nodes[model.scenes[0].nodes[i]], model);
+        auto child = processNode(model.nodes[model.scenes[0].nodes[i]], model, model.scenes[0].nodes[i]);
+        if (child)
+            rootNode->children.push_back(child);
     }
+
+    for (const auto& skin : model.skins)
+    {
+        auto s = new GfxSkin;
+
+        s->name = skin.name;
+
+        for (int joint : skin.joints)
+        {
+            auto bone = new GfxBone;
+            auto node = model.nodes[joint];
+
+            bone->name = node.name;
+
+            if (node.translation.size() == 3)
+            {
+                bone->position = {node.translation[0], node.translation[1], node.translation[2]};
+            }
+            if (node.rotation.size() == 4)
+            {
+
+                bone->rotation = glm::quat{static_cast<float>(node.rotation[3]), static_cast<float>(node.rotation[0]),
+                                           static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2])};
+            }
+            if (node.scale.size() == 3)
+            {
+                bone->scale = {node.scale[0], node.scale[1], node.scale[2]};
+            }
+
+            for (int child : node.children)
+            {
+                for (int j = 0; j < skin.joints.size(); ++j)
+                {
+                    if (skin.joints[j] == child)
+                    {
+                        bone->children.push_back(j);
+                    }
+                }
+            }
+
+            s->bones.push_back(bone);
+        }
+
+        for (int j = 0; j < s->bones.size(); ++j)
+        {
+            auto gfx_bone = s->bones[j];
+            for (int i = 0; i < gfx_bone->children.size(); ++i)
+            {
+                s->bones[gfx_bone->children[i]]->parent = j;
+            }
+        }
+
+        const tinygltf::Accessor& ibmAccessor = model.accessors[skin.inverseBindMatrices];
+        const tinygltf::BufferView& ibmBufferView = model.bufferViews[ibmAccessor.bufferView];
+        const tinygltf::Buffer& ibmBuffer = model.buffers[ibmBufferView.buffer];
+        int ibmAccessorIndex = skin.inverseBindMatrices;
+
+        if (ibmAccessorIndex < 0)
+        {
+            // No inverse bind matrices specified - use identity matrices
+            // This is rare but valid in glTF
+            std::vector<glm::mat4> inverseBindMatrices(skin.joints.size(), glm::mat4(1.0f));
+        }
+        else
+        {
+            // Get the accessor
+            const tinygltf::Accessor& accessor = model.accessors[ibmAccessorIndex];
+
+            // Get the buffer view
+            const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+
+            // Get the buffer
+            const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+            // Calculate the actual byte offset
+            size_t byteOffset = bufferView.byteOffset + accessor.byteOffset;
+
+            // The data is stored as an array of 4x4 matrices (floats)
+            const float* matrices = reinterpret_cast<const float*>(&buffer.data[byteOffset]);
+
+            // There should be one matrix per joint
+            size_t numJoints = skin.joints.size();
+            assert(accessor.count == numJoints);
+
+            for (size_t i = 0; i < numJoints; ++i)
+            {
+
+                s->bones[i]->inverseBindMatrix = glm::make_mat4(&matrices[i * 16]);
+            }
+        }
+
+        skins.push_back(s);
+    }
+
 }
 
-brl::GfxModel* brl::GfxModel::loadModel(std::string path)
+brl::GfxModelNode* brl::GfxModel::processNode(tinygltf::Node aNode, tinygltf::Model scene, int index)
 {
-    if (cachedModels.contains(path))
-        return cachedModels[path];
+    for (const auto& skin : scene.skins)
+    {
+        if (std::find(skin.joints.begin(), skin.joints.end(), index) != skin.joints.end())
+        {
+            return nullptr;
+        }
+    }
 
-    return new GfxModel(path);
-}
-
-brl::EcsEntity* brl::GfxModel::createEntity()
-{
-    return rootNode->createEntity();
-}
-
-
-brl::GfxModelNode* brl::GfxModel::processNode(tinygltf::Node aNode, tinygltf::Model scene)
-{
     auto node = new GfxModelNode;
-
 
     node->name = aNode.name;
 
-    if (aNode.scale.size() == 3)
+    if (aNode.translation.size() == 3)
     {
         node->position = {aNode.translation[0], aNode.translation[1], aNode.translation[2]};
     }
     if (aNode.rotation.size() == 4)
     {
 
-        node->rotation = glm::quat{static_cast<float>(aNode.rotation[0]), static_cast<float>(aNode.rotation[1]),
-                                   static_cast<float>(aNode.rotation[2]), static_cast<float>(aNode.rotation[3])};
+        node->rotation = glm::quat{static_cast<float>(aNode.rotation[3]), static_cast<float>(aNode.rotation[0]),
+                                   static_cast<float>(aNode.rotation[1]), static_cast<float>(aNode.rotation[2])};
     }
     if (aNode.scale.size() == 3)
     {
@@ -320,14 +615,15 @@ brl::GfxModelNode* brl::GfxModel::processNode(tinygltf::Node aNode, tinygltf::Mo
     }
 
     node->mesh = aNode.mesh;
+    node->skin = aNode.skin;
 
-    node->children = new GfxModelNode*[aNode.children.size()];
     for (int i = 0; i < aNode.children.size(); ++i)
     {
-        node->children[i] = processNode(scene.nodes[aNode.children[i]], scene);
+        auto child = processNode(scene.nodes[aNode.children[i]], scene, aNode.children[i]);
+        if (child)
+            node->children.push_back(child);
     }
 
-    node->childCount = aNode.children.size();
 
 
     node->model = this;
@@ -335,8 +631,13 @@ brl::GfxModelNode* brl::GfxModel::processNode(tinygltf::Node aNode, tinygltf::Mo
     return node;
 }
 
+
+std::map<std::string, brl::GfxModel*> brl::GfxModel::cachedModels;
+
 brl::GfxMeshRenderer::GfxMeshRenderer() { materials.push_back(new GfxMaterial(GfxShaderProgram::GetDefaultShader())); }
 
+    // Fix: create a named lvalue for the empty map to satisfy non-const reference requirement
+static brl::GfxUniformList emptyUniforms;
 
 void brl::GfxMeshRenderer::lateUpdate()
 {
@@ -345,6 +646,106 @@ void brl::GfxMeshRenderer::lateUpdate()
     for (int i = 0; i < mesh->subMeshCount; ++i)
     {
         GfxSubMesh* subMesh = mesh->subMeshes[i];
-        GfxEngine::instance->insertCall(materials[i], subMesh->buffer, calculateTransform(), instancingID);
+        GfxEngine::instance->insertCall(materials[i], subMesh->buffer, calculateTransform(), emptyUniforms, instancingID);
+    }
+}
+
+
+
+glm::mat4 brl::GfxBone::calculateLocalTransform()
+{
+    glm::mat4 t(1.0);
+
+    t = translate(t, position);
+    t *= glm::toMat4(rotation);
+    t = glm::scale(t, scale);
+
+
+    return t;
+}
+
+void brl::GfxSkeleton::earlyUpdate()
+{
+    EcsEntity::earlyUpdate();
+
+    if (jointMatrices.size() < bones.size())
+    {
+        jointMatrices.clear();
+        jointMatrices.reserve(bones.size());
+        for (int i = 0; i < bones.size(); i++)
+            jointMatrices.push_back(glm::mat4(1.0f));
+    }
+}
+
+std::vector<glm::mat4> brl::GfxSkeleton::calculateTransforms()
+{
+
+    for (int i = 0; i < bones.size(); ++i)
+    {
+        const auto& bone = bones[i];
+        if (bone->parent == -1)
+        {
+            _calcTransform(bone, glm::mat4(1.0), i, false);
+        }
+    }
+
+    return jointMatrices;
+}
+
+void brl::GfxSkeleton::_calcTransform(brl::GfxBone* bone, glm::mat4 parentTransform, int index, bool parentChanged)
+{
+    bool _changed = bone->changed || parentChanged;
+
+    if (_changed)
+    {
+
+        glm::mat4 t = bone->calculateLocalTransform();
+
+        t = parentTransform * t;
+
+        jointMatrices[index] = t * bone->inverseBindMatrix;
+    }
+
+    for (int child : bone->children)
+    {
+        _calcTransform(bones[child], jointMatrices[index], child, _changed);
+    }
+
+    bone->changed = false;
+}
+
+brl::GfxSkinnedMeshRenderer::GfxSkinnedMeshRenderer()
+{
+
+
+    materials[0] = new GfxMaterial(defaultSkinningShader);
+}
+
+void brl::GfxSkinnedMeshRenderer::start()
+{
+    GfxMeshRenderer::start();
+
+    model = getEntityInParent<GfxModelEntity>();
+}
+
+void brl::GfxSkinnedMeshRenderer::lateUpdate()
+{
+    EcsEntity::lateUpdate();
+
+    auto matrices = model->skeletons[skeletonIndex]->calculateTransforms();
+
+    GfxShaderValue* jointValue = new GfxShaderValue;
+    jointValue->m4value = std::make_shared<std::vector<glm::mat4>>(matrices);
+    for (int i = 0; i < mesh->subMeshCount; ++i)
+    {
+
+        GfxUniformList overrides;
+
+
+
+        overrides.push_back({materials[i]->getShader()->getUniform("_internalJoints[0]"), jointValue});
+
+        GfxSubMesh* subMesh = mesh->subMeshes[i];
+        GfxEngine::instance->insertCall(materials[i], subMesh->buffer, calculateTransform(), overrides, instancingID);
     }
 }
