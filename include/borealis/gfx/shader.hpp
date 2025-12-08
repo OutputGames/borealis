@@ -15,7 +15,8 @@ namespace brl
     struct GfxDrawCall;
     struct GfxAttribBuffer;
     struct GfxMaterial;
-    using GfxUniformList = std::unordered_map<GfxShaderUniform*, GfxShaderValue>;
+
+
 
     struct GfxShader
     {
@@ -50,6 +51,7 @@ namespace brl
         std::string name;
         GfxUniformType type;
         int location;
+        int count;
         GfxShaderUniform() = default;
     };
 
@@ -60,8 +62,51 @@ namespace brl
         glm::vec2 v2value;
         glm::vec3 v3value;
         glm::vec4 v4value;
-        glm::mat4 m4value;
-        GfxTexture* txValue;
+        std::shared_ptr<std::vector<glm::mat4>> m4value = nullptr;
+        GfxTexture* txValue = nullptr;
+    };
+
+    struct GfxShaderBinding 
+    {
+        brl::GfxShaderUniform* uniform = nullptr;
+        brl::GfxShaderValue* value = nullptr;
+
+        GfxShaderBinding() = default;
+        GfxShaderBinding(brl::GfxShaderUniform* u, brl::GfxShaderValue* v) : uniform(u), value(v) {}
+
+        ~GfxShaderBinding();
+    };
+
+    struct GfxUniformList : public std::vector<GfxShaderBinding>
+    {
+        bool contains(GfxShaderUniform* uniform);
+
+        
+
+// Non-const version for read/write access
+        GfxShaderValue*& operator[](GfxShaderUniform* uniform)
+        {
+            for (auto& element1 : *this) // Non-const loop for non-const method
+            {
+                if (element1.uniform == uniform)
+                    return element1.value;
+            }
+
+            // Not found - throw exception or add default behavior
+            throw std::out_of_range("Uniform not found");
+        }
+
+        // Const version for read-only access
+        GfxShaderValue* const& operator[](GfxShaderUniform* uniform) const
+        {
+            for (const auto& element1 : *this)
+            {
+                if (element1.uniform == uniform)
+                    return element1.value;
+            }
+
+            throw std::out_of_range("Uniform not found");
+        }
     };
 
     struct GfxShaderProgram
@@ -137,8 +182,8 @@ namespace brl
             if (!shader->getUniform(name))
                 return;
 
-            GfxShaderValue val;
-            val.intValue = value;
+            GfxShaderValue* val = new GfxShaderValue();
+            val->intValue = value;
             setOverride({shader->getUniform(name), val});
         }
 
@@ -149,8 +194,8 @@ namespace brl
             if (!shader->getUniform(name))
                 return;
 
-            GfxShaderValue val;
-            val.floatValue = value;
+            GfxShaderValue* val = new GfxShaderValue();
+            val->floatValue = value;
             setOverride({shader->getUniform(name), val});
         }
 
@@ -161,8 +206,8 @@ namespace brl
             if (!shader->getUniform(name))
                 return;
 
-            GfxShaderValue val;
-            val.v2value = value;
+            GfxShaderValue* val = new GfxShaderValue();
+            val->v2value = value;
             setOverride({shader->getUniform(name), val});
         }
 
@@ -172,8 +217,8 @@ namespace brl
             if (shader->getUniform(name) == nullptr)
                 return;
 
-            GfxShaderValue val;
-            val.v3value = value;
+            GfxShaderValue* val = new GfxShaderValue();
+            val->v3value = value;
             setOverride({shader->getUniform(name), val});
         }
 
@@ -184,21 +229,50 @@ namespace brl
             if (!shader->getUniform(name))
                 return;
 
-            GfxShaderValue val;
-            val.v4value = value;
+            GfxShaderValue* val = new GfxShaderValue();
+            val->v4value = value;
             setOverride({shader->getUniform(name), val});
         }
 
-        void setMat4(std::string name, glm::mat4 value)
+        void setMat4(std::string name, glm::mat4 value, int index=0)
         {
+            const auto uniform = shader->getUniform(name);
 
-
-            if (!shader->getUniform(name))
+            if (!uniform)
                 return;
 
-            GfxShaderValue val;
-            val.m4value = value;
-            setOverride({shader->getUniform(name), val});
+            if (overrides.contains(uniform))
+            {
+                overrides[uniform]->m4value->operator[](index) = value;
+            }
+            else
+            {
+
+                GfxShaderValue* val = new GfxShaderValue();
+                val->m4value->reserve(uniform->count);
+                val->m4value->operator[](index) = value;
+                setOverride({uniform, val});
+            }
+        }
+
+        void setMat4(std::string name, std::vector<glm::mat4>& value)
+        {
+            const auto uniform = shader->getUniform(name);
+
+            if (!uniform)
+                return;
+
+            if (overrides.contains(uniform))
+            {
+                overrides[uniform]->m4value = std::make_shared<std::vector<glm::mat4>>(value);
+            }
+            else
+            {
+
+                GfxShaderValue* val = new GfxShaderValue();
+                val->m4value = std::make_shared<std::vector<glm::mat4>>(value);
+                setOverride({uniform, val});
+            }
         }
 
         void setTexture(std::string name, GfxTexture* value)
@@ -206,17 +280,17 @@ namespace brl
             if (!shader->getUniform(name))
                 return;
 
-            GfxShaderValue val;
-            val.txValue = value;
+            GfxShaderValue* val = new GfxShaderValue();
+            val->txValue = value;
             setOverride({shader->getUniform(name), val});
         }
 
-        GfxShaderValue getUniform(std::string name)
+        GfxShaderValue* getUniform(std::string name)
         {
             for (const auto& uniform : overrides)
             {
-                if (uniform.first->name == name)
-                    return uniform.second;
+                if (uniform.uniform->name == name)
+                    return uniform.value;
             }
 
             return {};
@@ -235,7 +309,7 @@ namespace brl
         GfxUniformList overrides;
         unsigned int registryIndex = UINT_MAX;
 
-        void setOverride(std::pair<GfxShaderUniform*, GfxShaderValue> pair);
+        void setOverride(GfxShaderBinding pair);
     };
 
     struct GfxMaterialMgr
@@ -251,6 +325,22 @@ namespace brl
         void RemoveFromRegistry(GfxMaterial* material);
         ~GfxMaterialMgr();
 
+    };
+
+    
+    struct GfxDrawCall
+    {
+        GfxMaterial* material;
+        GfxAttribBuffer* gfxBuffer;
+        const glm::mat4 transform;
+        GfxUniformList uniqueOverrides;
+    };
+
+    struct GfxInstancedDrawCall
+    {
+        GfxMaterial* material;
+        std::vector<glm::mat4> transforms;
+        GfxAttribBuffer* gfxBuffer;
     };
 
 } // namespace brl
