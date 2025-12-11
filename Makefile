@@ -11,25 +11,14 @@ endif
 ifeq ($(config),debug)
   borealis_config = debug
   resource_packer_config = debug
-  borealis_test_config = debug
   glad_config = debug
   glfw3_config = debug
   stb_config = debug
   glm_config = debug
 
-else ifeq ($(config),debug_(renderdoc))
-  borealis_config = debug_(renderdoc)
-  resource_packer_config = debug_(renderdoc)
-  borealis_test_config = debug_(renderdoc)
-  glad_config = debug_(renderdoc)
-  glfw3_config = debug_(renderdoc)
-  stb_config = debug_(renderdoc)
-  glm_config = debug_(renderdoc)
-
 else ifeq ($(config),release)
   borealis_config = release
   resource_packer_config = release
-  borealis_test_config = release
   glad_config = release
   glfw3_config = release
   stb_config = release
@@ -39,7 +28,7 @@ else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := borealis resource_packer borealis-test glad glfw3 stb glm
+PROJECTS := borealis resource_packer glad glfw3 stb glm
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -55,12 +44,6 @@ resource_packer:
 ifneq (,$(resource_packer_config))
 	@echo "==== Building resource_packer ($(resource_packer_config)) ===="
 	@${MAKE} --no-print-directory -C . -f resource_packer.make config=$(resource_packer_config)
-endif
-
-borealis-test: borealis glad glfw3 resource_packer
-ifneq (,$(borealis_test_config))
-	@echo "==== Building borealis-test ($(borealis_test_config)) ===="
-	@${MAKE} --no-print-directory -C . -f borealis-test.make config=$(borealis_test_config)
 endif
 
 glad:
@@ -90,7 +73,6 @@ endif
 clean:
 	@${MAKE} --no-print-directory -C . -f borealis.make clean
 	@${MAKE} --no-print-directory -C . -f resource_packer.make clean
-	@${MAKE} --no-print-directory -C . -f borealis-test.make clean
 	@${MAKE} --no-print-directory -C ext/glad -f Makefile clean
 	@${MAKE} --no-print-directory -C ext/glfw -f Makefile clean
 	@${MAKE} --no-print-directory -C ext/stb -f Makefile clean
@@ -101,7 +83,6 @@ help:
 	@echo ""
 	@echo "CONFIGURATIONS:"
 	@echo "  debug"
-	@echo "  debug_\(renderdoc\)"
 	@echo "  release"
 	@echo ""
 	@echo "TARGETS:"
@@ -109,7 +90,6 @@ help:
 	@echo "   clean"
 	@echo "   borealis"
 	@echo "   resource_packer"
-	@echo "   borealis-test"
 	@echo "   glad"
 	@echo "   glfw3"
 	@echo "   stb"

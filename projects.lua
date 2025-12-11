@@ -40,9 +40,7 @@ project "borealis"
 
     prebuildcommands { resource_packer.." ".._SCRIPT_DIR.."/default_assets/ ".._MAIN_SCRIPT_DIR.."/out/default_assets.res" }
 
-    postbuildcommands {
-        "setx BOREALIS_DIR \"".._SCRIPT_DIR .. "\""
-    }
+    postbuildcommands {"setx BOREALIS_DIR \"".._SCRIPT_DIR .. "\""}
 
     links {
         "glad",

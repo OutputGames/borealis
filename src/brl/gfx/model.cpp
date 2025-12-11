@@ -590,6 +590,45 @@ brl::GfxModel::GfxModel(std::string path)
         skins.push_back(s);
     }
 
+    //https://github.com/mikelma/craftium/blob/7594e8af5637cd77da18bd33520a4907b9a19c6d/irr/src/CGLTFMeshFileLoader.cpp#L646
+    //https://github.khronos.org/glTF-Tutorials/gltfTutorial/gltfTutorial_007_Animations.html
+    // https://github.khronos.org/glTF-Tutorials/gltfTutorial/gltfTutorial_006_SimpleAnimation.html
+    // https://github.com/raysan5/raylib/blob/8fa5f1fe2cf7efeda59a5d935a259ccb1cb97f1c/src/rmodels.c#L6347
+    //https://raw.githubusercontent.com/KhronosGroup/glTF/refs/heads/main/specification/2.0/figures/gltfOverview-2.0.0d.png
+
+    for (tinygltf::Animation anim : model.animations) {
+
+        GfxAnimation* animation = new GfxAnimation();
+
+        for (tinygltf::AnimationChannel channel : anim.channels) {
+
+            GfxAnimation::Channel animChannel{};
+
+            tinygltf::AnimationSampler sampler = anim.samplers[channel.sampler];
+
+            int targetBone = -1;
+
+            for (int i = 0; i <model.skins[0].joints.size(); i++) {
+                if (model.skins[0].joints[i] == channel.target_node){
+                    targetBone = i;
+                }
+            }
+
+            if (targetBone == -1)
+                continue;
+
+            if (sampler.interpolation == "LINEAR")
+                animChannel.interpolation = GfxAnimation::LINEAR;
+            if (sampler.interpolation == "STEP")
+                animChannel.interpolation = GfxAnimation::STEP;
+            if (sampler.interpolation == "CUBICSPLINE")
+                animChannel.interpolation = GfxAnimation::CUBICSPLINE;
+            
+            
+        }
+
+        animations.push_back(animation);
+    }
 }
 
 brl::GfxModelNode* brl::GfxModel::processNode(tinygltf::Node aNode, tinygltf::Model scene, int index)

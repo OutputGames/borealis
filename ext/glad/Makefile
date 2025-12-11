@@ -47,22 +47,15 @@ endef
 ifeq ($(config),debug)
 OBJDIR = build/Debug
 DEFINES += -D_CRT_SECURE_NO_WARNINGS -DDEBUG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c11 -Wno-warnings -Wall -fcompare-debug-second
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -Wno-warnings -Wall -fcompare-debug-second
-ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64
-
-else ifeq ($(config),debug_(renderdoc))
-OBJDIR = build/Debug (RenderDoc)
-DEFINES += -D_CRT_SECURE_NO_WARNINGS -DDEBUG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c11 -Wno-warnings -Wall -fcompare-debug-second
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -Wno-warnings -Wall -fcompare-debug-second
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c11 -Wall -fcompare-debug-second
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -Wall -fcompare-debug-second
 ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64
 
 else ifeq ($(config),release)
 OBJDIR = build/Release
 DEFINES += -D_CRT_SECURE_NO_WARNINGS -DNDEBUG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c11 -Wno-warnings -Wall -fcompare-debug-second
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -Wno-warnings -Wall -fcompare-debug-second
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c11 -Wall -fcompare-debug-second
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -Wall -fcompare-debug-second
 ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64 -s
 
 endif

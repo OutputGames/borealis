@@ -104,6 +104,41 @@ namespace brl
         friend GfxModel;
     };
 
+    struct GfxAnimation {
+
+        enum ChannelInterpolation {
+            LINEAR,
+            STEP,
+            CUBICSPLINE
+        };
+
+        enum ChannelType {
+            TRANSLATION,
+            ROTATION,
+            SCALE
+        };
+
+        struct AnimationFrame {
+            float time;
+        };
+
+        struct Vec3AnimationFrame : AnimationFrame {
+            glm::vec3 value;
+        };
+
+        struct Channel {
+            int boneIndex;
+            ChannelInterpolation interpolation;
+            ChannelType type;
+
+            std::vector<AnimationFrame> frames;
+        };
+
+        std::string name;
+
+
+
+    };
 
 
     struct GfxModel {
@@ -112,6 +147,7 @@ namespace brl
         std::vector<GfxMaterialDescription*> materialDescriptions;
         std::vector<GfxMaterial*> materials;
         std::vector<GfxSkin*> skins;
+        std::vector<GfxAnimation*> animation;
 
         static GfxModel* loadModel(std::string path);
 
@@ -207,6 +243,16 @@ namespace brl
 
     private:
         GfxModelEntity* model = nullptr;
+    };
+
+
+
+    struct GfxAnimator : EcsEntity {
+
+        GfxAnimation* animation;
+
+    private:
+        GfxModelEntity* model= nullptr;
     };
 
     struct GfxModelEntity : EcsEntity
