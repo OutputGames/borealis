@@ -25,20 +25,20 @@ void brl::GfxCamera::draw(std::vector<GfxDrawCall>& calls, const GfxInstancedDra
     cachedFramebuffer->use();
     cachedFramebuffer->clear();
 
-    GfxShaderValue* viewValue = new GfxShaderValue;
-    GfxShaderValue* projValue = new GfxShaderValue;
-    GfxShaderValue* timeValue = new GfxShaderValue;
-    GfxShaderValue* cameraPosValue = new GfxShaderValue;
+    auto viewValue = std::make_shared<GfxShaderValue>();
+    auto projValue = std::make_shared<GfxShaderValue>();
+    auto timeValue = std::make_shared<GfxShaderValue>();
+    auto cameraPosValue = std::make_shared<GfxShaderValue>();
 
-    viewValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{GetViewMatrix()});
-    projValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{GetProjMatrix()});
+    viewValue->m4value = CONVERT_UNIFORM_MAT4(std::vector<glm::mat4>{GetViewMatrix()});
+    projValue->m4value = CONVERT_UNIFORM_MAT4(std::vector<glm::mat4>{GetProjMatrix()});
     timeValue->floatValue = glfwGetTime();
     cameraPosValue->v3value = position;
 
     for (GfxDrawCall& call : calls)
     {
-        GfxShaderValue* modelValue = new GfxShaderValue;
-        modelValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{call.transform});
+        auto modelValue = std::make_shared<GfxShaderValue>();
+        modelValue->m4value = CONVERT_UNIFORM_MAT4(std::vector<glm::mat4>{call.transform});
         GfxUniformList overrides;
         overrides.push_back({call.material->getShader()->getUniform("_internalView"), viewValue});
         overrides.push_back({call.material->getShader()->getUniform("_internalProj"), projValue});

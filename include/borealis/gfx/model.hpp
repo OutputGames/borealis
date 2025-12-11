@@ -76,7 +76,7 @@ namespace brl
     struct GfxModelNode {
         std::string name;
         glm::vec3 position = glm::vec3(0);
-        glm::quat rotation = glm::quat(); 
+        glm::quat rotation = glm::identity<glm::quat>();
         glm::vec3 scale = glm::vec3(1);
 
         int mesh = -1;
@@ -115,7 +115,7 @@ namespace brl
 
         static GfxModel* loadModel(std::string path);
 
-        EcsEntity* createEntity();
+        GfxModelEntity* createEntity();
 
     private:
         friend GfxEngine;
@@ -152,9 +152,10 @@ namespace brl
     {
         std::string name;
         glm::vec3 position = glm::vec3(0);
-        glm::quat rotation = glm::quat();
+        glm::quat rotation = glm::identity<glm::quat>();
         glm::vec3 scale = glm::vec3(1);
         glm::mat4 inverseBindMatrix = glm::mat4(1.0);
+        glm::mat4 worldMatrix = glm::mat4(1.0);
 
         int parent = -1;
 
@@ -171,6 +172,11 @@ namespace brl
     {
         std::string name;
         std::vector<GfxBone*> bones;
+
+    private:
+        friend GfxModel;
+        void initialize();
+        void _calcTransform(brl::GfxBone* bone, const glm::mat4& parentTransform, int index);
     };
 
     struct GfxSkeleton : EcsEntity
@@ -184,7 +190,7 @@ namespace brl
     private:
 
         std::vector<glm::mat4> jointMatrices;
-        void _calcTransform(brl::GfxBone* bone, glm::mat4 parentTransform, int index,
+        void _calcTransform(brl::GfxBone* bone, const glm::mat4& parentTransform, int index,
                                  bool parentChanged);
 
     };

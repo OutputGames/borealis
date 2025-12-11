@@ -336,7 +336,7 @@ void brl::GfxEngine::update()
 }
 
 void brl::GfxEngine::insertCall(::brl::GfxMaterial* material, ::brl::GfxAttribBuffer* buffer, const glm::mat4& transform,
-                                std::vector<GfxShaderBinding>& uniqueOverrides, int instancingIdx)
+                                GfxUniformList& uniqueOverrides, int instancingIdx)
 {
     auto shader = material->getShader();
     if (shader->instancingEnabled)

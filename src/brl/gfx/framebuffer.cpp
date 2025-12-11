@@ -30,7 +30,7 @@ void brl::GfxFramebufferAttachment::draw(GfxMaterial* material)
 
     GfxUniformList uniforms = {};
 
-    GfxShaderValue* sourceValue = new GfxShaderValue;
+    auto sourceValue = std::make_shared<GfxShaderValue>();
     sourceValue->txValue = this;
     uniforms.push_back({material->getShader()->getUniform("_sourceTexture"), sourceValue});
 

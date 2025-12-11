@@ -7,6 +7,7 @@
 
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
+#include "glm/gtx/matrix_decompose.hpp"
 
 static brl::GfxShaderProgram* defaultSkinningShader = nullptr;
 brl::GfxShaderProgram* GetSkinningShader()
@@ -41,7 +42,7 @@ brl::GfxShaderProgram* GetSkinningShader()
                                   "    vec3 totalNormal = vec3(0.0f);\n"
                                   "    for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)\n"
                                   "    {\n"
-                                  "        if(aBoneIds[i] == -1) \n"
+                                  "        if(aBoneIds[i] == -1 || aWeights[i] == 0.0) \n"
                                   "            continue;\n"
                                   "        if(aBoneIds[i] >= MAX_BONES) \n"
                                   "        {\n"
@@ -205,7 +206,7 @@ brl::GfxModel* brl::GfxModel::loadModel(std::string path)
 }
 
 
-brl::EcsEntity* brl::GfxModel::createEntity()
+brl::GfxModelEntity* brl::GfxModel::createEntity()
 {
     auto rootNodeEntity = rootNode->createEntity();
 
@@ -318,6 +319,36 @@ brl::GfxModel::GfxModel(std::string path)
             auto wght0s =
                 reinterpret_cast<const float*>(&wgt_buffer.data[wgt_bufferView.byteOffset + wgt_accessor.byteOffset]);
 
+            
+            std::vector<unsigned> indices;
+            if (prim.indices >= 0)
+            {
+                const tinygltf::Accessor& indexAccessor = model.accessors[prim.indices];
+                const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
+                const tinygltf::Buffer& indexBuffer = model.buffers[indexView.buffer];
+
+                const void* indexData = &indexBuffer.data[indexView.byteOffset + indexAccessor.byteOffset];
+
+                for (size_t i = 0; i < indexAccessor.count; i++)
+                {
+                    uint32_t index = 0;
+
+                    switch (indexAccessor.componentType)
+                    {
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                            index = static_cast<const uint16_t*>(indexData)[i];
+                            break;
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                            index = static_cast<const uint32_t*>(indexData)[i];
+                            break;
+                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                            index = static_cast<const uint8_t*>(indexData)[i];
+                            break;
+                    }
+
+                    indices.push_back(index);
+                }
+            }
 
 
             std::vector<GfxSkinnedVertex> vertices;
@@ -357,38 +388,7 @@ brl::GfxModel::GfxModel(std::string path)
             }
             else
             {
-                // Handle other types if needed
-                throw std::runtime_error("Unsupported joint component type");
-            }
-
-            std::vector<unsigned> indices;
-            if (prim.indices >= 0)
-            {
-                const tinygltf::Accessor& indexAccessor = model.accessors[prim.indices];
-                const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
-                const tinygltf::Buffer& indexBuffer = model.buffers[indexView.buffer];
-
-                const void* indexData = &indexBuffer.data[indexView.byteOffset + indexAccessor.byteOffset];
-
-                for (size_t i = 0; i < indexAccessor.count; i++)
-                {
-                    uint32_t index = 0;
-
-                    switch (indexAccessor.componentType)
-                    {
-                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                            index = static_cast<const uint16_t*>(indexData)[i];
-                            break;
-                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                            index = static_cast<const uint32_t*>(indexData)[i];
-                            break;
-                        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-                            index = static_cast<const uint8_t*>(indexData)[i];
-                            break;
-                    }
-
-                    indices.push_back(index);
-                }
+                // no joints
             }
 
             auto attribBuffer = new GfxAttribBuffer();
@@ -412,8 +412,13 @@ brl::GfxModel::GfxModel(std::string path)
             attribBuffer->insertAttribute(GfxAttribute{3, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex,position) });
             attribBuffer->insertAttribute(GfxAttribute{3, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, normal)});
             attribBuffer->insertAttribute(GfxAttribute{2, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, uv)});
-            attribBuffer->insertAttribute(GfxAttribute{4, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, boneIds), GL_INT});
-            attribBuffer->insertAttribute(GfxAttribute{4, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, weights)});
+            if (model.skins.size() > 0)
+            {
+                attribBuffer->insertAttribute(
+                    GfxAttribute{4, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, boneIds), GL_INT});
+                attribBuffer->insertAttribute(
+                    GfxAttribute{4, sizeof(GfxSkinnedVertex), (void*)offsetof(GfxSkinnedVertex, weights)});
+            }
 
             auto subMesh = new GfxSubMesh;
             subMesh->buffer = attribBuffer;
@@ -510,13 +515,13 @@ brl::GfxModel::GfxModel(std::string path)
             if (node.rotation.size() == 4)
             {
 
-                bone->rotation = glm::quat{static_cast<float>(node.rotation[3]), static_cast<float>(node.rotation[0]),
-                                           static_cast<float>(node.rotation[1]), static_cast<float>(node.rotation[2])};
+                bone->rotation = glm::make_quat(node.rotation.data());
             }
             if (node.scale.size() == 3)
             {
                 bone->scale = {node.scale[0], node.scale[1], node.scale[2]};
             }
+
 
             for (int child : node.children)
             {
@@ -580,6 +585,8 @@ brl::GfxModel::GfxModel(std::string path)
             }
         }
 
+        s->initialize();
+
         skins.push_back(s);
     }
 
@@ -606,8 +613,7 @@ brl::GfxModelNode* brl::GfxModel::processNode(tinygltf::Node aNode, tinygltf::Mo
     if (aNode.rotation.size() == 4)
     {
 
-        node->rotation = glm::quat{static_cast<float>(aNode.rotation[3]), static_cast<float>(aNode.rotation[0]),
-                                   static_cast<float>(aNode.rotation[1]), static_cast<float>(aNode.rotation[2])};
+        node->rotation = glm::make_quat(aNode.rotation.data());
     }
     if (aNode.scale.size() == 3)
     {
@@ -664,6 +670,35 @@ glm::mat4 brl::GfxBone::calculateLocalTransform()
     return t;
 }
 
+void brl::GfxSkin::initialize()
+{
+    for (int i = 0; i < bones.size(); ++i)
+    {
+        const auto& bone = bones[i];
+        if (bone->parent == -1)
+        {
+            _calcTransform(bone, glm::mat4(1.0), i);
+        }
+    }
+}
+
+void brl::GfxSkin::_calcTransform(brl::GfxBone* bone, const glm::mat4& parentTransform, int index)
+{
+    glm::mat4 t = bone->calculateLocalTransform();
+
+    t = parentTransform * t;
+
+
+    bone->worldMatrix = t;
+    //bone->inverseBindMatrix = glm::inverse(bone->worldMatrix);
+
+    for (int child : bone->children)
+    {
+        _calcTransform(bones[child], t, child);
+    }
+}
+
+
 void brl::GfxSkeleton::earlyUpdate()
 {
     EcsEntity::earlyUpdate();
@@ -692,7 +727,7 @@ std::vector<glm::mat4> brl::GfxSkeleton::calculateTransforms()
     return jointMatrices;
 }
 
-void brl::GfxSkeleton::_calcTransform(brl::GfxBone* bone, glm::mat4 parentTransform, int index, bool parentChanged)
+void brl::GfxSkeleton::_calcTransform(brl::GfxBone* bone, const glm::mat4& parentTransform, int index, bool parentChanged)
 {
     bool _changed = bone->changed || parentChanged;
 
@@ -702,13 +737,14 @@ void brl::GfxSkeleton::_calcTransform(brl::GfxBone* bone, glm::mat4 parentTransf
         glm::mat4 t = bone->calculateLocalTransform();
 
         t = parentTransform * t;
-
+        
+        bone->worldMatrix = t;
         jointMatrices[index] = t * bone->inverseBindMatrix;
     }
 
     for (int child : bone->children)
     {
-        _calcTransform(bones[child], jointMatrices[index], child, _changed);
+        _calcTransform(bones[child], bone->worldMatrix, child, _changed);
     }
 
     bone->changed = false;
@@ -734,13 +770,13 @@ void brl::GfxSkinnedMeshRenderer::lateUpdate()
 
     auto matrices = model->skeletons[skeletonIndex]->calculateTransforms();
 
-    GfxShaderValue* jointValue = new GfxShaderValue;
-    jointValue->m4value = std::make_shared<std::vector<glm::mat4>>(matrices);
+
     for (int i = 0; i < mesh->subMeshCount; ++i)
     {
 
         GfxUniformList overrides;
-
+        auto jointValue = std::make_shared<GfxShaderValue>();
+        jointValue->m4value = CONVERT_UNIFORM_MAT4(matrices);
 
 
         overrides.push_back({materials[i]->getShader()->getUniform("_internalJoints[0]"), jointValue});

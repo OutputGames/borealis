@@ -58,7 +58,7 @@ namespace brl
         void update();
         bool isRunning() {return mainWindow->isOpen();}
         void insertCall(GfxMaterial* material, GfxAttribBuffer* buffer, const glm::mat4& transform,
-                        std::vector<GfxShaderBinding>& uniqueOverrides, int instancingIdx = 0);
+                        GfxUniformList& uniqueOverrides, int instancingIdx = 0);
         int getFrameCount();
 
         float getAspectRatio();

@@ -45,8 +45,8 @@ void brl::GfxCanvas::insertDrawCall(const GfxUIDrawCall call)
 void brl::GfxCanvas::draw()
 {
 
-    GfxShaderValue* projValue = new GfxShaderValue;
-    GfxShaderValue* timeValue = new GfxShaderValue;
+    auto projValue = std::make_shared<GfxShaderValue>();
+    auto timeValue = std::make_shared<GfxShaderValue>();
 
     glm::vec2 screenSize = {GfxEngine::instance->getMainWidth(), GfxEngine::instance->getMainHeight()};
     // Apply to your UI projection matrix
@@ -59,14 +59,14 @@ void brl::GfxCanvas::draw()
     float bottom = virtualSize.y;
     float top = 0;
 
-    projValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{glm::ortho(left, right, bottom, top, -1.0f, 1.0f)});
+    projValue->m4value = CONVERT_UNIFORM_MAT4(std::vector<glm::mat4>{glm::ortho(left, right, bottom, top, -1.0f, 1.0f)});
 
     timeValue->floatValue = glfwGetTime();
 
     for (const GfxUIDrawCall& call : draw_calls)
     {
-        GfxShaderValue* modelValue = new GfxShaderValue;
-        modelValue->m4value = std::make_shared<std::vector<glm::mat4>>(std::vector<glm::mat4>{call.transform});
+        auto modelValue = std::make_shared<GfxShaderValue>();
+        modelValue->m4value = CONVERT_UNIFORM_MAT4(std::vector<glm::mat4>{call.transform});
         GfxUniformList overrides;
         overrides.push_back({call.material->getShader()->getUniform("_internalProj"), projValue});
         overrides.push_back({call.material->getShader()->getUniform("_internalModel"), modelValue});

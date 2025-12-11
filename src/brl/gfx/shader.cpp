@@ -144,13 +144,17 @@ brl::GfxShaderProgram* brl::GfxShaderProgram::GetDefaultShader()
 }
 
 
+brl::GfxShaderValue::~GfxShaderValue()
+{
+
+}
+
 brl::GfxShaderBinding::~GfxShaderBinding()
 {
-    if (value != nullptr)
+    if (real)
     {
 
-        delete value;
-        value = nullptr;
+        real = false;
     }
 }
 
@@ -396,11 +400,11 @@ void brl::GfxMaterial::reloadShader(GfxShaderProgram* shader)
 
     overrides.clear();
 
-    for (auto override : prevOverrides)
+    for ( auto& override : prevOverrides)
     {
         if (shader->getUniform(override.uniform->name))
         {
-            overrides.push_back(override);
+            overrides.push_back(std::move(override));
         }
     }
 }
@@ -422,6 +426,7 @@ size_t brl::GfxMaterial::getHash()
     return hash;
 }
 
+
 void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
                             GfxUniformList runtimeOverrides)
 {
@@ -433,54 +438,8 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
     {
         if (!_override.uniform)
             continue;
-        
 
-        //std::cout << "overriding uniform at " << _override.uniform->location << "(" << _override.uniform->name << ")"<< std::endl;
-        switch (_override.uniform->type)
-        {
-            case GL_FLOAT:
-                glUniform1f(_override.uniform->location, _override.value->floatValue);
-                break;
-            case GL_FLOAT_VEC2:
-                glUniform2f(_override.uniform->location, _override.value->v2value.x, _override.value->v2value.y);
-                break;
-            case GL_FLOAT_VEC3:
-                glUniform3f(_override.uniform->location, _override.value->v3value.x, _override.value->v3value.y,
-                            _override.value->v3value.z);
-                break;
-            case GL_FLOAT_VEC4:
-                glUniform4fv(_override.uniform->location, 1, value_ptr(_override.value->v4value));
-                break;
-            case GL_FLOAT_MAT4:
-                glUniformMatrix4fv(_override.uniform->location, _override.value->m4value.get()->size(), GL_FALSE,
-                                   glm::value_ptr((*_override.value->m4value)[0]));
-                break;
-            case GL_INT:
-            case GL_BOOL:
-                glUniform1i(_override.uniform->location, _override.value->intValue);
-                break;
-            case GL_SAMPLER_2D:
-                glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex(_override.uniform->name));
-                if (_override.value->txValue)
-                {
-                    glBindTexture(GL_TEXTURE_2D, _override.value->txValue->id);
-                }
-                else
-                {
-                    glBindTexture(GL_TEXTURE_2D, GfxTexture2d::getWhiteTexture()->id);
-
-                }
-                break;
-            case GL_SAMPLER_2D_ARRAY:
-            {
-                int i = shader->getTextureIndex(_override.uniform->name);
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.value->txValue->id);
-            }
-            break;
-            default:
-                break;
-        }
+        applyUniform(_override,shader);
     }
 
     for (const auto& _override : runtimeOverrides)
@@ -488,45 +447,8 @@ void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
         if (!_override.uniform)
             continue;
 
-        switch (_override.uniform->type)
-        {
-            case GL_FLOAT:
-                glUniform1f(_override.uniform->location, _override.value->floatValue);
-                break;
-            case GL_FLOAT_VEC2:
-                glUniform2f(_override.uniform->location, _override.value->v2value.x, _override.value->v2value.y);
-                break;
-            case GL_FLOAT_VEC3:
-                glUniform3f(_override.uniform->location, _override.value->v3value.x, _override.value->v3value.y,
-                            _override.value->v3value.z);
-                break;
-            case GL_FLOAT_VEC4:
-                glUniform4fv(_override.uniform->location, 1, value_ptr(_override.value->v4value));
-                break;
-            case GL_FLOAT_MAT4:
-                glUniformMatrix4fv(_override.uniform->location, _override.value->m4value.get()->size(), GL_FALSE,
-                                   glm::value_ptr((*_override.value->m4value)[0]));
-                break;
-            case GL_INT:
-                glUniform1i(_override.uniform->location, _override.value->intValue);
-                break;
-            case GL_SAMPLER_2D:
-            {
-                int i = shader->getTextureIndex(_override.uniform->name);
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, _override.value->txValue->id);
-            }
-            break;
-            case GL_SAMPLER_2D_ARRAY:
-            {
-                int i = shader->getTextureIndex(_override.uniform->name);
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.value->txValue->id);
-            }
-            break;
-            default:
-                break;
-        }
+        applyUniform(_override, shader);
+
     }
 
     if (buffer->ebo)
@@ -554,52 +476,8 @@ void brl::GfxMaterial::drawInstanced(std::vector<glm::mat4> transforms, GfxAttri
 
     for (const auto& _override : overrides)
     {
-        // std::cout << "overriding uniform at " << _override.uniform->location << "(" << _override.uniform->name << ")"<<
-        // std::endl;
-        switch (_override.uniform->type)
-        {
-            case GL_FLOAT:
-                glUniform1f(_override.uniform->location, _override.value->floatValue);
-                break;
-            case GL_FLOAT_VEC2:
-                glUniform2f(_override.uniform->location, _override.value->v2value.x, _override.value->v2value.y);
-                break;
-            case GL_FLOAT_VEC3:
-                glUniform3f(_override.uniform->location, _override.value->v3value.x, _override.value->v3value.y,
-                            _override.value->v3value.z);
-                break;
-            case GL_FLOAT_VEC4:
-                glUniform4fv(_override.uniform->location, 1, value_ptr(_override.value->v4value));
-                break;
-            case GL_FLOAT_MAT4:
-                glUniformMatrix4fv(_override.uniform->location, _override.value->m4value.get()->size(), GL_FALSE,
-                                   glm::value_ptr((*_override.value->m4value)[0]));
-                break;
-            case GL_INT:
-            case GL_BOOL:
-                glUniform1i(_override.uniform->location, _override.value->intValue);
-                break;
-            case GL_SAMPLER_2D:
-                glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex(_override.uniform->name));
-                if (_override.value->txValue)
-                {
-                    glBindTexture(GL_TEXTURE_2D, _override.value->txValue->id);
-                }
-                else
-                {
-                    glBindTexture(GL_TEXTURE_2D, GfxTexture2d::getWhiteTexture()->id);
-                }
-                break;
-            case GL_SAMPLER_2D_ARRAY:
-            {
-                int i = shader->getTextureIndex(_override.uniform->name);
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.value->txValue->id);
-            }
-            break;
-            default:
-                break;
-        }
+        applyUniform(_override, shader);
+
     }
 
     for (const auto& _override : runtimeOverrides)
@@ -607,45 +485,7 @@ void brl::GfxMaterial::drawInstanced(std::vector<glm::mat4> transforms, GfxAttri
         if (!_override.uniform)
             continue;
 
-        switch (_override.uniform->type)
-        {
-            case GL_FLOAT:
-                glUniform1f(_override.uniform->location, _override.value->floatValue);
-                break;
-            case GL_FLOAT_VEC2:
-                glUniform2f(_override.uniform->location, _override.value->v2value.x, _override.value->v2value.y);
-                break;
-            case GL_FLOAT_VEC3:
-                glUniform3f(_override.uniform->location, _override.value->v3value.x, _override.value->v3value.y,
-                            _override.value->v3value.z);
-                break;
-            case GL_FLOAT_VEC4:
-                glUniform4fv(_override.uniform->location, 1, value_ptr(_override.value->v4value));
-                break;
-            case GL_FLOAT_MAT4:
-                glUniformMatrix4fv(_override.uniform->location, _override.value->m4value.get()->size(), GL_FALSE,
-                                   glm::value_ptr((*_override.value->m4value)[0]));
-                break;
-            case GL_INT:
-                glUniform1i(_override.uniform->location, _override.value->intValue);
-                break;
-            case GL_SAMPLER_2D:
-            {
-                int i = shader->getTextureIndex(_override.uniform->name);
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, _override.value->txValue->id);
-            }
-            break;
-            case GL_SAMPLER_2D_ARRAY:
-            {
-                int i = shader->getTextureIndex(_override.uniform->name);
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.value->txValue->id);
-            }
-            break;
-            default:
-                break;
-        }
+        applyUniform(_override, shader);
     }
 
     if (buffer->ebo)
@@ -669,7 +509,55 @@ void brl::GfxMaterial::setOverride(GfxShaderBinding pair)
     }
     else
     {
-        overrides.push_back(pair);
+        overrides.push_back(std::move(pair));
+    }
+}
+
+void brl::GfxMaterial::applyUniform(const brl::GfxShaderBinding& _override, brl::GfxShaderProgram* shader)
+{
+    switch (_override.uniform->type)
+    {
+        case GL_FLOAT:
+            glUniform1f(_override.uniform->location, _override.value->floatValue);
+            break;
+        case GL_FLOAT_VEC2:
+            glUniform2f(_override.uniform->location, _override.value->v2value.x, _override.value->v2value.y);
+            break;
+        case GL_FLOAT_VEC3:
+            glUniform3f(_override.uniform->location, _override.value->v3value.x, _override.value->v3value.y,
+                        _override.value->v3value.z);
+            break;
+        case GL_FLOAT_VEC4:
+            glUniform4fv(_override.uniform->location, 1, value_ptr(_override.value->v4value));
+            break;
+        case GL_FLOAT_MAT4:
+            glUniformMatrix4fv(_override.uniform->location, _override.value->m4value->size(), GL_FALSE,
+                               glm::value_ptr((*_override.value->m4value)[0]));
+            break;
+        case GL_INT:
+        case GL_BOOL:
+            glUniform1i(_override.uniform->location, _override.value->intValue);
+            break;
+        case GL_SAMPLER_2D:
+            glActiveTexture(GL_TEXTURE0 + shader->getTextureIndex(_override.uniform->name));
+            if (_override.value->txValue)
+            {
+                glBindTexture(GL_TEXTURE_2D, _override.value->txValue->id);
+            }
+            else
+            {
+                glBindTexture(GL_TEXTURE_2D, brl::GfxTexture2d::getWhiteTexture()->id);
+            }
+            break;
+        case GL_SAMPLER_2D_ARRAY:
+            {
+                int i = shader->getTextureIndex(_override.uniform->name);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, _override.value->txValue->id);
+            }
+            break;
+        default:
+            break;
     }
 }
 
