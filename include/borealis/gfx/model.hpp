@@ -202,10 +202,16 @@ namespace brl
         std::vector<int> children;
 
         glm::mat4 calculateLocalTransform();
+        void validate();
+        void apply();
 
     private:
         friend GfxSkeleton;
         bool changed = true;
+
+        glm::vec3 lastCheckedPosition, lastCheckedScale;
+        glm::quat lastCheckedRotation;
+        
     };
 
     struct GfxSkin
@@ -261,6 +267,8 @@ namespace brl
 
     private:
         GfxModelEntity* model= nullptr;
+
+        float time = 0;
     };
 
     struct GfxModelEntity : EcsEntity

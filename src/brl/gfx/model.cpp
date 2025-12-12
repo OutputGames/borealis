@@ -754,6 +754,18 @@ glm::mat4 brl::GfxBone::calculateLocalTransform()
     return t;
 }
 
+void brl::GfxBone::validate()
+{
+    changed = (lastCheckedPosition != position) || (lastCheckedScale != scale) || (lastCheckedRotation != rotation);
+}
+
+void brl::GfxBone::apply()
+{
+    lastCheckedPosition = position;
+    lastCheckedRotation = rotation;
+    lastCheckedScale = scale;
+}
+
 void brl::GfxSkin::initialize()
 {
     for (int i = 0; i < bones.size(); ++i)
@@ -824,6 +836,8 @@ void brl::GfxSkeleton::_calcTransform(brl::GfxBone* bone, const glm::mat4& paren
         
         bone->worldMatrix = t;
         jointMatrices[index] = t * bone->inverseBindMatrix;
+
+        bone->apply();
     }
 
     for (int child : bone->children)
@@ -874,6 +888,40 @@ void brl::GfxAnimator::update()
 {
     const auto& skeleton = model->skeletons[0];
 
+    time += GfxEngine::instance->getDeltaTime();
 
+    for (int i = 0; i < animation->channels.size(); i++)
+    {
+        const auto& channel = animation->channels[i];
+        GfxBone* bone = skeleton->bones[channel.boneIndex];
+
+        int key = -1;
+        for (int j = 0; j < channel.frames.size()-1; j++)
+        {
+            if (time < channel.frames[j] ) {
+                key = j;
+                break;
+            }
+        }
+
+        // add interpolation
+        if (channel.type == GfxAnimation::TRANSLATION || channel.type == GfxAnimation::SCALE) {
+        
+            const Vec3AnimationFrame& frame = channel.frames[key];
+            const Vec3AnimationFrame& nextFrame = channel.frames[key+1];
+
+            if (channel.type == GfxAnimation::TRANSLATION) {
+                bone->position = frame.value;
+            } else {
+                bone->scale = frame.value;
+            }
+        } else {
+            const QuatAnimationFrame& frame = channel.frames[key];
+            const QuatAnimationFrame& nextFrame = channel.frames[key+1];
+
+            bone->rotation = frame.value;
+        }
+    }
+    
     
 }
