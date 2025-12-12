@@ -921,7 +921,11 @@ void brl::GfxAnimator::update()
 
             bone->rotation = frame.value;
         }
+
+        bone->validate();
     }
+
+
     
     
 }
