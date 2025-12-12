@@ -606,15 +606,26 @@ brl::GfxModel::GfxModel(std::string path)
 
             tinygltf::AnimationSampler sampler = anim.samplers[channel.sampler];
 
+            int targetSkin = -1;
             int targetBone = -1;
 
-            for (int i = 0; i <model.skins[0].joints.size(); i++) {
-                if (model.skins[0].joints[i] == channel.target_node){
-                    targetBone = i;
+            for (int j = 0; j < model.skins.size(); j++)
+            {
+                for (int i = 0; i <model.skins[j].joints.size(); i++) {
+                    if (model.skins[j].joints[i] == channel.target_node) {
+                        targetBone = i;
+                        targetSkin = j;
+                        break;
+                    }
+                }
+
+                if (targetBone != -1) {
+                    break;
                 }
             }
+            
 
-            if (targetBone == -1)
+            if (targetBone == -1 || targetSkin == -1)
                 continue;
 
             if (sampler.interpolation == "LINEAR")
@@ -623,8 +634,42 @@ brl::GfxModel::GfxModel(std::string path)
                 animChannel.interpolation = GfxAnimation::STEP;
             if (sampler.interpolation == "CUBICSPLINE")
                 animChannel.interpolation = GfxAnimation::CUBICSPLINE;
-            
-            
+
+            const tinygltf::Accessor& inputAccessor = model.accessors[sampler.input];
+            const tinygltf::Accessor& outputAccessor = model.accessors[sampler.output];
+
+            const tinygltf::BufferView& input_bufferView = model.bufferViews[inputAccessor.bufferView];
+            const tinygltf::Buffer& input_buffer = model.buffers[input_bufferView.buffer];
+
+            const tinygltf::BufferView& output_bufferView = model.bufferViews[outputAccessor.bufferView];
+            const tinygltf::Buffer& output_buffer = model.buffers[output_bufferView.buffer];
+
+
+            auto times = reinterpret_cast<const float*>(&input_buffer.data[input_bufferView.byteOffset + inputAccessor.byteOffset]);
+            int frameCount = inputAccessor.count;
+
+            auto values = reinterpret_cast<const float*>(&output_buffer.data[output_bufferView.byteOffset + outputAccessor.byteOffset]);
+
+
+            if (animChannel.type == GfxAnimation::TRANSLATION || animChannel.type == GfxAnimation::SCALE) {
+
+                for (std::size_t i = 0; i < frameCount; ++i) {
+                    float frame = times[i];
+                    glm::vec3 value = {values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]};
+                    
+                    animChannel.frames.push_back(GfxAnimation::Vec3AnimationFrame{frame,value});
+                }
+            } else if (animChannel.type == GfxAnimation::ROTATION) 
+            {
+                for (std::size_t i = 0; i < frameCount; ++i) {
+                    float frame = times[i];
+                    glm::quat value = {values[i * 4 + 0], values[i * 4 + 1], values[i * 4 + 2], values[i*4+3]};
+                    
+                    animChannel.frames.push_back(GfxAnimation::QuatAnimationFrame{frame,value});
+                }
+            }
+
+            animation->channels.push_back(animChannel);
         }
 
         animations.push_back(animation);
@@ -823,4 +868,12 @@ void brl::GfxSkinnedMeshRenderer::lateUpdate()
         GfxSubMesh* subMesh = mesh->subMeshes[i];
         GfxEngine::instance->insertCall(materials[i], subMesh->buffer, calculateTransform(), overrides, instancingID);
     }
+}
+
+void brl::GfxAnimator::update()
+{
+    const auto& skeleton = model->skeletons[0];
+
+
+    
 }

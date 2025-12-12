@@ -126,6 +126,10 @@ namespace brl
             glm::vec3 value;
         };
 
+        struct QuatAnimationFrame : AnimationFrame {
+            glm::quat value;
+        };
+
         struct Channel {
             int boneIndex;
             ChannelInterpolation interpolation;
@@ -136,7 +140,7 @@ namespace brl
 
         std::string name;
 
-
+        std::vector<Channel> channels;
 
     };
 
@@ -147,7 +151,7 @@ namespace brl
         std::vector<GfxMaterialDescription*> materialDescriptions;
         std::vector<GfxMaterial*> materials;
         std::vector<GfxSkin*> skins;
-        std::vector<GfxAnimation*> animation;
+        std::vector<GfxAnimation*> animations;
 
         static GfxModel* loadModel(std::string path);
 
@@ -250,6 +254,10 @@ namespace brl
     struct GfxAnimator : EcsEntity {
 
         GfxAnimation* animation;
+
+        GfxAnimator();
+
+        void update() override;
 
     private:
         GfxModelEntity* model= nullptr;
