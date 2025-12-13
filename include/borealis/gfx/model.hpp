@@ -131,16 +131,17 @@ namespace brl
         };
 
         struct Channel {
-            int boneIndex;
+            int boneIndex = -1;
             ChannelInterpolation interpolation;
             ChannelType type;
 
-            std::vector<AnimationFrame> frames;
+            std::vector<AnimationFrame*> frames;
         };
 
         std::string name;
 
         std::vector<Channel> channels;
+        float length = 0;
 
     };
 
@@ -261,8 +262,8 @@ namespace brl
 
         GfxAnimation* animation;
 
-        GfxAnimator();
 
+        void start() override;
         void update() override;
 
     private:

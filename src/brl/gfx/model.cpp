@@ -1,10 +1,11 @@
-#include "borealis/gfx/model.hpp"
+﻿#include "borealis/gfx/model.hpp"
 
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_EXTERNAL_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include <tiny_gltf.h>
 
+#include "borealis/debug/debug.hpp"
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
@@ -368,27 +369,25 @@ brl::GfxModel::GfxModel(std::string path)
             // Joint IDs can be stored as different types
             if (jnt_accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
             {
-                // 8-bit unsigned integers
+                // 8-bit unsigned integers (VEC4 = 4 bytes)
+                const size_t stride = jnt_bufferView.byteStride > 0 ? jnt_bufferView.byteStride : 4;
                 for (size_t i = 0; i < jnt_accessor.count; ++i)
                 {
                     const uint8_t* data = reinterpret_cast<const uint8_t*>(
-                        &jnt_buffer.data[jnt_bufferView.byteOffset + i * jnt_accessor.byteOffset]);
+                        &jnt_buffer.data[jnt_bufferView.byteOffset + jnt_accessor.byteOffset + i * stride]);
                     vertices[i].boneIds = glm::uvec4(data[0], data[1], data[2], data[3]);
                 }
             }
             else if (jnt_accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
             {
-                // 16-bit unsigned integers (most common)
+                // 16-bit unsigned integers (VEC4 = 8 bytes)
+                const size_t stride = jnt_bufferView.byteStride > 0 ? jnt_bufferView.byteStride : 8;
                 for (size_t i = 0; i < jnt_accessor.count; ++i)
                 {
                     const uint16_t* data = reinterpret_cast<const uint16_t*>(
-                        &jnt_buffer.data[jnt_bufferView.byteOffset + i * jnt_accessor.byteOffset]);
+                        &jnt_buffer.data[jnt_bufferView.byteOffset + jnt_accessor.byteOffset + i * stride]);
                     vertices[i].boneIds = glm::uvec4(data[0], data[1], data[2], data[3]);
                 }
-            }
-            else
-            {
-                // no joints
             }
 
             auto attribBuffer = new GfxAttribBuffer();
@@ -600,6 +599,8 @@ brl::GfxModel::GfxModel(std::string path)
 
         GfxAnimation* animation = new GfxAnimation();
 
+        animation->name = anim.name;
+
         for (tinygltf::AnimationChannel channel : anim.channels) {
 
             GfxAnimation::Channel animChannel{};
@@ -628,12 +629,21 @@ brl::GfxModel::GfxModel(std::string path)
             if (targetBone == -1 || targetSkin == -1)
                 continue;
 
+            animChannel.boneIndex = targetBone;
+
             if (sampler.interpolation == "LINEAR")
                 animChannel.interpolation = GfxAnimation::LINEAR;
             if (sampler.interpolation == "STEP")
                 animChannel.interpolation = GfxAnimation::STEP;
             if (sampler.interpolation == "CUBICSPLINE")
                 animChannel.interpolation = GfxAnimation::CUBICSPLINE;
+
+            if (channel.target_path == "translation")
+                animChannel.type = GfxAnimation::TRANSLATION;
+            if (channel.target_path == "rotation")
+                animChannel.type = GfxAnimation::ROTATION;
+            if (channel.target_path == "scale")
+                animChannel.type = GfxAnimation::SCALE;
 
             const tinygltf::Accessor& inputAccessor = model.accessors[sampler.input];
             const tinygltf::Accessor& outputAccessor = model.accessors[sampler.output];
@@ -657,15 +667,20 @@ brl::GfxModel::GfxModel(std::string path)
                     float frame = times[i];
                     glm::vec3 value = {values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]};
                     
-                    animChannel.frames.push_back(GfxAnimation::Vec3AnimationFrame{frame,value});
+                    animation->length = glm::max(animation->length, frame);
+
+
+                    animChannel.frames.push_back(new GfxAnimation::Vec3AnimationFrame{frame,value});
                 }
             } else if (animChannel.type == GfxAnimation::ROTATION) 
             {
                 for (std::size_t i = 0; i < frameCount; ++i) {
                     float frame = times[i];
-                    glm::quat value = {values[i * 4 + 0], values[i * 4 + 1], values[i * 4 + 2], values[i*4+3]};
+                    glm::quat value = {values[i * 4 + 3], values[i * 4 + 0], values[i * 4 + 1], values[i * 4 + 2]};
                     
-                    animChannel.frames.push_back(GfxAnimation::QuatAnimationFrame{frame,value});
+                    animation->length = glm::max(animation->length, frame);
+
+                    animChannel.frames.push_back(new GfxAnimation::QuatAnimationFrame{frame,value});
                 }
             }
 
@@ -740,18 +755,12 @@ void brl::GfxMeshRenderer::lateUpdate()
     }
 }
 
-
-
 glm::mat4 brl::GfxBone::calculateLocalTransform()
 {
-    glm::mat4 t(1.0);
-
-    t = translate(t, position);
-    t *= glm::toMat4(rotation);
-    t = glm::scale(t, scale);
-
-
-    return t;
+    glm::mat4 t = glm::translate(glm::mat4(1.0), position);
+    glm::mat4 r = glm::toMat4(rotation);
+    glm::mat4 s = glm::scale(glm::mat4(1.0), scale);
+    return t * r * s; // T * R * S (correct order)
 }
 
 void brl::GfxBone::validate()
@@ -764,6 +773,8 @@ void brl::GfxBone::apply()
     lastCheckedPosition = position;
     lastCheckedRotation = rotation;
     lastCheckedScale = scale;
+
+    changed = false;
 }
 
 void brl::GfxSkin::initialize()
@@ -844,8 +855,6 @@ void brl::GfxSkeleton::_calcTransform(brl::GfxBone* bone, const glm::mat4& paren
     {
         _calcTransform(bones[child], bone->worldMatrix, child, _changed);
     }
-
-    bone->changed = false;
 }
 
 brl::GfxSkinnedMeshRenderer::GfxSkinnedMeshRenderer()
@@ -884,11 +893,25 @@ void brl::GfxSkinnedMeshRenderer::lateUpdate()
     }
 }
 
+void brl::GfxAnimator::start()
+{
+    EcsEntity::start();
+
+    model = getEntityInParent<GfxModelEntity>();
+}
+
 void brl::GfxAnimator::update()
 {
+    EcsEntity::update();
+
     const auto& skeleton = model->skeletons[0];
 
     time += GfxEngine::instance->getDeltaTime();
+
+    if (time > animation->length)
+    {
+        time = 0;
+    }
 
     for (int i = 0; i < animation->channels.size(); i++)
     {
@@ -896,36 +919,55 @@ void brl::GfxAnimator::update()
         GfxBone* bone = skeleton->bones[channel.boneIndex];
 
         int key = -1;
-        for (int j = 0; j < channel.frames.size()-1; j++)
+        for (int j = 0; j < channel.frames.size() - 1; j++)
         {
-            if (time < channel.frames[j] ) {
+            if (time < channel.frames[j+1]->time)
+            {
                 key = j;
                 break;
             }
         }
 
-        // add interpolation
-        if (channel.type == GfxAnimation::TRANSLATION || channel.type == GfxAnimation::SCALE) {
+        if (key == -1)
+            continue;
         
-            const Vec3AnimationFrame& frame = channel.frames[key];
-            const Vec3AnimationFrame& nextFrame = channel.frames[key+1];
 
-            if (channel.type == GfxAnimation::TRANSLATION) {
-                bone->position = frame.value;
-            } else {
-                bone->scale = frame.value;
+        // add interpolation
+        if (channel.type == GfxAnimation::TRANSLATION || channel.type == GfxAnimation::SCALE)
+        {
+
+            const GfxAnimation::Vec3AnimationFrame* frame =
+                static_cast<const GfxAnimation::Vec3AnimationFrame*>(channel.frames[key]);
+            const GfxAnimation::Vec3AnimationFrame* nextFrame =
+                static_cast<const GfxAnimation::Vec3AnimationFrame*>(channel.frames[key + 1]);
+
+            if (channel.type == GfxAnimation::TRANSLATION)
+            {
+                bone->position = frame->value;
             }
-        } else {
-            const QuatAnimationFrame& frame = channel.frames[key];
-            const QuatAnimationFrame& nextFrame = channel.frames[key+1];
+            else
+            {
+                bone->scale = frame->value;
+            }
+        }
+        else
+        {
+            const GfxAnimation::QuatAnimationFrame* frame =
+                static_cast<const GfxAnimation::QuatAnimationFrame*>(channel.frames[key]);
+            const GfxAnimation::QuatAnimationFrame* nextFrame =
+                static_cast<const GfxAnimation::QuatAnimationFrame*>(channel.frames[key + 1]);
 
-            bone->rotation = frame.value;
+            bone->rotation = glm::normalize(frame->value);
         }
 
         bone->validate();
     }
 
-
-    
-    
+for (const auto& bone : skeleton->bones)
+    {
+        for (int childIndex : bone->children)
+        {
+            brl_debug::drawLine(bone->position, skeleton->bones[childIndex]->position);
+        }
+    }
 }
