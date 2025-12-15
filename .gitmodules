@@ -13,3 +13,6 @@
 [submodule "ext/FastNoiseLite"]
 	path = ext/FastNoiseLite
 	url = https://github.com/OutputGames/FastNoiseLite.git
+[submodule "ext/freetype"]
+	path = ext/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git

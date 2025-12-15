@@ -15,13 +15,15 @@ namespace brl
         ~GfxTexture();
 
 
-    private:
+    protected:
         friend struct GfxMaterial;
         friend struct GfxShader;
         friend struct GfxSprite;
         friend struct GfxTexture2d;
         friend struct GfxTexture2dArray;
         friend struct GfxFramebuffer;
+        friend struct GfxTextRenderer;
+        friend struct TextMaterialKey;
 
         unsigned id = UINT_MAX;
         int width, height;

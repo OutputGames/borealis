@@ -2,6 +2,8 @@
 #define UI_HPP
 
 
+#include "buffer.hpp"
+#include "ui.hpp"
 #include "borealis/ecs/entity.hpp"
 #include "borealis/gfx/camera.hpp"
 #include "borealis/gfx/shader.hpp"
@@ -37,6 +39,7 @@ namespace brl
     private:
         friend struct GfxImage;
         friend struct GfxUIElement;
+        friend struct GfxTextRenderer;
         friend GfxEngine;
 
         static GfxCanvas* mainCanvas;
@@ -120,6 +123,53 @@ namespace brl
         glm::mat4 transform;
         GfxAttribBuffer* gfxBuffer;
         GfxMaterial* material;
+    };
+
+    struct GfxFont
+    {
+        struct GfxFontCharacter : GfxTexture
+        {
+            GfxFontCharacter(unsigned int id, glm::ivec2 s, glm::ivec2 b, unsigned int adv);
+            glm::ivec2 size; // Size of glyph
+            glm::ivec2 bearing; // Offset from baseline to left/top of glyph
+            unsigned int advanceOffset; // Offset to advance to next glyph
+        };
+
+        std::map<char, GfxFontCharacter> characters;
+        int fontSize = 48;
+
+        GfxFont(std::string path);
+
+    };
+
+    struct GfxTextRenderer : GfxUIElement
+    {
+        GfxTextRenderer(GfxCanvas* c);
+
+        GfxFont* font = nullptr;
+
+        std::string text;
+
+        void start() override;
+        void lateUpdate() override;
+
+    private:
+        GfxAttribBuffer* charVAO = nullptr;
+        GfxBuffer* charVBO = nullptr;
+
+            // Material pool for text rendering with different colors
+        struct TextMaterialKey
+        {
+            glm::vec3 color;
+            GfxFont::GfxFontCharacter textureID;
+
+            bool operator<(const TextMaterialKey& other) const;
+        };
+        std::map<TextMaterialKey, GfxMaterial*> materialCache;
+        // Helper to get or create text material with specific color and texture
+        GfxMaterial* getMaterial(glm::vec3 color, const GfxFont::GfxFontCharacter& textureID);
+    // Helper to create quad geometry for a single character
+        void createCharacterQuad(const GfxFont::GfxFontCharacter& ch, glm::vec2 position, float scale, float vertices[6][4]);
     };
 
 } // namespace brl

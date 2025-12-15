@@ -107,7 +107,7 @@ namespace brl
         bool setupAttributesForInstancing = false;
         GfxBuffer* instanceBuffer;
 
-    }; // <-- Add a semicolon here to terminate the struct definition
+    }; 
 
 
 } // namespace brl

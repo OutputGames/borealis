@@ -264,6 +264,7 @@ void brl::GfxEngine::initialize(int width, int height, std::string windowName)
 
     InputMgr::init(static_cast<GLFWwindow*>(mainWindow->window));
 
+    auto defaultFont = new GfxFont("D:/Roboto-Regular.ttf");
 
     // To start a frame capture, call StartFrameCapture.
     // You can specify NULL, NULL for the device to capture on if you have only one device and

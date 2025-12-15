@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 
+#include "ui.hpp"
+
 namespace brl
 {
     struct GfxShaderProgram;
@@ -309,6 +311,18 @@ namespace brl
             setOverride(override);
         }
 
+        void setTexture(std::string name, const GfxTexture* value)
+        {
+            if (!shader->getUniform(name))
+                return;
+
+            auto val = std::make_shared<GfxShaderValue>();
+            //val->txValue = const_cast<GfxTexture*>(value);
+
+            auto override = GfxShaderBinding(shader->getUniform(name), val);
+            setOverride(override);
+        }
+
         GfxShaderValue* getUniform(std::string name)
         {
             if (!shader->getUniform(name))
@@ -333,8 +347,6 @@ namespace brl
         void draw(GfxAttribBuffer* buffer, GfxUniformList runtimeOverrides = {});
         void drawInstanced(std::vector<glm::mat4> transforms, GfxAttribBuffer* gfxBuffer,
                            GfxUniformList runtimeOverrides = {});
-
-
 
     private:
         friend struct GfxMaterialMgr;

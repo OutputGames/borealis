@@ -8,7 +8,7 @@ project "borealis"
     cppdialect "C++23"
     targetdir "lib"
     objdir "build"
-    dependson {"glad", "tinygltf", "resource_packer", "glfw"}
+    dependson {"glad", "tinygltf", "resource_packer", "glfw", "freetype"}
 
     files {
         "src/**.cpp",
@@ -31,6 +31,7 @@ project "borealis"
         "ext/glfw/include",
         "ext/assimp/include",
         "ext/tinygltf",
+        "ext/freetype/include",
         "ext"
     }
 
@@ -95,3 +96,4 @@ include("ext/glad/premake5.lua")
 include("ext/glfw/premake5.lua")
 include("ext/stb/premake5.lua")
 include("ext/glm/premake5.lua")
+include("ext/freetype/premake5.lua")
