@@ -122,12 +122,69 @@ void brl::GfxImage::lateUpdate()
     canvas->insertDrawCall({calculateTransform(), GfxMesh::GetPrimitive(QUAD)->GetSubMesh(0)->buffer, material});
 }
 
-brl::GfxFont::GfxFontCharacter::GfxFontCharacter(unsigned int id, glm::ivec2 s, glm::ivec2 b, unsigned int adv)
+brl::GfxFont::GfxFontCharacter::GfxFontCharacter(unsigned int i, glm::ivec2 s, glm::ivec2 b, unsigned int adv)
 {
-    this->id = id;
+    this->id = i;
     this->size = s;
     this->bearing = b;
     this->advanceOffset = adv;
+
+        // Create VBO for character quad (will be updated per-character)
+    charVBO = new GfxBuffer(GL_ARRAY_BUFFER);
+
+    // Create VAO for text rendering
+    charVAO = new GfxAttribBuffer();
+    charVAO->assignBuffer(charVBO);
+    charVAO->mode = GL_TRIANGLES;
+
+    // Configure vertex attributes for text rendering
+    // Position (vec2) + TexCoords (vec2) = vec4
+    GfxAttribute posTexCoord = {
+        .size = 4, .stride = 4 * sizeof(float), .pointer = 0, .format = GL_FLOAT, .normalized = false};
+    charVAO->insertAttribute(posTexCoord);
+
+    // Allocate space for one quad (6 vertices * 4 floats)
+    float vertices[6][4] = {};
+
+    glm::vec2 position = glm::vec2{0};
+    float scale = 1;
+
+    float xpos = 0;
+    float ypos = 0;
+
+    float w = size.x * scale;
+    float h = size.y * scale;
+
+    // Create quad vertices (2 triangles)
+    // Triangle 1
+    vertices[0][0] = xpos;
+    vertices[0][1] = ypos + h;
+    vertices[0][2] = 0.0f;
+    vertices[0][3] = 0.0f;
+    vertices[1][0] = xpos;
+    vertices[1][1] = ypos;
+    vertices[1][2] = 0.0f;
+    vertices[1][3] = 1.0f;
+    vertices[2][0] = xpos + w;
+    vertices[2][1] = ypos;
+    vertices[2][2] = 1.0f;
+    vertices[2][3] = 1.0f;
+
+    // Triangle 2
+    vertices[3][0] = xpos;
+    vertices[3][1] = ypos + h;
+    vertices[3][2] = 0.0f;
+    vertices[3][3] = 0.0f;
+    vertices[4][0] = xpos + w;
+    vertices[4][1] = ypos;
+    vertices[4][2] = 1.0f;
+    vertices[4][3] = 1.0f;
+    vertices[5][0] = xpos + w;
+    vertices[5][1] = ypos + h;
+    vertices[5][2] = 1.0f;
+    vertices[5][3] = 0.0f;
+
+    charVBO->updateData(GL_DYNAMIC_DRAW, vertices, sizeof(vertices));
 }
 
 brl::GfxFont::GfxFont(std::string path)
@@ -177,13 +234,16 @@ brl::GfxFont::GfxFont(std::string path)
         }
 
         // generate texture
-        unsigned int texture;
+        unsigned int texture = -1;
 
         glGenTextures(1, &texture);
 
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        
         glObjectLabel(GL_TEXTURE, texture, -1, charName.c_str());
 
-        glBindTexture(GL_TEXTURE_2D, texture);
+
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RED,
                      GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
         // set texture options
@@ -192,11 +252,11 @@ brl::GfxFont::GfxFont(std::string path)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         // now store character for later use
-        GfxFontCharacter character = {
+        GfxFontCharacter* character = new GfxFontCharacter{
             texture, glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top), face->glyph->advance.x
+            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top), static_cast<unsigned int>(face->glyph->advance.x)
         };
-        characters.insert(std::pair<char, GfxFontCharacter>(c, character));
+        characters.insert(std::pair<char, GfxFontCharacter*>(c, character));
     }
 
     FT_Done_Face(face);
@@ -209,23 +269,7 @@ brl::GfxTextRenderer::GfxTextRenderer(GfxCanvas* c) : GfxUIElement(c)
 void brl::GfxTextRenderer::start()
 {
     GfxUIElement::start();
-    // Create VBO for character quad (will be updated per-character)
-    charVBO = new GfxBuffer(GL_ARRAY_BUFFER);
 
-    // Create VAO for text rendering
-    charVAO = new GfxAttribBuffer();
-    charVAO->assignBuffer(charVBO);
-    charVAO->mode = GL_TRIANGLES;
-
-    // Configure vertex attributes for text rendering
-    // Position (vec2) + TexCoords (vec2) = vec4
-    GfxAttribute posTexCoord = {
-        .size = 4, .stride = 4 * sizeof(float), .pointer = 0, .format = GL_FLOAT, .normalized = false};
-    charVAO->insertAttribute(posTexCoord);
-
-    // Allocate space for one quad (6 vertices * 4 floats)
-    float quadVertices[6][4] = {};
-    charVBO->updateData(GL_DYNAMIC_DRAW, quadVertices, sizeof(quadVertices));
 }
 
 void brl::GfxTextRenderer::lateUpdate()
@@ -233,7 +277,6 @@ void brl::GfxTextRenderer::lateUpdate()
     GfxUIElement::lateUpdate();
 
     // Prepare vertex data
-    std::vector<float> vertices;
     glm::vec2 cursor = glm::vec2(0);
     float scale = glm::length(this->scale());
 
@@ -241,37 +284,36 @@ void brl::GfxTextRenderer::lateUpdate()
 
     for (char c : text)
     {
-        const GfxFont::GfxFontCharacter& ch = font->characters[c];
+        GfxFont::GfxFontCharacter* ch = font->characters[c];
 
         // Skip characters with no visual representation (like space might not have geometry)
-        if (ch.size.x == 0 || ch.size.y == 0)
+        if (ch->size.x == 0 || ch->size.y == 0)
         {
-            cursor.x += (ch.advanceOffset >> 6) * scale;
+            cursor.x += (ch->advanceOffset >> 6) * scale;
             continue;
         }
-
-        // Create quad geometry for this character
-        float vertices[6][4];
-        createCharacterQuad(ch, cursor, scale, vertices);
-
-        // Update the shared VBO with this character's geometry
-        // Note: Since each draw call references the same VBO, we need to update it before each draw
-        // Your rendering system should handle this by updating the VBO before executing each draw call
-        charVBO->updateData(GL_DYNAMIC_DRAW, vertices, sizeof(vertices));
 
         // Get or create material for this color and character texture
         GfxMaterial* material = getMaterial(glm::vec3(1), ch);
 
+        float xpos = cursor.x + ch->bearing.x * scale;
+        float ypos = cursor.y - (ch->size.y - ch->bearing.y) * scale;
+
+        glm::mat4 t = glm::translate(glm::vec3{xpos, ypos, 0});
+        glm::mat4 s = glm::scale(glm::mat4(1.0), glm::vec3{scale});
+
+        glm::mat4 subTransform = t * s;
+
         // Create draw call
         GfxUIDrawCall drawCall;
-        drawCall.transform = transform; // Use projection as transform
-        drawCall.gfxBuffer = charVAO;
+        drawCall.transform = subTransform * transform; // Use projection as transform
+        drawCall.gfxBuffer = ch->charVAO;
         drawCall.material = material;
 
         canvas->draw_calls.push_back(drawCall);
 
         // Advance cursor for next glyph
-        cursor.x += (ch.advanceOffset >> 6) * scale;
+        cursor.x += (ch->advanceOffset >> 6) * scale;
     }
 
 }
@@ -279,8 +321,8 @@ void brl::GfxTextRenderer::lateUpdate()
 
 bool brl::GfxTextRenderer::TextMaterialKey::operator<(const TextMaterialKey& other) const
 {
-    if (textureID.id != other.textureID.id)
-        return textureID.id < other.textureID.id;
+    if (textureID->id != other.textureID->id)
+        return textureID->id < other.textureID->id;
     if (color.r != other.color.r)
         return color.r < other.color.r;
     if (color.g != other.color.g)
@@ -288,7 +330,7 @@ bool brl::GfxTextRenderer::TextMaterialKey::operator<(const TextMaterialKey& oth
     return color.b < other.color.b;
 }
 
-brl::GfxMaterial* brl::GfxTextRenderer::getMaterial(glm::vec3 color, const GfxFont::GfxFontCharacter& textureID)
+brl::GfxMaterial* brl::GfxTextRenderer::getMaterial(glm::vec3 color, GfxFont::GfxFontCharacter* textureID)
 {
     TextMaterialKey key = {color, textureID};
 
@@ -310,8 +352,14 @@ brl::GfxMaterial* brl::GfxTextRenderer::getMaterial(glm::vec3 color, const GfxFo
         uniform mat4 _internalModel;
         
         void main() {
-            gl_Position = _internalProj * _internalModel * vec4(vertex.xy, 0.0, 1.0);
+
+            vec4 p = _internalProj * _internalModel * vec4(vertex.xy, 0.0, 1.0);
+
+            p.z = 0;
+
+            gl_Position = p;
             TexCoords = vertex.zw;
+            TexCoords.y = 1.0 - TexCoords.y;
         }
     )";
 
@@ -324,8 +372,13 @@ brl::GfxMaterial* brl::GfxTextRenderer::getMaterial(glm::vec3 color, const GfxFo
         uniform vec3 textColor;
         
         void main() {
-            vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
-            color = vec4(textColor, 1.0) * sampled;
+        
+            float r = texture(text,TexCoords).r;
+
+            float m = 0.4f;
+            float t = 0.1f;
+
+            color = vec4( (r > m) ? r+m : 0.0f);
         }
     )";
 
@@ -342,46 +395,9 @@ brl::GfxMaterial* brl::GfxTextRenderer::getMaterial(glm::vec3 color, const GfxFo
     // TODO: Set up shaders based on your material system
     // material->setShader(vertexShaderSource, fragmentShaderSource);
 
-    material->setTexture("text", &textureID);
+    material->setTexture("text", textureID);
+
+    materialCache[key] = material;
 
     return material;
-}
-
-void brl::GfxTextRenderer::createCharacterQuad(const GfxFont::GfxFontCharacter& ch, glm::vec2 position, float scale,
-                                               float vertices[6][4])
-{
-    float xpos = position.x + ch.bearing.x * scale;
-    float ypos = position.y - (ch.size.y - ch.bearing.y) * scale;
-
-    float w = ch.size.x * scale;
-    float h = ch.size.y * scale;
-
-    // Create quad vertices (2 triangles)
-    // Triangle 1
-    vertices[0][0] = xpos;
-    vertices[0][1] = ypos + h;
-    vertices[0][2] = 0.0f;
-    vertices[0][3] = 0.0f;
-    vertices[1][0] = xpos;
-    vertices[1][1] = ypos;
-    vertices[1][2] = 0.0f;
-    vertices[1][3] = 1.0f;
-    vertices[2][0] = xpos + w;
-    vertices[2][1] = ypos;
-    vertices[2][2] = 1.0f;
-    vertices[2][3] = 1.0f;
-
-    // Triangle 2
-    vertices[3][0] = xpos;
-    vertices[3][1] = ypos + h;
-    vertices[3][2] = 0.0f;
-    vertices[3][3] = 0.0f;
-    vertices[4][0] = xpos + w;
-    vertices[4][1] = ypos;
-    vertices[4][2] = 1.0f;
-    vertices[4][3] = 1.0f;
-    vertices[5][0] = xpos + w;
-    vertices[5][1] = ypos + h;
-    vertices[5][2] = 1.0f;
-    vertices[5][3] = 0.0f;
 }

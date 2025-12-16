@@ -8,8 +8,6 @@
 #include <memory>
 #include <vector>
 
-#include "ui.hpp"
-
 namespace brl
 {
     struct GfxShaderProgram;
@@ -311,17 +309,7 @@ namespace brl
             setOverride(override);
         }
 
-        void setTexture(std::string name, const GfxTexture* value)
-        {
-            if (!shader->getUniform(name))
-                return;
-
-            auto val = std::make_shared<GfxShaderValue>();
-            //val->txValue = const_cast<GfxTexture*>(value);
-
-            auto override = GfxShaderBinding(shader->getUniform(name), val);
-            setOverride(override);
-        }
+        void setTexture(std::string name, const GfxTexture* value);
 
         GfxShaderValue* getUniform(std::string name)
         {

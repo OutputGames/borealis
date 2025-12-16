@@ -427,6 +427,18 @@ size_t brl::GfxMaterial::getHash()
 }
 
 
+void brl::GfxMaterial::setTexture(std::string name, const GfxTexture* value)
+{
+    if (!shader->getUniform(name))
+        return;
+
+    auto val = std::make_shared<GfxShaderValue>();
+    val->txValue = value->clone();
+
+    auto override = GfxShaderBinding(shader->getUniform(name), val);
+    setOverride(override);
+}
+
 void brl::GfxMaterial::draw(GfxAttribBuffer* buffer,
                             GfxUniformList runtimeOverrides)
 {

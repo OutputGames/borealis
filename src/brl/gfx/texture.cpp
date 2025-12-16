@@ -13,6 +13,17 @@ brl::GfxTexture::~GfxTexture()
     glDeleteTextures(1, &id);
 }
 
+brl::GfxTexture* brl::GfxTexture::clone() const
+{
+    const auto& tex = new GfxTexture;
+
+    tex->id = id;
+    tex->width = width;
+    tex->height = height;
+
+    return tex;
+}
+
 brl::GfxTexture2d::GfxTexture2d(std::string path)
 {
     cachedTextures.insert_or_assign(path, this);

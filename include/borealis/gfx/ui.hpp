@@ -3,7 +3,6 @@
 
 
 #include "buffer.hpp"
-#include "ui.hpp"
 #include "borealis/ecs/entity.hpp"
 #include "borealis/gfx/camera.hpp"
 #include "borealis/gfx/shader.hpp"
@@ -129,13 +128,17 @@ namespace brl
     {
         struct GfxFontCharacter : GfxTexture
         {
+            GfxFontCharacter() = default;
             GfxFontCharacter(unsigned int id, glm::ivec2 s, glm::ivec2 b, unsigned int adv);
             glm::ivec2 size; // Size of glyph
             glm::ivec2 bearing; // Offset from baseline to left/top of glyph
             unsigned int advanceOffset; // Offset to advance to next glyph
+
+            GfxAttribBuffer* charVAO = nullptr;
+            GfxBuffer* charVBO = nullptr;
         };
 
-        std::map<char, GfxFontCharacter> characters;
+        std::map<char, GfxFontCharacter*> characters;
         int fontSize = 48;
 
         GfxFont(std::string path);
@@ -154,22 +157,21 @@ namespace brl
         void lateUpdate() override;
 
     private:
-        GfxAttribBuffer* charVAO = nullptr;
-        GfxBuffer* charVBO = nullptr;
+
 
             // Material pool for text rendering with different colors
         struct TextMaterialKey
         {
             glm::vec3 color;
-            GfxFont::GfxFontCharacter textureID;
+            GfxFont::GfxFontCharacter* textureID;
 
             bool operator<(const TextMaterialKey& other) const;
         };
         std::map<TextMaterialKey, GfxMaterial*> materialCache;
         // Helper to get or create text material with specific color and texture
-        GfxMaterial* getMaterial(glm::vec3 color, const GfxFont::GfxFontCharacter& textureID);
+        GfxMaterial* getMaterial(glm::vec3 color, GfxFont::GfxFontCharacter* textureID);
     // Helper to create quad geometry for a single character
-        void createCharacterQuad(const GfxFont::GfxFontCharacter& ch, glm::vec2 position, float scale, float vertices[6][4]);
+        void createCharacterQuad(const GfxFont::GfxFontCharacter* ch, glm::vec2 position, float scale, float vertices[6][4]);
     };
 
 } // namespace brl

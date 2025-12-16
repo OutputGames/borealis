@@ -15,6 +15,8 @@ namespace brl
         ~GfxTexture();
 
 
+        GfxTexture* clone() const;
+
     protected:
         friend struct GfxMaterial;
         friend struct GfxShader;
@@ -27,6 +29,8 @@ namespace brl
 
         unsigned id = UINT_MAX;
         int width, height;
+
+
     };
 
     #pragma pack(push, 1)
