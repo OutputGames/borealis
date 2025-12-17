@@ -143,6 +143,15 @@ namespace brl
         std::vector<Channel> channels;
         float length = 0;
 
+        static GfxAnimation* loadAnimation(std::string path);
+
+    private:
+        friend GfxModel;
+
+        GfxAnimation(std::string path);
+        GfxAnimation() = default;
+
+        static std::map<std::string, brl::GfxAnimation*> cachedAnimations;
     };
 
 

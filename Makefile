@@ -15,6 +15,7 @@ ifeq ($(config),debug)
   glfw3_config = debug
   stb_config = debug
   glm_config = debug
+  freetype_config = debug
 
 else ifeq ($(config),release)
   borealis_config = release
@@ -23,18 +24,19 @@ else ifeq ($(config),release)
   glfw3_config = release
   stb_config = release
   glm_config = release
+  freetype_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := borealis resource_packer glad glfw3 stb glm
+PROJECTS := borealis resource_packer glad glfw3 stb glm freetype
 
 .PHONY: all clean help $(PROJECTS) 
 
 all: $(PROJECTS)
 
-borealis: glad glfw3 resource_packer
+borealis: glad glfw3 resource_packer freetype
 ifneq (,$(borealis_config))
 	@echo "==== Building borealis ($(borealis_config)) ===="
 	@${MAKE} --no-print-directory -C . -f borealis.make config=$(borealis_config)
@@ -70,6 +72,12 @@ ifneq (,$(glm_config))
 	@${MAKE} --no-print-directory -C ext/glm -f Makefile config=$(glm_config)
 endif
 
+freetype:
+ifneq (,$(freetype_config))
+	@echo "==== Building freetype ($(freetype_config)) ===="
+	@${MAKE} --no-print-directory -C ext/freetype -f Makefile config=$(freetype_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f borealis.make clean
 	@${MAKE} --no-print-directory -C . -f resource_packer.make clean
@@ -77,6 +85,7 @@ clean:
 	@${MAKE} --no-print-directory -C ext/glfw -f Makefile clean
 	@${MAKE} --no-print-directory -C ext/stb -f Makefile clean
 	@${MAKE} --no-print-directory -C ext/glm -f Makefile clean
+	@${MAKE} --no-print-directory -C ext/freetype -f Makefile clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -94,5 +103,6 @@ help:
 	@echo "   glfw3"
 	@echo "   stb"
 	@echo "   glm"
+	@echo "   freetype"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

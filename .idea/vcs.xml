@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ext/FastNoiseLite" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ext/freetype" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ext/glfw" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ext/glm" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/ext/stb" vcs="Git" />

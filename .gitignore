@@ -52,3 +52,5 @@
 Makefile
 *.user
 *.slnx
+Makefile
+/.idea

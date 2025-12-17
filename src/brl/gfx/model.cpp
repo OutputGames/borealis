@@ -104,6 +104,83 @@ brl::GfxShaderProgram* GetSkinningShader()
     return defaultSkinningShader;
 }
 
+brl::GfxAnimation *brl::GfxAnimation::loadAnimation(std::string path)
+{
+    if (cachedAnimations.contains(path))
+        return cachedAnimations[path];
+
+    return new GfxAnimation(path);
+}
+
+std::vector<std::string> splitFileByCharacter(const std::string& data, char delim = '\n') {
+    std::vector<std::string> lines;
+    // Open the file for reading
+    std::stringstream file(data);
+
+    std::string line;
+    // Read each line using std::getline() until the end of the file
+    while (std::getline(file, line, delim)) {
+        lines.push_back(line);
+    }
+
+    // The file is automatically closed when the ifstream object goes out of scope,
+    // but you can also call file.close() explicitly.
+
+    return lines;
+}
+
+brl::GfxAnimation::GfxAnimation(std::string path)
+{
+
+    if (path.ends_with(".smd")) {
+        // smd loading
+
+        std::string data = brl::readFileString(path);
+
+        const auto& lines = splitFileByCharacter(data);
+
+        int version = 0;
+
+        enum smd_stage {
+            none,
+            nodes
+        };
+        smd_stage cur_stage = none;
+
+        for (const auto & line : lines) {
+            if (line.starts_with("version")) {
+                using namespace std::literals::string_literals; // Bring the "s" suffix into scope
+
+                std::string verStr = line.substr(("version "s).length(),1);
+
+                version = std::atoi(verStr.c_str());
+                continue;
+            }
+
+            if (line.starts_with("nodes")) {
+                cur_stage = nodes;
+                continue;
+            }
+
+            if (line.starts_with("end")) {
+                cur_stage = none;
+                continue;
+            }
+
+            if (cur_stage == nodes) {
+                auto data = splitFileByCharacter(line,' ');
+
+                int id = std::atoi(data[0].c_str());
+                std::string name = data[1].c_str();
+                int parentId = std::atoi(data[2].c_str());
+
+            }
+        }
+
+    }
+
+}
+
 brl::GfxSubMesh::~GfxSubMesh()
 {
     delete buffer;
