@@ -38,6 +38,7 @@ namespace brl
         void print(std::string s);
         IoFile readFileBinary(std::string path);
         std::string readFileString(std::string path);
+        std::vector<IoFile> readFilesBinary(std::string directory);
         void shutdown();
     };
 
@@ -46,6 +47,10 @@ namespace brl
     inline std::string readFileString(std::string path)
     {
         return IoEngine::engine->readFileString(path);
+    }
+    inline std::vector<IoFile> readFilesBinary(std::string directory)
+    {
+        return IoEngine::engine->readFilesBinary(directory);  
     }
 
 

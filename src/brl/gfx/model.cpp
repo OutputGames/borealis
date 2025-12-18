@@ -8,6 +8,7 @@
 #include "borealis/debug/debug.hpp"
 #include "borealis/gfx/engine.hpp"
 #include "borealis/gfx/shader.hpp"
+#include "glm/gtx/euler_angles.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
 
 static brl::GfxShaderProgram* defaultSkinningShader = nullptr;
@@ -104,6 +105,9 @@ brl::GfxShaderProgram* GetSkinningShader()
     return defaultSkinningShader;
 }
 
+std::map<std::string, brl::GfxAnimation*> brl::GfxAnimation::cachedAnimations;
+
+
 brl::GfxAnimation *brl::GfxAnimation::loadAnimation(std::string path)
 {
     if (cachedAnimations.contains(path))
@@ -132,53 +136,146 @@ std::vector<std::string> splitFileByCharacter(const std::string& data, char deli
 brl::GfxAnimation::GfxAnimation(std::string path)
 {
 
-    if (path.ends_with(".smd")) {
+if (path.ends_with(".smd"))
+    {
         // smd loading
-
         std::string data = brl::readFileString(path);
-
         const auto& lines = splitFileByCharacter(data);
 
-        int version = 0;
-
-        enum smd_stage {
+        enum smd_stage
+        {
             none,
-            nodes
+            nodes,
+            skeleton
         };
         smd_stage cur_stage = none;
 
-        for (const auto & line : lines) {
-            if (line.starts_with("version")) {
-                using namespace std::literals::string_literals; // Bring the "s" suffix into scope
+        struct smd_frame
+        {
+            int frame;
+            glm::vec3 position;
+            glm::quat rotation;
+        };
 
-                std::string verStr = line.substr(("version "s).length(),1);
+        struct smd_channel
+        {
+            std::vector<smd_frame> frames;
+        };
 
-                version = std::atoi(verStr.c_str());
+        struct smd_bone
+        {
+            int id = 0;
+            std::string name;
+            int parent_bone = -1;
+            smd_channel channel;
+        };
+
+        std::vector<smd_bone> bones;
+        bones.reserve(64); // Reserve reasonable initial capacity
+
+        int max_frame = 0;
+        int current_time = 0;
+
+        for (const auto& line : lines)
+        {
+            if (line.empty())
                 continue;
-            }
 
-            if (line.starts_with("nodes")) {
+            // Fast stage detection using first character
+            char first_char = line[0];
+
+            if (first_char == 'v')
+            { // version
+                continue; // Version not used, skip parsing
+            }
+            else if (first_char == 'n')
+            { // nodes
                 cur_stage = nodes;
                 continue;
             }
-
-            if (line.starts_with("end")) {
+            else if (first_char == 's')
+            { // skeleton
+                cur_stage = skeleton;
+                continue;
+            }
+            else if (first_char == 'e')
+            { // end
                 cur_stage = none;
                 continue;
             }
 
-            if (cur_stage == nodes) {
-                auto data = splitFileByCharacter(line,' ');
+            if (cur_stage == nodes)
+            {
+                auto data = splitFileByCharacter(line, ' ');
 
-                int id = std::atoi(data[0].c_str());
-                std::string name = data[1].c_str();
-                int parentId = std::atoi(data[2].c_str());
+                smd_bone bone;
+                bone.id = std::atoi(data[0].c_str());
+                bone.name = std::move(data[1]);
+                bone.parent_bone = std::atoi(data[2].c_str());
+                bone.channel.frames.reserve(max_frame > 0 ? max_frame + 1 : 32);
 
+                bones.push_back(std::move(bone));
+            }
+            else if (cur_stage == skeleton)
+            {
+                if (first_char == 't')
+                { // time
+                    // Fast parse: skip "time " prefix
+                    current_time = std::atoi(line.c_str() + 5);
+                    max_frame = std::max(max_frame, current_time);
+                }
+                else
+                {
+                    auto data = splitFileByCharacter(line, ' ');
+                    int id = std::atoi(data[0].c_str());
+
+                    smd_frame f;
+                    f.frame = current_time;
+                    f.position =
+                        glm::vec3(std::atof(data[1].c_str()), std::atof(data[2].c_str()), std::atof(data[3].c_str()));
+
+                    glm::vec3 angles(std::atof(data[4].c_str()), std::atof(data[5].c_str()),
+                                     std::atof(data[6].c_str()));
+
+                    // Correct SMD quaternion conversion (XYZ order)
+                    f.rotation = glm::quat(angles);
+
+                    bones[id].channel.frames.push_back(std::move(f));
+                }
             }
         }
 
-    }
+        length = 1.0f;
 
+        // Reserve space for channels
+        channels.reserve(bones.size() * 2);
+
+        const float inv_max_frame = max_frame > 0 ? 1.0f / static_cast<float>(max_frame) : 0.0f;
+
+        for (auto& bone : bones)
+        {
+            if (bone.channel.frames.empty())
+                continue;
+
+            Channel positionChannel{bone.id, ChannelInterpolation::LINEAR, TRANSLATION};
+            Channel rotationChannel{bone.id, ChannelInterpolation::LINEAR, ROTATION};
+
+            size_t frame_count = bone.channel.frames.size();
+            positionChannel.frames.reserve(frame_count);
+            rotationChannel.frames.reserve(frame_count);
+
+            for (const smd_frame& frame : bone.channel.frames)
+            {
+                float time = static_cast<float>(frame.frame) * inv_max_frame;
+
+                positionChannel.frames.push_back(new Vec3AnimationFrame{time, frame.position});
+                rotationChannel.frames.push_back(new QuatAnimationFrame{time, frame.rotation});
+            }
+
+            channels.push_back(std::move(positionChannel));
+            channels.push_back(std::move(rotationChannel));
+        }
+    }
 }
 
 brl::GfxSubMesh::~GfxSubMesh()

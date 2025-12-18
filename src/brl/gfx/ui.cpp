@@ -91,9 +91,9 @@ glm::mat4 brl::GfxUIElement::calculateTransform()
 {
     glm::mat4 t(1.0);
     glm::vec2 screenSize = {GfxEngine::instance->getMainWidth(), GfxEngine::instance->getMainHeight()};
-    float scaleFactor = canvas->GetScaleFactor(screenSize)*2;
+    float scaleFactor = canvas->GetScaleFactor(screenSize);
 
-    t = translate(t,(position()*scaleFactor) + (scale()*scaleFactor));
+    t = translate(t,(position()*scaleFactor) + ((scale()*scaleFactor)/2.0f));
     t *= toMat4(rotation());
     t = glm::scale(t, scale()*scaleFactor);
 
@@ -122,7 +122,7 @@ void brl::GfxImage::lateUpdate()
     canvas->insertDrawCall({calculateTransform(), GfxMesh::GetPrimitive(QUAD)->GetSubMesh(0)->buffer, material});
 }
 
-brl::GfxFont::GfxFontCharacter::GfxFontCharacter(unsigned int i, glm::ivec2 s, glm::ivec2 b, unsigned int adv)
+brl::GfxFont::GfxFontCharacter::GfxFontCharacter(unsigned int i, glm::vec2 s, glm::vec2 b, unsigned int adv)
 {
     this->id = i;
     this->size = s;
@@ -143,28 +143,28 @@ brl::GfxFont::GfxFontCharacter::GfxFontCharacter(unsigned int i, glm::ivec2 s, g
         .size = 4, .stride = 4 * sizeof(float), .pointer = 0, .format = GL_FLOAT, .normalized = false};
     charVAO->insertAttribute(posTexCoord);
 
-    // Allocate space for one quad (6 vertices * 4 floats)
+    // Create geometry in LOCAL SPACE (0,0) to (size.x, size.y)
+    // The bearing offset will be applied via transform in lateUpdate
     float vertices[6][4] = {};
 
-    glm::vec2 position = glm::vec2{0};
-    float scale = 1;
+    // Position relative to bearing
+    float xpos = bearing.x;
+    float ypos = -(size.y - bearing.y); // Note: this accounts for baseline offset
 
-    float xpos = 0;
-    float ypos = 0;
+    float w = size.x;
+    float h = size.y;
 
-    float w = size.x * scale;
-    float h = size.y * scale;
-
-    // Create quad vertices (2 triangles)
     // Triangle 1
     vertices[0][0] = xpos;
     vertices[0][1] = ypos + h;
     vertices[0][2] = 0.0f;
     vertices[0][3] = 0.0f;
+
     vertices[1][0] = xpos;
     vertices[1][1] = ypos;
     vertices[1][2] = 0.0f;
     vertices[1][3] = 1.0f;
+
     vertices[2][0] = xpos + w;
     vertices[2][1] = ypos;
     vertices[2][2] = 1.0f;
@@ -175,16 +175,18 @@ brl::GfxFont::GfxFontCharacter::GfxFontCharacter(unsigned int i, glm::ivec2 s, g
     vertices[3][1] = ypos + h;
     vertices[3][2] = 0.0f;
     vertices[3][3] = 0.0f;
+
     vertices[4][0] = xpos + w;
     vertices[4][1] = ypos;
     vertices[4][2] = 1.0f;
     vertices[4][3] = 1.0f;
+
     vertices[5][0] = xpos + w;
     vertices[5][1] = ypos + h;
     vertices[5][2] = 1.0f;
     vertices[5][3] = 0.0f;
 
-    charVBO->updateData(GL_DYNAMIC_DRAW, vertices, sizeof(vertices));
+    charVBO->updateData(GL_STATIC_DRAW, vertices, sizeof(vertices)); // Changed to STATIC_DRAW
 }
 
 brl::GfxFont::GfxFont(std::string path)
@@ -253,8 +255,8 @@ brl::GfxFont::GfxFont(std::string path)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         // now store character for later use
         GfxFontCharacter* character = new GfxFontCharacter{
-            texture, glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top), static_cast<unsigned int>(face->glyph->advance.x)
+            texture, glm::vec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+            glm::vec2(face->glyph->bitmap_left, face->glyph->bitmap_top), static_cast<unsigned int>(face->glyph->advance.x)
         };
         characters.insert(std::pair<char, GfxFontCharacter*>(c, character));
     }
@@ -280,39 +282,41 @@ void brl::GfxTextRenderer::lateUpdate()
     glm::vec2 cursor = glm::vec2(0);
     float scale = glm::length(this->scale());
 
-    glm::mat4 transform = calculateTransform();
+    glm::mat4 baseTransform = calculateTransform();
 
     for (char c : text)
     {
         GfxFont::GfxFontCharacter* ch = font->characters[c];
 
-        // Skip characters with no visual representation (like space might not have geometry)
+        // Skip characters with no visual representation
         if (ch->size.x == 0 || ch->size.y == 0)
         {
             cursor.x += (ch->advanceOffset >> 6) * scale;
             continue;
         }
 
-        // Get or create material for this color and character texture
+        cursor.y = -ch->bearing.y*2;
+
+        // Get or create material for this character
         GfxMaterial* material = getMaterial(glm::vec3(1), ch);
 
-        float xpos = cursor.x + ch->bearing.x * scale;
-        float ypos = cursor.y - (ch->size.y - ch->bearing.y) * scale;
+        // Create transform: translate to cursor position, then scale
+        glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(cursor.x, cursor.y, 0.0f));
+        glm::mat4 scaling = glm::scale(glm::mat4(1.0f), glm::vec3(scale, scale, 1.0f));
 
-        glm::mat4 t = glm::translate(glm::vec3{xpos, ypos, 0});
-        glm::mat4 s = glm::scale(glm::mat4(1.0), glm::vec3{scale});
-
-        glm::mat4 subTransform = t * s;
+        // Combine: baseTransform * translation * scale
+        // The character geometry already has bearing offset baked in
+        glm::mat4 finalTransform = baseTransform * translation * scaling;
 
         // Create draw call
         GfxUIDrawCall drawCall;
-        drawCall.transform = subTransform * transform; // Use projection as transform
+        drawCall.transform = finalTransform;
         drawCall.gfxBuffer = ch->charVAO;
         drawCall.material = material;
 
         canvas->draw_calls.push_back(drawCall);
 
-        // Advance cursor for next glyph
+        // Advance cursor for next glyph (divide by 64 because FreeType uses 1/64 pixel units)
         cursor.x += (ch->advanceOffset >> 6) * scale;
     }
 
@@ -354,8 +358,6 @@ brl::GfxMaterial* brl::GfxTextRenderer::getMaterial(glm::vec3 color, GfxFont::Gf
         void main() {
 
             vec4 p = _internalProj * _internalModel * vec4(vertex.xy, 0.0, 1.0);
-
-            p.z = 0;
 
             gl_Position = p;
             TexCoords = vertex.zw;
@@ -400,4 +402,27 @@ brl::GfxMaterial* brl::GfxTextRenderer::getMaterial(glm::vec3 color, GfxFont::Gf
     materialCache[key] = material;
 
     return material;
+}
+
+void brl::GfxTextRenderer::debugPrintCharacterInfo()
+{
+    std::cout << "=== Text Renderer Debug ===" << std::endl;
+    std::cout << "Text: \"" << text << "\"" << std::endl;
+    std::cout << "Scale: " << glm::length(this->scale()) << std::endl;
+
+    glm::vec2 cursor = glm::vec2(0);
+    float scale = glm::length(this->scale());
+
+    for (char c : text)
+    {
+        GfxFont::GfxFontCharacter* ch = font->characters[c];
+
+        std::cout << "Char '" << c << "':" << std::endl;
+        std::cout << "  Size: (" << ch->size.x << ", " << ch->size.y << ")" << std::endl;
+        std::cout << "  Bearing: (" << ch->bearing.x << ", " << ch->bearing.y << ")" << std::endl;
+        std::cout << "  Advance: " << (ch->advanceOffset >> 6) << std::endl;
+        std::cout << "  Cursor pos: (" << cursor.x << ", " << cursor.y << ")" << std::endl;
+
+        cursor.x += (ch->advanceOffset >> 6) * scale;
+    }
 }

@@ -14,7 +14,11 @@ void main()
 
    texCoords.y = 1.0 - texCoords.y;
 
-   gl_Position = _internalProj * _internalModel * vec4(aPos,0, 1.0);
+   vec4  p = _internalProj * _internalModel * vec4(aPos,0, 1.0);
+
+   p.z = 0;
+
+   gl_Position = p;
 }
 #define __ENDSHADER
 

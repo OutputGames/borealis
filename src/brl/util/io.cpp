@@ -119,8 +119,6 @@ brl::IoFile brl::IoEngine::readFileBinary(std::string path)
 
     std::filesystem::path p(path);
 
-    std::cout << "Trying to load file at " << p.filename().string() << std::endl;
-
     std::string assetsPack = "";
 
     if (p.has_root_name())
@@ -161,6 +159,89 @@ std::string brl::IoEngine::readFileString(std::string path)
     file.free(true);
 
     return str;
+}
+
+std::vector<brl::IoFile> brl::IoEngine::readFilesBinary(std::string directory)
+{
+    std::vector<IoFile> files;
+
+    std::replace(directory.begin(), directory.end(), '\\', '/');
+
+    
+    std::filesystem::path p(directory);
+
+    std::string assetsPack = "";
+
+    if (p.has_root_name())
+    {
+        std::cout << p.root_name().string() << std::endl;
+        if (p.root_name().string() == "D:")
+        {
+            assetsPack = "default_assets";
+        }
+
+        directory = directory.replace(0, p.root_name().string().size() + 1, "");
+    }
+    else
+    {
+        assetsPack = "assets";
+    }
+
+    std::ifstream file(assetsPack + ".res", std::ios::binary);
+    if (!file)
+        throw std::runtime_error("Failed to open resource path");
+
+    while (true)
+    {
+        uint32_t strLen = 0;
+        file.read(reinterpret_cast<char*>(&strLen), sizeof(strLen));
+
+        if (strLen > 0)
+        {
+            brl::IoFile block{};
+
+            // --- Read string ---
+            if (strLen > 0)
+            {
+                std::vector<char> strBuf(strLen);
+                file.read(strBuf.data(), strLen);
+                block.filePath.assign(strBuf.begin(), strBuf.end());
+                std::replace(block.filePath.begin(), block.filePath.end(), '\\', '/');
+            }
+
+            // --- Read data size ---
+            file.read(reinterpret_cast<char*>(&block.dataSize), sizeof(block.dataSize));
+
+            if (block.filePath.starts_with(directory))
+            {
+
+                // --- Read binary data ---
+                if (block.dataSize > 0)
+                {
+                    block.data = new unsigned char[block.dataSize];
+                    file.read(reinterpret_cast<char*>(block.data), block.dataSize);
+                }
+
+
+                file_map.insert({block.filePath, block});
+                files.push_back(block);
+            }
+            else
+            {
+                file.seekg(block.dataSize, std::ios::cur);
+            }
+        }
+        else
+        {
+        
+        }
+
+        if (file.eof())
+            break;
+    }
+
+
+    return files;
 }
 
 void brl::IoEngine::shutdown()

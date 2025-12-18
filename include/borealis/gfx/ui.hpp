@@ -35,13 +35,14 @@ namespace brl
         void earlyUpdate() override;
         void lateUpdate() override;
 
+                static GfxCanvas* mainCanvas;
+
     private:
         friend struct GfxImage;
         friend struct GfxUIElement;
         friend struct GfxTextRenderer;
         friend GfxEngine;
 
-        static GfxCanvas* mainCanvas;
 
         void insertDrawCall(const GfxUIDrawCall call);
 
@@ -129,9 +130,9 @@ namespace brl
         struct GfxFontCharacter : GfxTexture
         {
             GfxFontCharacter() = default;
-            GfxFontCharacter(unsigned int id, glm::ivec2 s, glm::ivec2 b, unsigned int adv);
-            glm::ivec2 size; // Size of glyph
-            glm::ivec2 bearing; // Offset from baseline to left/top of glyph
+            GfxFontCharacter(unsigned int id, glm::vec2 s, glm::vec2 b, unsigned int adv);
+            glm::vec2 size; // Size of glyph
+            glm::vec2 bearing; // Offset from baseline to left/top of glyph
             unsigned int advanceOffset; // Offset to advance to next glyph
 
             GfxAttribBuffer* charVAO = nullptr;
@@ -154,6 +155,7 @@ namespace brl
         std::string text;
 
         void start() override;
+        void debugPrintCharacterInfo();
         void lateUpdate() override;
 
     private:
